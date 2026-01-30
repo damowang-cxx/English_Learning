@@ -1,26 +1,328 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cyber-bg: #0a0a0f;
+  --cyber-primary: #00ffff;
+  --cyber-secondary: #ff00ff;
+  --cyber-accent: #00ff00;
+  --cyber-warning: #ffff00;
+  --cyber-danger: #ff0080;
+  --cyber-text: #e0e0e0;
+  --cyber-text-dim: #888888;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--cyber-bg);
+  --color-foreground: var(--cyber-text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cyber-bg);
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 0, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(0, 255, 128, 0.03) 0%, transparent 50%);
+  color: var(--cyber-text);
+  font-family: 'Courier New', 'Monaco', monospace;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* 赛博朋克风格的滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cyber-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyber-secondary);
+}
+
+/* 霓虹灯文字效果 */
+@keyframes neon-glow {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px var(--cyber-primary),
+      0 0 10px var(--cyber-primary),
+      0 0 15px var(--cyber-primary),
+      0 0 20px var(--cyber-primary);
+  }
+  50% {
+    text-shadow: 
+      0 0 2px var(--cyber-primary),
+      0 0 5px var(--cyber-primary),
+      0 0 8px var(--cyber-primary),
+      0 0 12px var(--cyber-primary);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* 扫描线效果 - 模拟飞船HUD */
+.scan-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--cyber-primary),
+    transparent
+  );
+  animation: scan-line 4s linear infinite;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.2;
+  box-shadow: 0 0 10px var(--cyber-primary);
+}
+
+/* 速度线效果 */
+@keyframes speed-lines {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.3;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.speed-line {
+  position: fixed;
+  left: 0;
+  width: 1px;
+  height: 200px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 255, 255, 0.3),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+  animation: speed-lines 2s linear infinite;
+}
+
+/* 星空主题按钮样式 */
+.cyber-button {
+  position: relative;
+  padding: 12px 24px;
+  background: rgba(232, 244, 255, 0.05);
+  border: 1px solid rgba(232, 244, 255, 0.3);
+  color: rgba(232, 244, 255, 0.9);
+  font-family: 'Courier New', monospace;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+
+.cyber-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(232, 244, 255, 0.1);
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.cyber-button:hover {
+  color: rgba(232, 244, 255, 1);
+  border-color: rgba(232, 244, 255, 0.5);
+  background: rgba(232, 244, 255, 0.08);
+  box-shadow: 
+    0 0 8px rgba(232, 244, 255, 0.3),
+    0 0 15px rgba(232, 244, 255, 0.2);
+}
+
+.cyber-button:hover::before {
+  left: 0;
+}
+
+/* 星空主题卡片样式 */
+.cyber-card {
+  background: rgba(232, 244, 255, 0.02);
+  border: 1px solid rgba(232, 244, 255, 0.08);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(232, 244, 255, 0.05);
+}
+
+.cyber-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    45deg,
+    rgba(232, 244, 255, 0.1),
+    rgba(232, 244, 255, 0.05),
+    rgba(232, 244, 255, 0.1)
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 3s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cyber-card:hover::before {
+  opacity: 0.2;
+}
+
+.cyber-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(232, 244, 255, 0.2);
+  background: rgba(232, 244, 255, 0.04);
+  box-shadow: 
+    0 0 10px rgba(232, 244, 255, 0.15),
+    0 0 20px rgba(232, 244, 255, 0.08);
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 输入框样式 */
+.cyber-input {
+  background: rgba(232, 244, 255, 0.04);
+  border: 1px solid rgba(232, 244, 255, 0.15);
+  color: var(--cyber-text);
+  padding: 12px 16px;
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(2px);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.cyber-input:focus {
+  outline: none;
+  border-color: rgba(232, 244, 255, 0.3);
+  background: rgba(232, 244, 255, 0.06);
+  box-shadow: 
+    0 0 6px rgba(232, 244, 255, 0.15),
+    inset 0 1px 2px rgba(232, 244, 255, 0.05);
+}
+
+/* 文本高亮效果 */
+.text-cyber-glow {
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+/* 网格背景 */
+.cyber-grid {
+  background-image: 
+    linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* 音频播放器样式 */
+audio {
+  width: 100%;
+  filter: brightness(0.9) contrast(1.1);
+}
+
+audio::-webkit-media-controls-panel {
+  background-color: rgba(232, 244, 255, 0.05);
+  border: 1px solid rgba(232, 244, 255, 0.2);
+}
+
+audio::-webkit-media-controls-play-button {
+  background-color: rgba(232, 244, 255, 0.2);
+  border-radius: 50%;
+}
+
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+  color: rgba(232, 244, 255, 0.8);
+  font-family: 'Courier New', monospace;
+}
+
+/* 复选框样式 */
+input[type="checkbox"] {
+  accent-color: rgba(232, 244, 255, 0.6);
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  box-shadow: 0 0 8px rgba(232, 244, 255, 0.3);
+}
+
+/* 加载动画 */
+@keyframes loading-dots {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%, 100% {
+    content: '...';
+  }
+}
+
+.loading::after {
+  content: '';
+  animation: loading-dots 1.5s steps(4, end) infinite;
 }
