@@ -16,26 +16,20 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen relative">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-5xl font-bold mb-2 font-mono" style={{ 
-              color: 'rgba(232, 244, 255, 0.7)',
-              textShadow: '0 0 5px rgba(232, 244, 255, 0.3), 0 0 10px rgba(232, 244, 255, 0.2)',
-              letterSpacing: '0.1em',
-              fontWeight: 300
-            }}>
-              ENGLISH LEARNING
-            </h1>
-            <p className="text-gray-500 text-sm font-mono tracking-widest opacity-70">[ 英语学习训练系统 ]</p>
-          </div>
-          <Link
-            href="/upload"
-            className="relative px-6 py-3 font-mono text-sm uppercase tracking-wider border border-gray-500/30 text-gray-300 hover:text-gray-200 hover:border-gray-400/40 transition-all duration-300 bg-gray-800/20 hover:bg-gray-800/30 backdrop-blur-sm"
-          >
-            <span className="relative z-10">+ 上传新训练条目</span>
-          </Link>
-        </div>
+      {/* 内容区域 - 限制在半圆形窗户视口范围内 */}
+      <div className="container mx-auto px-4 py-8 cockpit-viewport" style={{
+        position: 'relative',
+        zIndex: 10,
+        paddingTop: '8vh',
+        paddingBottom: '15vh',
+        maxHeight: '65vh',
+        overflowY: 'auto',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: '85%',
+        maxWidth: '1200px'
+      }}>
+        {/* 上传按钮已集成到仪表盘中 */}
 
         {items.length === 0 ? (
           <div className="text-center py-20">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ParticleBackground from "@/components/ParticleBackground";
 import StarBackground from "@/components/StarBackground";
+import CockpitOverlay from "@/components/CockpitOverlay";
 
 export const metadata: Metadata = {
   title: "英语学习训练",
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body className="antialiased relative">
         <StarBackground />
         <ParticleBackground />
+        <CockpitOverlay />
         <div className="scan-line" />
         <div className="relative z-10">
           {children}

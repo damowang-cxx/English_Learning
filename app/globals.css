@@ -24,6 +24,13 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--cyber-bg);
   background-image: 
@@ -34,6 +41,13 @@ body {
   font-family: 'Courier New', 'Monaco', monospace;
   overflow-x: hidden;
   position: relative;
+  min-height: 100vh;
+}
+
+/* 驾驶舱视口区域样式 */
+.cockpit-viewport {
+  position: relative;
+  z-index: 10;
 }
 
 /* 赛博朋克风格的滚动条 */
