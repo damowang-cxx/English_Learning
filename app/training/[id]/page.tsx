@@ -255,7 +255,6 @@ export default function TrainingDetailPage() {
                     backdropFilter: 'blur(4px)'
                   }}
                 >
-                >
                   {/* 句子文本 */}
                   <div className="flex items-start gap-4 mb-4">
                     <button

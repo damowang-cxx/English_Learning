@@ -2,14 +2,42 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import HudScreen from './HudScreen'
+
+interface TrainingItem {
+  id: string
+  title: string
+  createdAt: string | Date
+  sentences: { id: string }[]
+}
 
 export default function CockpitOverlay() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
   const router = useRouter()
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [isHoveringUpload, setIsHoveringUpload] = useState(false)
+  const [isHoveringList, setIsHoveringList] = useState(false)
   const [buttonPosition, setButtonPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [listButtonPosition, setListButtonPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [isHudOpen, setIsHudOpen] = useState(false)
+  const [trainingItems, setTrainingItems] = useState<TrainingItem[]>([])
+
+  // 获取训练条目数据
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await fetch('/api/training-items')
+        if (response.ok) {
+          const data = await response.json()
+          setTrainingItems(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch training items:', error)
+      }
+    }
+    fetchItems()
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -113,6 +141,228 @@ export default function CockpitOverlay() {
           ctx.shadowBlur = 0
         }
       }
+
+      // ========== 绘制顶部悬挂装置和灯光系统 ==========
+      const warmLightColor = '#ff8c40'  // 暖橙色
+      const warmLightColorBright = '#ffb366'  // 亮暖黄色
+      
+      // 1. 绘制吊顶结构（在状态指示灯上方）
+      ctx.save()
+      const ceilingStructureY = topPanelHeight - 25
+      const ceilingThickness = 8
+      
+      // 吊顶主体（深色金属）
+      ctx.fillStyle = '#1a1a2e'
+      ctx.fillRect(0, ceilingStructureY, width, ceilingThickness)
+      
+      // 吊顶边框（金属质感）
+      ctx.strokeStyle = '#2d1b4e'
+      ctx.lineWidth = 2
+      ctx.strokeRect(0, ceilingStructureY, width, ceilingThickness)
+      
+      // 吊顶内部装饰线条
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.3
+      ctx.beginPath()
+      ctx.moveTo(0, ceilingStructureY + ceilingThickness / 2)
+      ctx.lineTo(width, ceilingStructureY + ceilingThickness / 2)
+      ctx.stroke()
+      ctx.globalAlpha = 1
+      ctx.restore()
+      
+      // 2. 绘制悬挂灯具（像素风格，3个主要灯具）
+      const lampCount = 3
+      const lampSpacing = width / (lampCount + 1)
+      const lampSwingAmplitude = 2  // 摇摆幅度
+      const lampSwingSpeed = 0.0008  // 摇摆速度
+      
+      for (let i = 0; i < lampCount; i++) {
+        const lampX = lampSpacing * (i + 1)
+        const baseLampY = ceilingStructureY + ceilingThickness + 15
+        // 摇摆效果（轻微晃动）
+        const swingOffset = Math.sin(time * lampSwingSpeed + i * Math.PI / 3) * lampSwingAmplitude
+        const lampY = baseLampY + swingOffset
+        
+        ctx.save()
+        
+        // 2.1 绘制悬挂电缆
+        const cableLength = 25
+        ctx.strokeStyle = '#2d1b4e'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(lampX, ceilingStructureY + ceilingThickness)
+        ctx.lineTo(lampX, lampY)
+        ctx.stroke()
+        
+        // 电缆高光
+        ctx.strokeStyle = '#3a3a5a'
+        ctx.lineWidth = 1
+        ctx.globalAlpha = 0.6
+        ctx.beginPath()
+        ctx.moveTo(lampX - 0.5, ceilingStructureY + ceilingThickness)
+        ctx.lineTo(lampX - 0.5, lampY)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+        
+        // 2.2 绘制灯具主体（像素风格设备盒）
+        const lampWidth = 24
+        const lampHeight = 18
+        const lampXPos = lampX - lampWidth / 2
+        const lampYPos = lampY
+        
+        // 灯具外壳（深色金属）
+        ctx.fillStyle = '#1a1a2e'
+        ctx.fillRect(lampXPos, lampYPos, lampWidth, lampHeight)
+        
+        // 灯具边框（金属质感）
+        ctx.strokeStyle = '#2d1b4e'
+        ctx.lineWidth = 2
+        ctx.strokeRect(lampXPos, lampYPos, lampWidth, lampHeight)
+        
+        // 灯具内边框（高光）
+        ctx.strokeStyle = '#3a3a5a'
+        ctx.lineWidth = 1
+        ctx.globalAlpha = 0.6
+        ctx.strokeRect(lampXPos + 1, lampYPos + 1, lampWidth - 2, lampHeight - 2)
+        ctx.globalAlpha = 1
+        
+        // 2.3 绘制光源（周期性闪烁）
+        const lightIntensity = 0.5 + Math.sin(time * 0.002 + i * 0.5) * 0.4  // 闪烁效果
+        const lightAlpha = lightIntensity * 0.9
+        
+        // 光源主体（暖橙色）
+        ctx.fillStyle = warmLightColor
+        ctx.globalAlpha = lightAlpha
+        ctx.fillRect(lampXPos + 4, lampYPos + 4, lampWidth - 8, lampHeight - 8)
+        
+        // 光源高光（亮暖黄色）
+        ctx.fillStyle = warmLightColorBright
+        ctx.globalAlpha = lightAlpha * 0.6
+        ctx.fillRect(lampXPos + 6, lampYPos + 6, lampWidth - 12, lampHeight - 12)
+        ctx.globalAlpha = 1
+        
+        // 光源像素点（模拟LED）
+        const pixelSize = 2
+        const pixelSpacing = 4
+        ctx.fillStyle = warmLightColorBright
+        ctx.globalAlpha = lightAlpha
+        for (let px = 0; px < 3; px++) {
+          for (let py = 0; py < 2; py++) {
+            const pixelX = lampXPos + 6 + px * pixelSpacing
+            const pixelY = lampYPos + 6 + py * pixelSpacing
+            ctx.fillRect(pixelX, pixelY, pixelSize, pixelSize)
+          }
+        }
+        ctx.globalAlpha = 1
+        
+        // 2.4 绘制光柱（从灯具向下照射）
+        const lightBeamLength = 80
+        const lightBeamWidth = lampWidth * 1.2
+        const lightBeamY = lampYPos + lampHeight
+        
+        // 光柱渐变（从亮到暗）
+        const beamGradient = ctx.createLinearGradient(
+          lampX, lightBeamY,
+          lampX, lightBeamY + lightBeamLength
+        )
+        beamGradient.addColorStop(0, `rgba(255, 140, 64, ${lightAlpha * 0.3})`)  // 暖橙色
+        beamGradient.addColorStop(0.3, `rgba(255, 140, 64, ${lightAlpha * 0.15})`)
+        beamGradient.addColorStop(0.7, `rgba(255, 140, 64, ${lightAlpha * 0.05})`)
+        beamGradient.addColorStop(1, 'rgba(255, 140, 64, 0)')
+        
+        ctx.fillStyle = beamGradient
+        ctx.beginPath()
+        ctx.moveTo(lampX - lightBeamWidth / 2, lightBeamY)
+        ctx.lineTo(lampX + lightBeamWidth / 2, lightBeamY)
+        ctx.lineTo(lampX + lightBeamWidth / 2 * 0.8, lightBeamY + lightBeamLength)
+        ctx.lineTo(lampX - lightBeamWidth / 2 * 0.8, lightBeamY + lightBeamLength)
+        ctx.closePath()
+        ctx.fill()
+        
+        // 光柱中心高亮线
+        ctx.strokeStyle = warmLightColorBright
+        ctx.lineWidth = 1
+        ctx.globalAlpha = lightAlpha * 0.4
+        ctx.beginPath()
+        ctx.moveTo(lampX, lightBeamY)
+        ctx.lineTo(lampX, lightBeamY + lightBeamLength)
+        ctx.stroke()
+        ctx.globalAlpha = 1
+        
+        // 2.5 绘制灯具投影（增加立体感）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
+        ctx.beginPath()
+        ctx.moveTo(lampXPos + lampWidth, lampYPos + lampHeight)
+        ctx.lineTo(lampXPos + lampWidth + 3, lampYPos + lampHeight + 5)
+        ctx.lineTo(lampXPos + lampWidth + 3, lightBeamY + lightBeamLength)
+        ctx.lineTo(lampXPos + lampWidth, lightBeamY + lightBeamLength)
+        ctx.closePath()
+        ctx.fill()
+        
+        // 2.6 绘制灯具上的小型控制元件
+        ctx.fillStyle = accentColor2
+        ctx.globalAlpha = 0.6 + Math.sin(time * 0.003 + i) * 0.3
+        ctx.fillRect(lampXPos + lampWidth - 6, lampYPos + 2, 3, 3)
+        ctx.globalAlpha = 1
+        
+        ctx.restore()
+      }
+      
+      // 3. 绘制额外的悬挂设备盒（在指示灯附近）
+      const deviceBoxCount = 2
+      const deviceBoxSpacing = width / (deviceBoxCount + 1)
+      
+      for (let i = 0; i < deviceBoxCount; i++) {
+        const boxX = deviceBoxSpacing * (i + 1)
+        const boxY = ceilingStructureY + ceilingThickness + 8
+        const boxWidth = 16
+        const boxHeight = 12
+        
+        ctx.save()
+        
+        // 3.1 悬挂点
+        ctx.fillStyle = '#2d1b4e'
+        ctx.beginPath()
+        ctx.arc(boxX, ceilingStructureY + ceilingThickness, 2, 0, Math.PI * 2)
+        ctx.fill()
+        
+        // 3.2 设备盒主体
+        ctx.fillStyle = '#1a1a2e'
+        ctx.fillRect(boxX - boxWidth / 2, boxY, boxWidth, boxHeight)
+        
+        // 设备盒边框
+        ctx.strokeStyle = '#2d1b4e'
+        ctx.lineWidth = 1.5
+        ctx.strokeRect(boxX - boxWidth / 2, boxY, boxWidth, boxHeight)
+        
+        // 设备盒内边框
+        ctx.strokeStyle = '#3a3a5a'
+        ctx.lineWidth = 0.5
+        ctx.globalAlpha = 0.5
+        ctx.strokeRect(boxX - boxWidth / 2 + 1, boxY + 1, boxWidth - 2, boxHeight - 2)
+        ctx.globalAlpha = 1
+        
+        // 3.3 设备盒上的指示灯
+        const indicatorColor = Math.sin(time * 0.002 + i) > 0 ? accentColor2 : '#333344'
+        ctx.fillStyle = indicatorColor
+        ctx.fillRect(boxX - 3, boxY + 3, 6, 4)
+        
+        // 3.4 设备盒投影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'
+        ctx.fillRect(boxX - boxWidth / 2 + 2, boxY + boxHeight, boxWidth - 4, 3)
+        
+        ctx.restore()
+      }
+      
+      // 4. 绘制顶部区域的整体投影（增强空间层次感）
+      ctx.save()
+      const shadowGradient = ctx.createLinearGradient(0, ceilingStructureY + ceilingThickness, 0, ceilingStructureY + ceilingThickness + 30)
+      shadowGradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)')
+      shadowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = shadowGradient
+      ctx.fillRect(0, ceilingStructureY + ceilingThickness, width, 30)
+      ctx.restore()
 
       // ========== 绘制半圆形窗户（三段式，带透视效果） ==========
       const frameThickness = 20 // 外圈框架厚度
@@ -1592,6 +1842,30 @@ export default function CockpitOverlay() {
         height: uploadButtonHeight
       })
 
+      // 列表按钮位置计算（位于上传按钮左侧）
+      const listButtonWidth = 120
+      const listButtonHeight = 38
+      const listButtonSpacing = 15  // 与上传按钮的间距
+      const listButtonX = finalButtonX - listButtonWidth - listButtonSpacing
+      const listButtonY = uploadButtonY  // 与上传按钮同一水平线
+      
+      // 存储列表按钮位置供后续使用
+      const listButtonInfo = {
+        x: listButtonX,
+        y: listButtonY,
+        width: listButtonWidth,
+        height: listButtonHeight,
+        radius: buttonRadius
+      }
+      
+      // 更新列表按钮位置状态（用于渲染透明按钮）
+      setListButtonPosition({
+        x: listButtonX,
+        y: listButtonY,
+        width: listButtonWidth,
+        height: listButtonHeight
+      })
+
       // 连接线条（连接各个组件）
       ctx.strokeStyle = accentColor2
       ctx.lineWidth = 1
@@ -1952,6 +2226,104 @@ export default function CockpitOverlay() {
       }
       ctx.globalAlpha = 1
 
+      // ========== 列表按钮（在上传按钮左侧） ==========
+      const listBtnX = listButtonInfo.x
+      const listBtnY = listButtonInfo.y
+      const listBtnW = listButtonInfo.width
+      const listBtnH = listButtonInfo.height
+      const listBtnR = listButtonInfo.radius
+      
+      // 列表按钮背景（动态发光效果，圆角）
+      const listButtonGlowValue = 0.5 + Math.sin(time * 0.003 + 0.5) * 0.3
+      ctx.fillStyle = accentColor2
+      ctx.globalAlpha = listButtonGlowValue * 0.4
+      ctx.beginPath()
+      ctx.roundRect(listBtnX - 3, listBtnY - 3, listBtnW + 6, listBtnH + 6, listBtnR + 2)
+      ctx.fill()
+      ctx.globalAlpha = 1
+      
+      // 列表按钮主体（圆角矩形）
+      ctx.fillStyle = '#2a2a4e'
+      ctx.beginPath()
+      ctx.roundRect(listBtnX, listBtnY, listBtnW, listBtnH, listBtnR)
+      ctx.fill()
+      
+      // 列表按钮边框（动态，圆角）
+      ctx.strokeStyle = accentColor2
+      ctx.lineWidth = 3
+      ctx.shadowBlur = 8 + Math.sin(time * 0.003 + 0.5) * 4
+      ctx.shadowColor = accentColor2
+      ctx.beginPath()
+      ctx.roundRect(listBtnX, listBtnY, listBtnW, listBtnH, listBtnR)
+      ctx.stroke()
+      ctx.shadowBlur = 0
+      
+      // 列表按钮内边框（圆角）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.roundRect(listBtnX + 2, listBtnY + 2, listBtnW - 4, listBtnH - 4, listBtnR - 1)
+      ctx.stroke()
+      
+      // 列表按钮图标（列表/网格图标）
+      const listIconX = listBtnX + listBtnW / 2
+      const listIconY = listBtnY + listBtnH / 2 - 2
+      ctx.strokeStyle = accentColor2
+      ctx.lineWidth = 2.5
+      ctx.shadowBlur = 6
+      ctx.shadowColor = accentColor2
+      // 绘制网格图标（3x3网格）
+      const iconGridSize = 8
+      const iconGridSpacing = 3
+      for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+          const x = listIconX - iconGridSize + col * iconGridSpacing
+          const y = listIconY - iconGridSize + row * iconGridSpacing
+          ctx.fillStyle = accentColor2
+          ctx.fillRect(x, y, 2, 2)
+        }
+      }
+      ctx.shadowBlur = 0
+      
+      // 列表按钮文字
+      ctx.fillStyle = accentColor2
+      ctx.font = 'bold 11px monospace'
+      ctx.textAlign = 'center'
+      ctx.shadowBlur = 4
+      ctx.shadowColor = accentColor2
+      ctx.fillText('LIST', listIconX, listBtnY + listBtnH - 8)
+      ctx.shadowBlur = 0
+      
+      // 列表按钮交互提示
+      const mouseInListButton = mousePos.x >= listBtnX && 
+                                mousePos.x <= listBtnX + listBtnW &&
+                                mousePos.y >= listBtnY && 
+                                mousePos.y <= listBtnY + listBtnH
+      
+      setIsHoveringList(mouseInListButton)
+      
+      if (mouseInListButton) {
+        // 悬停时的外发光效果（圆角）
+        ctx.strokeStyle = accentColor1
+        ctx.lineWidth = 4
+        ctx.globalAlpha = 0.9
+        ctx.shadowBlur = 12
+        ctx.shadowColor = accentColor1
+        ctx.beginPath()
+        ctx.roundRect(listBtnX - 4, listBtnY - 4, listBtnW + 8, listBtnH + 8, listBtnR + 3)
+        ctx.stroke()
+        ctx.shadowBlur = 0
+        ctx.globalAlpha = 1
+        
+        // 悬停时的背景高亮（圆角）
+        ctx.fillStyle = accentColor1
+        ctx.globalAlpha = 0.15
+        ctx.beginPath()
+        ctx.roundRect(listBtnX, listBtnY, listBtnW, listBtnH, listBtnR)
+        ctx.fill()
+        ctx.globalAlpha = 1
+      }
+
       // ========== 上传按钮（最后绘制，位于控制面板右上角，确保在所有元素之上） ==========
       // 使用之前计算的按钮位置信息
       const buttonX = uploadButtonInfo.x
@@ -2143,11 +2515,39 @@ export default function CockpitOverlay() {
           width: '100vw',
           height: '100vh',
           position: 'fixed',
-          cursor: isHoveringUpload ? 'pointer' : 'default',
+          cursor: (isHoveringUpload || isHoveringList) ? 'pointer' : 'default',
           pointerEvents: 'none' // Canvas 不拦截点击，让透明按钮处理
         }}
         onMouseMove={handleMouseMove}
       />
+      {/* 列表按钮 */}
+      {listButtonPosition && (
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsHudOpen(true)
+          }}
+          onMouseEnter={() => setIsHoveringList(true)}
+          onMouseLeave={() => setIsHoveringList(false)}
+          style={{
+            position: 'fixed',
+            left: `${listButtonPosition.x}px`,
+            top: `${listButtonPosition.y}px`,
+            width: `${listButtonPosition.width}px`,
+            height: `${listButtonPosition.height}px`,
+            zIndex: 100,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            margin: 0,
+            pointerEvents: 'auto'
+          }}
+          aria-label="打开训练条目列表"
+        />
+      )}
+      {/* 上传按钮 */}
       {buttonPosition && (
         <button
           onClick={(e) => {
@@ -2174,6 +2574,13 @@ export default function CockpitOverlay() {
           aria-label="上传新的训练条目"
         />
       )}
+      {/* HUD屏幕 */}
+      <HudScreen
+        isOpen={isHudOpen}
+        onClose={() => setIsHudOpen(false)}
+        buttonPosition={listButtonPosition}
+        trainingItems={trainingItems}
+      />
     </>
   )
 }
