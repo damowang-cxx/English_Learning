@@ -91,44 +91,111 @@ export default function CockpitOverlay() {
       const accentColor2 = '#00ffff' // 青色
       const accentColor3 = '#ff8c00' // 橙色
 
-      // 中央半圆形窗户参数（扩大一倍）
+      // 三段式窗口结构参数
       const centerX = width / 2
-      const windowRadius = Math.min(width, height) * 0.7 // 从0.35扩大到0.7，扩大一倍
-      const windowTop = height * 0.05 // 调整顶部位置以适应更大的窗口
-      const windowCenterY = windowTop + windowRadius
-      const paneCount = 3 // 三个分段
-      const paneAngle = Math.PI / paneCount // 每个窗格的角度
+      
+      // 上段：倒梯形顶舱（包含左右三角形窗口区域）
+      const topSectionTop = 0
+      const topSectionBottom = height * 0.25 // 上段底部位置
+      const topSectionHeight = topSectionBottom - topSectionTop
+      
+      // 中段：长方形主窗口区域
+      const middleSectionTop = topSectionBottom
+      const middleSectionBottom = height * 0.65 // 中段底部位置
+      const middleSectionHeight = middleSectionBottom - middleSectionTop
+      
+      // 下段：操控面板
+      const bottomSectionTop = middleSectionBottom
+      const bottomSectionBottom = height
+      const bottomSectionHeight = bottomSectionBottom - bottomSectionTop
+      
+      // 上段倒梯形参数
+      const topTrapezoidTopWidth = width * 0.3 // 顶部宽度（窄）
+      const topTrapezoidBottomWidth = width * 0.85 // 底部宽度（宽）
+      const topTrapezoidTopLeft = centerX - topTrapezoidTopWidth / 2
+      const topTrapezoidTopRight = centerX + topTrapezoidTopWidth / 2
+      const topTrapezoidBottomLeft = centerX - topTrapezoidBottomWidth / 2
+      const topTrapezoidBottomRight = centerX + topTrapezoidBottomWidth / 2
+      
+      // 中段长方形窗口参数
+      const middleWindowWidth = width * 0.85
+      const middleWindowLeft = centerX - middleWindowWidth / 2
+      const middleWindowRight = centerX + middleWindowWidth / 2
+      
+      // 上段左右三角形窗口参数（剩余区域）
+      const triangleWindowWidth = (width - middleWindowWidth) / 2 // 左右各一个三角形
+      const leftTriangleRight = middleWindowLeft // 左三角形右边界
+      const rightTriangleLeft = middleWindowRight // 右三角形左边界
+      
+      // 控制面板参数（下段）
+      const panelTop = bottomSectionTop
+      const panelHeight = bottomSectionHeight
+      const panelWidth = width * 0.85
+      const panelLeft = centerX - panelWidth / 2
+      
+      const centerY = (middleSectionTop + middleSectionBottom) / 2 // 中段中心Y位置
 
       // 清除画布
       ctx.clearRect(0, 0, width, height)
       
-      // 先填充整个背景
+      // 先填充整个背景（深色驾驶舱内部）
       ctx.fillStyle = cockpitColor
       ctx.fillRect(0, 0, width, height)
+      
+      // 注意：窗口清除操作会在所有舱壁绘制完成后执行，让窗口区域显示底层星空背景
 
-      // 绘制顶部控制台区域（缩小以适应更大的窗口）
-      const topPanelHeight = Math.max(windowTop, 5) // 确保至少有一些顶部空间
-      ctx.fillStyle = panelColor
-      ctx.fillRect(0, 0, width, topPanelHeight)
+      // 绘制顶部面板区域（梯形，从顶部向下延伸）
+      const topPanelTop = 0
+      const topPanelBottom = topSectionBottom // 使用新的三段式结构变量
+      const topPanelTopWidth = width
+      const topPanelBottomWidth = width * 0.85  // 底部较窄，形成梯形
+      
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(0, topPanelTop)
+      ctx.lineTo(width, topPanelTop)
+      ctx.lineTo(centerX + topPanelBottomWidth / 2, topPanelBottom)
+      ctx.lineTo(centerX - topPanelBottomWidth / 2, topPanelBottom)
+      ctx.closePath()
+      
+      const topPanelGradient = ctx.createLinearGradient(0, topPanelTop, 0, topPanelBottom)
+      topPanelGradient.addColorStop(0, '#2a0a3a')
+      topPanelGradient.addColorStop(0.5, '#150520')
+      topPanelGradient.addColorStop(1, '#0a0210')
+      ctx.fillStyle = topPanelGradient
+      ctx.fill()
+      
+      // 顶部面板边框
+      ctx.strokeStyle = '#4a00e0'
+      ctx.lineWidth = 4
+      ctx.stroke()
+      ctx.restore()
 
-      // 顶部装饰线条和细节
+      // 顶部装饰线条和细节（在顶部面板内）
       for (let i = 0; i < 5; i++) {
-        const y = topPanelHeight - 20 - i * 15
+        const t = i / 5
+        const y = topPanelTop + (topPanelBottom - topPanelTop) * (0.3 + t * 0.5)
+        const lineLeftX = (width - topPanelBottomWidth) / 2 + topPanelBottomWidth * 0.1
+        const lineRightX = (width + topPanelBottomWidth) / 2 - topPanelBottomWidth * 0.1
+        const currentLeftX = (width - topPanelBottomWidth) / 2 + (topPanelBottomWidth * 0.1) * (1 - t)
+        const currentRightX = (width + topPanelBottomWidth) / 2 - (topPanelBottomWidth * 0.1) * (1 - t)
+        
         ctx.strokeStyle = accentColor1
         ctx.lineWidth = 1
         ctx.globalAlpha = 0.3 - i * 0.05
         ctx.beginPath()
-        ctx.moveTo(0, y)
-        ctx.lineTo(width, y)
+        ctx.moveTo(currentLeftX, y)
+        ctx.lineTo(currentRightX, y)
         ctx.stroke()
       }
       ctx.globalAlpha = 1
 
-      // 顶部状态指示灯
-      const indicatorSpacing = width / 12
+      // 顶部状态指示灯（在顶部面板底部）
+      const indicatorSpacing = topPanelBottomWidth / 12
+      const indicatorStartX = centerX - topPanelBottomWidth / 2
       for (let i = 0; i < 12; i++) {
-        const x = indicatorSpacing * i + indicatorSpacing / 2
-        const y = topPanelHeight - 10
+        const x = indicatorStartX + indicatorSpacing * i + indicatorSpacing / 2
+        const y = topPanelBottom - 10
         const isActive = Math.sin(time * 0.001 + i) > 0
         
         ctx.fillStyle = isActive ? accentColor2 : '#333344'
@@ -148,7 +215,7 @@ export default function CockpitOverlay() {
       
       // 1. 绘制吊顶结构（在状态指示灯上方）
       ctx.save()
-      const ceilingStructureY = topPanelHeight - 25
+      const ceilingStructureY = topPanelBottom - 25  // 使用 topPanelBottom 替代 topPanelHeight
       const ceilingThickness = 8
       
       // 吊顶主体（深色金属）
@@ -364,628 +431,188 @@ export default function CockpitOverlay() {
       ctx.fillRect(0, ceilingStructureY + ceilingThickness, width, 30)
       ctx.restore()
 
-      // ========== 绘制半圆形窗户（三段式，带透视效果） ==========
-      const frameThickness = 20 // 外圈框架厚度
-      const dividerWidth = 6 // 分隔线宽度
-      const perspectiveDepth = 15 // 透视深度（窗口向后延伸的距离）
-      const perspectiveScale = 0.85 // 底部相对于顶部的缩放比例（创造透视感）
-      
-      // 计算透视变形后的底部半径
-      const bottomRadius = windowRadius * perspectiveScale
-      const bottomCenterY = windowCenterY + perspectiveDepth
-      
-      // 先绘制外圈框架（深色金属质感，带透视）
+      // ========== 绘制三段式窗口结构（曲线连接，自然融合） ==========
       ctx.save()
-      // 外圈顶部
-      ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius + frameThickness, 0, Math.PI, true)
-      // 外圈底部（透视变形）
-      ctx.arc(centerX, bottomCenterY, bottomRadius + frameThickness, Math.PI, 0, false)
-      ctx.closePath()
-      ctx.fillStyle = '#1a1a2e'
-      ctx.fill()
       
-      // 外圈框架的发光边框（顶部）
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 3
-      ctx.shadowBlur = 12
+      // 计算曲线控制点（用于平滑连接）
+      const curveControlOffset = 30 // 曲线控制点偏移量
+      
+      // 1. 绘制窗口框架线条（使用曲线连接，让过渡更自然）
+      ctx.strokeStyle = accentColor1 // 品红色主框架
+      ctx.lineWidth = 4
+      ctx.shadowBlur = 10
       ctx.shadowColor = accentColor1
-      ctx.globalAlpha = 0.7
-      ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius + frameThickness - 1, 0, Math.PI, true)
-      ctx.stroke()
-      ctx.shadowBlur = 0
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = 0.9
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
       
-      // 外圈框架的发光边框（底部，较暗，创造深度）
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 2
-      ctx.shadowBlur = 8
-      ctx.shadowColor = accentColor1
-      ctx.globalAlpha = 0.4
+      // 垂直分割线（将中段长方形分成左右两部分，使用曲线）
+      const verticalDividerX = centerX
       ctx.beginPath()
-      ctx.arc(centerX, bottomCenterY, bottomRadius + frameThickness - 1, Math.PI, 0, false)
+      ctx.moveTo(verticalDividerX, middleSectionTop)
+      // 使用二次贝塞尔曲线，让线条更柔和
+      ctx.quadraticCurveTo(verticalDividerX, middleSectionTop + middleSectionHeight * 0.3, verticalDividerX, (middleSectionTop + middleSectionBottom) / 2)
+      ctx.quadraticCurveTo(verticalDividerX, middleSectionBottom - middleSectionHeight * 0.3, verticalDividerX, middleSectionBottom)
       ctx.stroke()
-      ctx.shadowBlur = 0
-      ctx.globalAlpha = 1
-      ctx.restore()
       
-      // 绘制框架的侧面（连接顶部和底部，创造3D效果）
-      ctx.save()
-      const sideGradient = ctx.createLinearGradient(
-        centerX - windowRadius - frameThickness, windowCenterY,
-        centerX - bottomRadius - frameThickness, bottomCenterY
+      // 水平分割线（将中段长方形分成上下两部分，使用曲线）
+      const horizontalDividerY = (middleSectionTop + middleSectionBottom) / 2
+      ctx.beginPath()
+      ctx.moveTo(middleWindowLeft, horizontalDividerY)
+      // 使用二次贝塞尔曲线
+      ctx.quadraticCurveTo(middleWindowLeft + middleWindowWidth * 0.3, horizontalDividerY, centerX, horizontalDividerY)
+      ctx.quadraticCurveTo(middleWindowRight - middleWindowWidth * 0.3, horizontalDividerY, middleWindowRight, horizontalDividerY)
+      ctx.stroke()
+      
+      // 连接上段三角形和中段长方形的曲线（左侧）
+      // 左上角到中段左侧（曲线）
+      ctx.beginPath()
+      ctx.moveTo(topTrapezoidTopLeft, topSectionTop)
+      // 使用二次贝塞尔曲线，控制点在中间偏下
+      ctx.quadraticCurveTo(
+        (topTrapezoidTopLeft + middleWindowLeft) / 2, 
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.6,
+        middleWindowLeft, 
+        middleSectionTop
       )
-      sideGradient.addColorStop(0, '#1a1a2e')
-      sideGradient.addColorStop(1, '#0a0a1a')
-      ctx.fillStyle = sideGradient
-      
-      // 左侧侧面
-      ctx.beginPath()
-      ctx.moveTo(centerX - windowRadius - frameThickness, windowCenterY)
-      ctx.lineTo(centerX - bottomRadius - frameThickness, bottomCenterY)
-      ctx.lineTo(centerX - bottomRadius - frameThickness, bottomCenterY + 5)
-      ctx.lineTo(centerX - windowRadius - frameThickness, windowCenterY + 2)
-      ctx.closePath()
-      ctx.fill()
-      
-      // 右侧侧面
-      ctx.beginPath()
-      ctx.moveTo(centerX + windowRadius + frameThickness, windowCenterY)
-      ctx.lineTo(centerX + bottomRadius + frameThickness, bottomCenterY)
-      ctx.lineTo(centerX + bottomRadius + frameThickness, bottomCenterY + 5)
-      ctx.lineTo(centerX + windowRadius + frameThickness, windowCenterY + 2)
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
-      
-      // 绘制内圈框架（窗户玻璃的边缘，带透视）
-      ctx.save()
-      // 内圈顶部
-      ctx.strokeStyle = '#2d1b4e'
-      ctx.lineWidth = 3
-      ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius, 0, Math.PI, true)
       ctx.stroke()
       
-      // 内圈底部（透视变形）
-      ctx.strokeStyle = '#1a1a2e'
-      ctx.lineWidth = 2
-      ctx.globalAlpha = 0.7
+      // 左下角到中段左侧（曲线）
       ctx.beginPath()
-      ctx.arc(centerX, bottomCenterY, bottomRadius, Math.PI, 0, false)
+      ctx.moveTo(topTrapezoidBottomLeft, topSectionBottom)
+      ctx.quadraticCurveTo(
+        (topTrapezoidBottomLeft + middleWindowLeft) / 2,
+        topSectionBottom + (middleSectionTop - topSectionBottom) * 0.4,
+        middleWindowLeft,
+        middleSectionTop
+      )
       ctx.stroke()
-      ctx.globalAlpha = 1
       
-      // 内圈框架的发光效果（顶部）
+      // 连接上段三角形和中段长方形的曲线（右侧）
+      // 右上角到中段右侧（曲线）
+      ctx.beginPath()
+      ctx.moveTo(topTrapezoidTopRight, topSectionTop)
+      ctx.quadraticCurveTo(
+        (topTrapezoidTopRight + middleWindowRight) / 2,
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.6,
+        middleWindowRight,
+        middleSectionTop
+      )
+      ctx.stroke()
+      
+      // 右下角到中段右侧（曲线）
+      ctx.beginPath()
+      ctx.moveTo(topTrapezoidBottomRight, topSectionBottom)
+      ctx.quadraticCurveTo(
+        (topTrapezoidBottomRight + middleWindowRight) / 2,
+        topSectionBottom + (middleSectionTop - topSectionBottom) * 0.4,
+        middleWindowRight,
+        middleSectionTop
+      )
+      ctx.stroke()
+      
+      // 内层框架线条（青色，增强视觉效果，也使用曲线）
       ctx.strokeStyle = accentColor2
-      ctx.lineWidth = 1.5
+      ctx.lineWidth = 2
       ctx.shadowBlur = 6
       ctx.shadowColor = accentColor2
-      ctx.globalAlpha = 0.6
+      ctx.globalAlpha = 0.7
+      
+      // 内层垂直分割线（曲线）
       ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius - 1, 0, Math.PI, true)
+      ctx.moveTo(verticalDividerX, middleSectionTop + 5)
+      ctx.quadraticCurveTo(verticalDividerX, horizontalDividerY, verticalDividerX, middleSectionBottom - 5)
       ctx.stroke()
+      
+      // 内层水平分割线（曲线）
+      ctx.beginPath()
+      ctx.moveTo(middleWindowLeft + 5, horizontalDividerY)
+      ctx.quadraticCurveTo(centerX, horizontalDividerY, middleWindowRight - 5, horizontalDividerY)
+      ctx.stroke()
+      
       ctx.shadowBlur = 0
       ctx.globalAlpha = 1
       
-      // 内圈框架的发光效果（底部，较暗）
-      ctx.strokeStyle = accentColor2
-      ctx.lineWidth = 1
-      ctx.shadowBlur = 4
-      ctx.shadowColor = accentColor2
-      ctx.globalAlpha = 0.3
-      ctx.beginPath()
-      ctx.arc(centerX, bottomCenterY, bottomRadius - 1, Math.PI, 0, false)
-      ctx.stroke()
-      ctx.shadowBlur = 0
-      ctx.globalAlpha = 1
-      ctx.restore()
-      
-      // 绘制内圈侧面的连接线（创造深度感）
-      ctx.save()
-      ctx.strokeStyle = '#2d1b4e'
-      ctx.lineWidth = 2
-      ctx.globalAlpha = 0.5
-      // 左侧连接线
-      ctx.beginPath()
-      ctx.moveTo(centerX - windowRadius, windowCenterY)
-      ctx.lineTo(centerX - bottomRadius, bottomCenterY)
-      ctx.stroke()
-      // 右侧连接线
-      ctx.beginPath()
-      ctx.moveTo(centerX + windowRadius, windowCenterY)
-      ctx.lineTo(centerX + bottomRadius, bottomCenterY)
-      ctx.stroke()
-      ctx.globalAlpha = 1
-      ctx.restore()
-      
-      // 绘制两条竖直平行分隔线，将半圆从左到右分成三个窗口（带透视效果）
-      // 计算两条竖直线的X位置（顶部和底部位置不同，创造透视）
-      const divider1TopX = centerX - windowRadius / 3  // 顶部左侧三分之一处
-      const divider2TopX = centerX + windowRadius / 3  // 顶部右侧三分之一处
-      const divider1BottomX = centerX - bottomRadius / 3  // 底部左侧三分之一处（透视缩放）
-      const divider2BottomX = centerX + bottomRadius / 3  // 底部右侧三分之一处（透视缩放）
-      
-      // 计算每条线与半圆弧的交点（顶部Y坐标）
-      const calcTopY = (x: number, radius: number, centerY: number) => {
-        const dx = x - centerX
-        const dy = Math.sqrt(Math.max(0, radius * radius - dx * dx))
-        return centerY - dy
-      }
-      
-      const divider1TopY = calcTopY(divider1TopX, windowRadius, windowCenterY)
-      const divider2TopY = calcTopY(divider2TopX, windowRadius, windowCenterY)
-      const dividerBottomY = bottomCenterY  // 底部在透视后的直径上
-      
-      // 绘制真实金属支架样式的竖直分隔线（带透视效果，更真实的钢铁质感）
-      const drawVerticalDivider = (topX: number, topY: number, bottomX: number, bottomY: number) => {
-        const topSteelWidth = 12  // 顶部钢铁支架的宽度
-        const bottomSteelWidth = topSteelWidth * perspectiveScale  // 底部宽度（透视缩放）
-        const steelThickness = 3  // 支架的厚度（3D效果）
-        
-        // 1. 绘制支架的3D主体（前后两个面）
-        ctx.save()
-        
-        // 前面（朝向观察者）
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(topX + topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2, bottomY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.closePath()
-        
-        // 真实钢铁颜色（深灰到中灰，带金属光泽）
-        const steelGradient = ctx.createLinearGradient(
-          topX - topSteelWidth / 2, topY,
-          topX + topSteelWidth / 2, topY
-        )
-        steelGradient.addColorStop(0, '#1e1e2e')  // 深灰
-        steelGradient.addColorStop(0.15, '#2d2d3d')  // 中深灰
-        steelGradient.addColorStop(0.4, '#3c3c4c')  // 中灰
-        steelGradient.addColorStop(0.6, '#4a4a5a')  // 浅灰（高光）
-        steelGradient.addColorStop(0.85, '#3c3c4c')  // 中灰
-        steelGradient.addColorStop(1, '#1e1e2e')  // 深灰
-        ctx.fillStyle = steelGradient
-        ctx.fill()
-        
-        // 添加垂直深度渐变（模拟光照）
-        const verticalGradient = ctx.createLinearGradient(topX, topY, bottomX, bottomY)
-        verticalGradient.addColorStop(0, 'rgba(255, 255, 255, 0.08)')
-        verticalGradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.03)')
-        verticalGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)')
-        verticalGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.12)')
-        verticalGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)')
-        ctx.fillStyle = verticalGradient
-        ctx.fill()
-        
-        // 2. 绘制左侧边缘（金属高光边缘，模拟倒角）
-        ctx.save()
-        // 高光边缘（较亮）
-        ctx.strokeStyle = '#6a6a7a'
-        ctx.lineWidth = 2
-        ctx.globalAlpha = 0.9
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.stroke()
-        // 高光边缘内部（更亮）
-        ctx.strokeStyle = '#8a8a9a'
-        ctx.lineWidth = 1
-        ctx.globalAlpha = 0.6
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2 + 1, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2 + 1, bottomY)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        ctx.restore()
-        
-        // 3. 绘制右侧边缘（深色阴影边缘）
-        ctx.save()
-        ctx.strokeStyle = '#0f0f1f'
-        ctx.lineWidth = 2.5
-        ctx.globalAlpha = 0.95
-        ctx.beginPath()
-        ctx.moveTo(topX + topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2, bottomY)
-        ctx.stroke()
-        // 内部阴影线
-        ctx.strokeStyle = '#1a1a2a'
-        ctx.lineWidth = 1.5
-        ctx.globalAlpha = 0.8
-        ctx.beginPath()
-        ctx.moveTo(topX + topSteelWidth / 2 - 1, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2 - 1, bottomY)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        ctx.restore()
-        
-        // 4. 绘制金属表面的划痕和磨损（增加真实感）
-        ctx.save()
-        ctx.strokeStyle = '#2a2a3a'
-        ctx.lineWidth = 0.5
-        ctx.globalAlpha = 0.3
-        // 随机划痕
-        for (let i = 0; i < 8; i++) {
-          const t = 0.1 + Math.random() * 0.8
-          const y = topY + (bottomY - topY) * t
-          const x1 = topX - topSteelWidth / 2 + 1 + Math.random() * 2
-          const x2 = topX + topSteelWidth / 2 - 1 - Math.random() * 2
-          const bottomX1 = bottomX - bottomSteelWidth / 2 + 1 + Math.random() * 2
-          const bottomX2 = bottomX + bottomSteelWidth / 2 - 1 - Math.random() * 2
-          const currentX1 = x1 + (bottomX1 - x1) * t
-          const currentX2 = x2 + (bottomX2 - x2) * t
-          ctx.beginPath()
-          ctx.moveTo(currentX1, y)
-          ctx.lineTo(currentX2, y)
-          ctx.stroke()
-        }
-        ctx.globalAlpha = 1
-        ctx.restore()
-        
-        // 5. 绘制金属表面的氧化/锈迹（轻微）
-        ctx.save()
-        ctx.fillStyle = 'rgba(100, 60, 40, 0.15)'  // 轻微锈色
-        ctx.globalAlpha = 0.2
-        // 在底部添加一些氧化效果
-        const rustY = topY + (bottomY - topY) * 0.7
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2 + 1, rustY)
-        ctx.lineTo(topX + topSteelWidth / 2 - 1, rustY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2 - 1, bottomY - 2)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2 + 1, bottomY - 2)
-        ctx.closePath()
-        ctx.fill()
-        ctx.globalAlpha = 1
-        ctx.restore()
-        
-        // 6. 绘制顶部和底部的焊接/连接点（真实的焊接痕迹）
-        ctx.save()
-        // 顶部焊接点
-        const weldSize = 5
-        // 焊接主体（深色）
-        ctx.fillStyle = '#252535'
-        ctx.beginPath()
-        ctx.arc(topX, topY - 2, weldSize / 2, 0, Math.PI * 2)
-        ctx.fill()
-        // 焊接高光（模拟焊接后的金属光泽）
-        ctx.fillStyle = '#4a4a5a'
-        ctx.beginPath()
-        ctx.arc(topX - 1.5, topY - 3, 1.5, 0, Math.PI * 2)
-        ctx.fill()
-        // 焊接阴影
-        ctx.fillStyle = '#151525'
-        ctx.beginPath()
-        ctx.arc(topX + 1.5, topY - 1.5, 1.5, 0, Math.PI * 2)
-        ctx.fill()
-        // 焊接周围的痕迹
-        ctx.strokeStyle = '#353545'
-        ctx.lineWidth = 1
-        ctx.globalAlpha = 0.5
-        ctx.beginPath()
-        ctx.arc(topX, topY - 2, weldSize / 2 + 1, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        
-        // 底部焊接点（较小，透视效果）
-        const bottomWeldSize = weldSize * perspectiveScale
-        ctx.fillStyle = '#252535'
-        ctx.beginPath()
-        ctx.arc(bottomX, bottomY + 1, bottomWeldSize / 2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#4a4a5a'
-        ctx.beginPath()
-        ctx.arc(bottomX - 1.2, bottomY + 0.3, 1.2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#151525'
-        ctx.beginPath()
-        ctx.arc(bottomX + 1.2, bottomY + 1.7, 1.2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.strokeStyle = '#353545'
-        ctx.lineWidth = 0.8
-        ctx.globalAlpha = 0.5
-        ctx.beginPath()
-        ctx.arc(bottomX, bottomY + 1, bottomWeldSize / 2 + 0.8, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        ctx.restore()
-        
-        // 7. 绘制金属表面的反光（左侧高光带，模拟金属光泽）
-        ctx.save()
-        const reflectionGradient = ctx.createLinearGradient(
-          topX - topSteelWidth / 2, topY,
-          topX - topSteelWidth / 3, topY
-        )
-        reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0)')
-        reflectionGradient.addColorStop(0.3, 'rgba(180, 180, 200, 0.2)')
-        reflectionGradient.addColorStop(0.6, 'rgba(220, 220, 240, 0.15)')
-        reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)')
-        ctx.fillStyle = reflectionGradient
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(topX - topSteelWidth / 3, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 3, bottomY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.closePath()
-        ctx.fill()
-        ctx.restore()
-        
-        // 8. 绘制支架的投影（增加真实感和深度）
-        ctx.save()
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'
-        ctx.beginPath()
-        ctx.moveTo(topX + topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2, bottomY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2 + 3, bottomY + 3)
-        ctx.lineTo(topX + topSteelWidth / 2 + 3, topY + 3)
-        ctx.closePath()
-        ctx.fill()
-        ctx.restore()
-        
-        ctx.restore()
-      }
-      
-      // 绘制第一条竖直分隔线（左侧，带透视）
-      drawVerticalDivider(divider1TopX, divider1TopY, divider1BottomX, dividerBottomY)
-      
-      // 绘制第二条竖直分隔线（右侧，带透视）
-      drawVerticalDivider(divider2TopX, divider2TopY, divider2BottomX, dividerBottomY)
-      
-      // 绘制窗户底部边缘（连接控制面板的部分，带透视）
-      ctx.save()
-      // 底部边缘（透视后的梯形）
-      ctx.beginPath()
-      ctx.moveTo(centerX - windowRadius - frameThickness, windowCenterY)
-      ctx.lineTo(centerX - bottomRadius - frameThickness, bottomCenterY)
-      ctx.lineTo(centerX + bottomRadius + frameThickness, bottomCenterY)
-      ctx.lineTo(centerX + windowRadius + frameThickness, windowCenterY)
-      ctx.closePath()
-      ctx.fillStyle = '#1a1a2e'
-      ctx.fill()
-      
-      // 底部边缘的高光（顶部边缘）
+      // 2. 绘制窗口边框（只绘制边框，不填充背景，因为窗口需要透明）
+      // 上段倒梯形边框
       ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 2
+      ctx.lineWidth = 3
       ctx.shadowBlur = 8
       ctx.shadowColor = accentColor1
-      ctx.globalAlpha = 0.6
       ctx.beginPath()
-      ctx.moveTo(centerX - windowRadius, windowCenterY)
-      ctx.lineTo(centerX + windowRadius, windowCenterY)
-      ctx.stroke()
-      // 底部边缘的高光（底部边缘，较暗）
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 1.5
-      ctx.shadowBlur = 6
-      ctx.shadowColor = accentColor1
-      ctx.globalAlpha = 0.3
-      ctx.beginPath()
-      ctx.moveTo(centerX - bottomRadius, bottomCenterY)
-      ctx.lineTo(centerX + bottomRadius, bottomCenterY)
+      ctx.moveTo(topTrapezoidTopLeft, topSectionTop)
+      ctx.lineTo(topTrapezoidTopRight, topSectionTop)
+      ctx.lineTo(topTrapezoidBottomRight, topSectionBottom)
+      ctx.lineTo(topTrapezoidBottomLeft, topSectionBottom)
+      ctx.closePath()
       ctx.stroke()
       ctx.shadowBlur = 0
-      ctx.globalAlpha = 1
-      ctx.restore()
       
-      // 清除整个半圆形窗户内部区域，使其完全透明（带透视）
-      ctx.save()
-      ctx.globalCompositeOperation = 'destination-out'
-      ctx.fillStyle = 'rgba(0, 0, 0, 1)'
-      // 清除顶部半圆
+      // 中段长方形边框
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 3
+      ctx.shadowBlur = 8
+      ctx.shadowColor = accentColor1
+      ctx.strokeRect(middleWindowLeft, middleSectionTop, middleWindowWidth, middleSectionHeight)
+      ctx.shadowBlur = 0
+      
+      // 左三角形边框（曲线连接）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 3
+      ctx.shadowBlur = 8
+      ctx.shadowColor = accentColor1
       ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius, 0, Math.PI, true)
-      ctx.fill()
-      // 清除底部半圆（透视后的）
-      ctx.beginPath()
-      ctx.arc(centerX, bottomCenterY, bottomRadius, Math.PI, 0, false)
-      ctx.fill()
-      // 清除侧面区域（连接顶部和底部）
-      ctx.beginPath()
-      ctx.moveTo(centerX - windowRadius, windowCenterY)
-      ctx.lineTo(centerX - bottomRadius, bottomCenterY)
-      ctx.lineTo(centerX + bottomRadius, bottomCenterY)
-      ctx.lineTo(centerX + windowRadius, windowCenterY)
-      ctx.closePath()
-      ctx.fill()
-      ctx.restore()
-      
-      // 清除操作后，重新绘制分隔线在窗口内的部分（确保分隔线可见，带透视，真实金属质感）
-      ctx.save()
-      ctx.globalCompositeOperation = 'source-over'
-      
-      // 重新绘制分隔线（只绘制窗口内的部分，带透视，真实金属质感）
-      const drawDividerInWindow = (topX: number, topY: number, bottomX: number, bottomY: number) => {
-        const topSteelWidth = 12
-        const bottomSteelWidth = topSteelWidth * perspectiveScale
-        
-        // 绘制分隔线主体（真实金属质感）
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(topX + topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2, bottomY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.closePath()
-        
-        // 真实钢铁颜色（深灰到中灰，带金属光泽）
-        const steelGradient = ctx.createLinearGradient(
-          topX - topSteelWidth / 2, topY,
-          topX + topSteelWidth / 2, topY
-        )
-        steelGradient.addColorStop(0, '#1e1e2e')
-        steelGradient.addColorStop(0.15, '#2d2d3d')
-        steelGradient.addColorStop(0.4, '#3c3c4c')
-        steelGradient.addColorStop(0.6, '#4a4a5a')
-        steelGradient.addColorStop(0.85, '#3c3c4c')
-        steelGradient.addColorStop(1, '#1e1e2e')
-        ctx.fillStyle = steelGradient
-        ctx.fill()
-        
-        // 垂直深度渐变
-        const verticalGradient = ctx.createLinearGradient(topX, topY, bottomX, bottomY)
-        verticalGradient.addColorStop(0, 'rgba(255, 255, 255, 0.08)')
-        verticalGradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.03)')
-        verticalGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)')
-        verticalGradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.12)')
-        verticalGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)')
-        ctx.fillStyle = verticalGradient
-        ctx.fill()
-        
-        // 左侧边缘高光（金属高光边缘）
-        ctx.strokeStyle = '#6a6a7a'
-        ctx.lineWidth = 2
-        ctx.globalAlpha = 0.9
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.stroke()
-        ctx.strokeStyle = '#8a8a9a'
-        ctx.lineWidth = 1
-        ctx.globalAlpha = 0.6
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2 + 1, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2 + 1, bottomY)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        
-        // 右侧边缘阴影
-        ctx.strokeStyle = '#0f0f1f'
-        ctx.lineWidth = 2.5
-        ctx.globalAlpha = 0.95
-        ctx.beginPath()
-        ctx.moveTo(topX + topSteelWidth / 2, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2, bottomY)
-        ctx.stroke()
-        ctx.strokeStyle = '#1a1a2a'
-        ctx.lineWidth = 1.5
-        ctx.globalAlpha = 0.8
-        ctx.beginPath()
-        ctx.moveTo(topX + topSteelWidth / 2 - 1, topY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2 - 1, bottomY)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        
-        // 金属表面的划痕和磨损
-        ctx.strokeStyle = '#2a2a3a'
-        ctx.lineWidth = 0.5
-        ctx.globalAlpha = 0.3
-        for (let i = 0; i < 6; i++) {
-          const t = 0.1 + (i / 7) * 0.8
-          const y = topY + (bottomY - topY) * t
-          const x1 = topX - topSteelWidth / 2 + 1 + Math.random() * 2
-          const x2 = topX + topSteelWidth / 2 - 1 - Math.random() * 2
-          const bottomX1 = bottomX - bottomSteelWidth / 2 + 1 + Math.random() * 2
-          const bottomX2 = bottomX + bottomSteelWidth / 2 - 1 - Math.random() * 2
-          const currentX1 = x1 + (bottomX1 - x1) * t
-          const currentX2 = x2 + (bottomX2 - x2) * t
-          ctx.beginPath()
-          ctx.moveTo(currentX1, y)
-          ctx.lineTo(currentX2, y)
-          ctx.stroke()
-        }
-        ctx.globalAlpha = 1
-        
-        // 轻微氧化/锈迹
-        ctx.fillStyle = 'rgba(100, 60, 40, 0.15)'
-        ctx.globalAlpha = 0.2
-        const rustY = topY + (bottomY - topY) * 0.7
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2 + 1, rustY)
-        ctx.lineTo(topX + topSteelWidth / 2 - 1, rustY)
-        ctx.lineTo(bottomX + bottomSteelWidth / 2 - 1, bottomY - 2)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2 + 1, bottomY - 2)
-        ctx.closePath()
-        ctx.fill()
-        ctx.globalAlpha = 1
-        
-        // 顶部焊接点
-        const weldSize = 5
-        ctx.fillStyle = '#252535'
-        ctx.beginPath()
-        ctx.arc(topX, topY - 2, weldSize / 2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#4a4a5a'
-        ctx.beginPath()
-        ctx.arc(topX - 1.5, topY - 3, 1.5, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#151525'
-        ctx.beginPath()
-        ctx.arc(topX + 1.5, topY - 1.5, 1.5, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.strokeStyle = '#353545'
-        ctx.lineWidth = 1
-        ctx.globalAlpha = 0.5
-        ctx.beginPath()
-        ctx.arc(topX, topY - 2, weldSize / 2 + 1, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        
-        // 底部焊接点
-        const bottomWeldSize = weldSize * perspectiveScale
-        ctx.fillStyle = '#252535'
-        ctx.beginPath()
-        ctx.arc(bottomX, bottomY + 1, bottomWeldSize / 2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#4a4a5a'
-        ctx.beginPath()
-        ctx.arc(bottomX - 1.2, bottomY + 0.3, 1.2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = '#151525'
-        ctx.beginPath()
-        ctx.arc(bottomX + 1.2, bottomY + 1.7, 1.2, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.strokeStyle = '#353545'
-        ctx.lineWidth = 0.8
-        ctx.globalAlpha = 0.5
-        ctx.beginPath()
-        ctx.arc(bottomX, bottomY + 1, bottomWeldSize / 2 + 0.8, 0, Math.PI * 2)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-        
-        // 金属反光
-        const reflectionGradient = ctx.createLinearGradient(
-          topX - topSteelWidth / 2, topY,
-          topX - topSteelWidth / 3, topY
-        )
-        reflectionGradient.addColorStop(0, 'rgba(255, 255, 255, 0)')
-        reflectionGradient.addColorStop(0.3, 'rgba(180, 180, 200, 0.2)')
-        reflectionGradient.addColorStop(0.6, 'rgba(220, 220, 240, 0.15)')
-        reflectionGradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)')
-        ctx.fillStyle = reflectionGradient
-        ctx.beginPath()
-        ctx.moveTo(topX - topSteelWidth / 2, topY)
-        ctx.lineTo(topX - topSteelWidth / 3, topY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 3, bottomY)
-        ctx.lineTo(bottomX - bottomSteelWidth / 2, bottomY)
-        ctx.closePath()
-        ctx.fill()
-      }
-      
-      drawDividerInWindow(divider1TopX, divider1TopY, divider1BottomX, dividerBottomY)
-      drawDividerInWindow(divider2TopX, divider2TopY, divider2BottomX, dividerBottomY)
-      
-      ctx.restore()
-      
-      // 添加窗口内部的深度渐变（顶部亮，底部暗，增强透视感）
-      ctx.save()
-      ctx.globalCompositeOperation = 'source-over'
-      const depthGradient = ctx.createRadialGradient(
-        centerX, windowCenterY, 0,
-        centerX, bottomCenterY, windowRadius
+      ctx.moveTo(0, topSectionTop)
+      // 使用曲线连接到中段
+      ctx.quadraticCurveTo(
+        middleWindowLeft * 0.5,
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.7,
+        middleWindowLeft,
+        middleSectionTop
       )
-      depthGradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)')
-      depthGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)')
-      depthGradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)')
-      ctx.fillStyle = depthGradient
+      // 连接到倒梯形底部
+      ctx.quadraticCurveTo(
+        (middleWindowLeft + topTrapezoidBottomLeft) / 2,
+        (middleSectionTop + topSectionBottom) / 2,
+        topTrapezoidBottomLeft,
+        topSectionBottom
+      )
+      ctx.lineTo(topTrapezoidTopLeft, topSectionTop)
+      ctx.closePath()
+      ctx.stroke()
+      
+      // 右三角形边框（曲线连接）
       ctx.beginPath()
-      ctx.arc(centerX, windowCenterY, windowRadius, 0, Math.PI, true)
-      ctx.fill()
+      ctx.moveTo(width, topSectionTop)
+      ctx.quadraticCurveTo(
+        middleWindowRight + (width - middleWindowRight) * 0.5,
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.7,
+        middleWindowRight,
+        middleSectionTop
+      )
+      ctx.quadraticCurveTo(
+        (middleWindowRight + topTrapezoidBottomRight) / 2,
+        (middleSectionTop + topSectionBottom) / 2,
+        topTrapezoidBottomRight,
+        topSectionBottom
+      )
+      ctx.lineTo(topTrapezoidTopRight, topSectionTop)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.shadowBlur = 0
+      
       ctx.restore()
+      
+      // 保存窗口边界用于清除操作
+      // 需要清除的区域包括：上段左右三角形 + 中段长方形
+      const windowLeft = 0 // 左三角形左边界
+      const windowRight = width // 右三角形右边界
+      const windowTopY = topSectionTop
+      const windowBottomY = middleSectionBottom
 
-      // 绘制半圆形下方的长方形控制面板（连接到透视后的底部）
-      const panelTop = bottomCenterY + 2  // 连接到透视后的底部
-      const panelHeight = windowRadius * 0.4
-      const panelWidth = bottomRadius * 2  // 使用透视后的底部宽度
-      const panelLeft = centerX - panelWidth / 2
+      // ========== 控制面板（保留原有功能） ==========
+      // 控制面板参数已在顶部定义，这里直接使用
+      // panelTop, panelHeight, panelWidth, panelLeft 已在顶部定义
 
       // 控制面板背景
       ctx.fillStyle = panelColor
@@ -2013,174 +1640,724 @@ export default function CockpitOverlay() {
       ctx.fillText('STATUS', rightPanelScreenX + 3, rightPanelScreenY + 12)
       ctx.fillText('READY', rightPanelScreenX + 3, rightPanelScreenY + 25)
 
-      // 绘制左侧控制台
-      const leftConsoleWidth = panelLeft
-      const leftConsoleTop = windowTop
-      const leftConsoleHeight = height - windowTop - (height - panelTop - panelHeight)
-
-      ctx.fillStyle = panelColor
-      ctx.fillRect(0, leftConsoleTop, leftConsoleWidth, leftConsoleHeight)
-
-      // 左侧控制台边框
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 3
-      ctx.strokeRect(0, leftConsoleTop, leftConsoleWidth, leftConsoleHeight)
-
-      // 左侧多个屏幕
-      const screenWidth = leftConsoleWidth * 0.75
-      const screenHeight = 80
-      const screenSpacing = 20
-      const screenX = leftConsoleWidth * 0.125
-
-      // 屏幕1 - 系统状态
-      let screenY = leftConsoleTop + 30
-      ctx.fillStyle = '#000000'
-      ctx.fillRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.strokeStyle = accentColor2
-      ctx.lineWidth = 2
-      ctx.shadowBlur = 4
-      ctx.shadowColor = accentColor2
-      ctx.strokeRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.shadowBlur = 0
+      // ========== 不再绘制左右侧内壁（根据用户要求） ==========
+      // 窗口边界用于其他组件（如果需要）
+      const windowLeftEdgeX = middleWindowLeft
+      const windowRightEdgeX = middleWindowRight
       
-      ctx.fillStyle = accentColor2
-      ctx.font = 'bold 10px monospace'
-      ctx.textAlign = 'left'
-      ctx.fillText('[SYSTEM]', screenX + 6, screenY + 18)
-      ctx.fillText('STATUS: ONLINE', screenX + 6, screenY + 35)
-      ctx.fillText('POWER: 100%', screenX + 6, screenY + 52)
-      ctx.fillText('TEMP: NORMAL', screenX + 6, screenY + 69)
+      // 注意：以下所有左侧和右侧舱壁的绘制代码已被注释掉，因为用户要求不再需要左右侧内壁
+      /*
+      
+      // 左侧舱壁的连接点（近端和远端）
+      const leftWallNearEdgeX = leftWallNearWidth // 近端边缘
+      const leftWallFarEdgeX = leftWallFarWidth // 远端边缘
 
-      // 屏幕2 - 扫描数据
-      screenY += screenHeight + screenSpacing
-      ctx.fillStyle = '#000000'
-      ctx.fillRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.strokeStyle = accentColor2
-      ctx.strokeRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.fillStyle = accentColor2
-      ctx.fillText('[SCAN]', screenX + 6, screenY + 18)
-      ctx.fillText('TARGET: NONE', screenX + 6, screenY + 35)
-      ctx.fillText('RANGE: MAX', screenX + 6, screenY + 52)
-      ctx.fillText('SCAN: ACTIVE', screenX + 6, screenY + 69)
+      // 左侧舱壁基础（深色金属，带透视的梯形）
+      ctx.save()
+      ctx.beginPath()
+      // 绘制透视梯形（近大远小）
+      ctx.moveTo(0, leftWallNearY) // 左下角（近端）
+      ctx.lineTo(leftWallNearEdgeX, leftWallNearY) // 右下角（近端）
+      ctx.lineTo(leftWallFarEdgeX, leftWallFarY) // 右上角（远端）
+      ctx.lineTo(0, leftWallFarY) // 左上角（远端）
+      ctx.closePath()
+      
+      // 渐变填充（从近到远，从亮到暗）
+      const wallBaseGradient = ctx.createLinearGradient(0, leftWallNearY, leftWallFarEdgeX, leftWallFarY)
+      wallBaseGradient.addColorStop(0, '#0a0a1a')
+      wallBaseGradient.addColorStop(0.2, '#1a1a2e')
+      wallBaseGradient.addColorStop(0.6, '#1a1a2e')
+      wallBaseGradient.addColorStop(1, '#0f0f1e')
+      ctx.fillStyle = wallBaseGradient
+      ctx.fill()
+      
+      // 添加深度渐变（从近到远逐渐变暗）
+      const leftWallDepthGradient = ctx.createLinearGradient(0, leftWallNearY, 0, leftWallFarY)
+      leftWallDepthGradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)')
+      leftWallDepthGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.02)')
+      leftWallDepthGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)')
+      leftWallDepthGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)')
+      ctx.fillStyle = leftWallDepthGradient
+      ctx.fill()
+      ctx.restore()
 
-      // 屏幕3 - 通讯
-      screenY += screenHeight + screenSpacing
-      ctx.fillStyle = '#000000'
-      ctx.fillRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.strokeStyle = accentColor2
-      ctx.strokeRect(screenX, screenY, screenWidth, screenHeight)
-      ctx.fillStyle = accentColor2
-      ctx.fillText('[COMM]', screenX + 6, screenY + 18)
-      ctx.fillText('LINK: ACTIVE', screenX + 6, screenY + 35)
-      ctx.fillText('SIGNAL: STRONG', screenX + 6, screenY + 52)
-      ctx.fillText('FREQ: 1420MHz', screenX + 6, screenY + 69)
-
-      // 左侧按钮组
-      const leftButtonX = leftConsoleWidth * 0.5
-      const leftButtonY = screenY + screenHeight + 30
-      const leftButtonSpacing = 25
-      for (let i = 0; i < 6; i++) {
-        const btnY = leftButtonY + i * leftButtonSpacing
-        const isOn = Math.sin(time * 0.001 + i) > 0
-        
-        ctx.fillStyle = isOn ? accentColor2 : '#333344'
-        ctx.fillRect(leftButtonX - 8, btnY - 4, 16, 8)
-        
-        if (isOn) {
-          ctx.shadowBlur = 6
-          ctx.shadowColor = accentColor2
-          ctx.fillRect(leftButtonX - 8, btnY - 4, 16, 8)
-          ctx.shadowBlur = 0
-        }
+      // 左侧舱壁面板接缝（垂直，带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.6
+      for (let i = 1; i < 4; i++) {
+        const nearX = (leftWallNearEdgeX / 4) * i
+        const farX = (leftWallFarEdgeX / 4) * i
+        ctx.beginPath()
+        ctx.moveTo(farX, leftWallFarY) // 远端
+        ctx.lineTo(nearX, leftWallNearY) // 近端
+        ctx.stroke()
       }
-
-      // 绘制右侧控制台
-      const rightConsoleWidth = width - (panelLeft + panelWidth)
-      const rightConsoleTop = windowTop
-
-      ctx.fillStyle = panelColor
-      ctx.fillRect(panelLeft + panelWidth, rightConsoleTop, rightConsoleWidth, leftConsoleHeight)
-
-      // 右侧控制台边框
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 3
-      ctx.strokeRect(panelLeft + panelWidth, rightConsoleTop, rightConsoleWidth, leftConsoleHeight)
-
-      // 右侧屏幕
-      const rightScreenX = panelLeft + panelWidth + rightConsoleWidth * 0.125
-
-      // 屏幕1 - 导航
-      screenY = rightConsoleTop + 30
-      ctx.fillStyle = '#000000'
-      ctx.fillRect(rightScreenX, screenY, screenWidth, screenHeight)
-      ctx.strokeStyle = accentColor1
-      ctx.lineWidth = 2
-      ctx.shadowBlur = 4
-      ctx.shadowColor = accentColor1
-      ctx.strokeRect(rightScreenX, screenY, screenWidth, screenHeight)
-      ctx.shadowBlur = 0
-      ctx.fillStyle = accentColor1
-      ctx.fillText('[NAV]', rightScreenX + 6, screenY + 18)
-      ctx.fillText('COURSE: SET', rightScreenX + 6, screenY + 35)
-      ctx.fillText('SPEED: MAX', rightScreenX + 6, screenY + 52)
-      ctx.fillText('ALT: 10000KM', rightScreenX + 6, screenY + 69)
-
-      // 屏幕2 - 武器/系统
-      screenY += screenHeight + screenSpacing
-      ctx.fillStyle = '#000000'
-      ctx.fillRect(rightScreenX, screenY, screenWidth, screenHeight)
-      ctx.strokeStyle = accentColor1
-      ctx.strokeRect(rightScreenX, screenY, screenWidth, screenHeight)
-      ctx.fillStyle = accentColor1
-      ctx.fillText('[WEAPON]', rightScreenX + 6, screenY + 18)
-      ctx.fillText('STATUS: READY', rightScreenX + 6, screenY + 35)
-      ctx.fillText('ENERGY: FULL', rightScreenX + 6, screenY + 52)
-      ctx.fillText('TARGET: LOCKED', rightScreenX + 6, screenY + 69)
-
-      // 屏幕3 - 全息投影区域
-      screenY += screenHeight + screenSpacing
-      const hologramSize = 60
-      ctx.fillStyle = accentColor2
-      ctx.globalAlpha = 0.2 + Math.sin(time * 0.003) * 0.15
-      ctx.fillRect(rightScreenX + screenWidth / 2 - hologramSize / 2, screenY, 
-                   hologramSize, hologramSize * 1.2)
       ctx.globalAlpha = 1
-      ctx.strokeStyle = accentColor2
-      ctx.lineWidth = 2
-      ctx.shadowBlur = 8
-      ctx.shadowColor = accentColor2
-      ctx.strokeRect(rightScreenX + screenWidth / 2 - hologramSize / 2, screenY, 
-                     hologramSize, hologramSize * 1.2)
-      ctx.shadowBlur = 0
 
-      // 右侧按钮和开关
-      const rightButtonX = panelLeft + panelWidth + rightConsoleWidth * 0.5
-      const rightButtonY = screenY + hologramSize * 1.2 + 20
-      for (let i = 0; i < 6; i++) {
-        const btnY = rightButtonY + i * leftButtonSpacing
-        const isOn = Math.cos(time * 0.001 + i) > 0
-        
-        ctx.fillStyle = isOn ? accentColor1 : '#333344'
-        ctx.fillRect(rightButtonX - 8, btnY - 4, 16, 8)
-        
-        if (isOn) {
-          ctx.shadowBlur = 6
-          ctx.shadowColor = accentColor1
-          ctx.fillRect(rightButtonX - 8, btnY - 4, 16, 8)
-          ctx.shadowBlur = 0
+      // 左侧舱壁面板接缝（水平，带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.5
+      const horizontalSeams = 6
+      for (let i = 1; i < horizontalSeams; i++) {
+        const t = i / horizontalSeams // 0到1的进度
+        const seamY = leftWallFarY + (leftWallNearY - leftWallFarY) * t
+        const seamNearWidth = leftWallNearEdgeX
+        const seamFarWidth = leftWallFarEdgeX
+        const currentWidth = seamFarWidth + (seamNearWidth - seamFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(0, seamY)
+        ctx.lineTo(currentWidth, seamY)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // 左侧舱壁铆钉（沿接缝，带透视）
+      ctx.fillStyle = '#3a3a4e'
+      for (let row = 0; row < horizontalSeams; row++) {
+        for (let col = 0; col < 4; col++) {
+          const t = (row + 0.5) / horizontalSeams // 0到1的进度
+          const rivetY = leftWallFarY + (leftWallNearY - leftWallFarY) * t
+          const nearX = (leftWallNearEdgeX / 4) * col + (leftWallNearEdgeX / 8)
+          const farX = (leftWallFarEdgeX / 4) * col + (leftWallFarEdgeX / 8)
+          const rivetX = farX + (nearX - farX) * t
+          const rivetSize = 1.5 + t * 0.5 // 近处大，远处小
+          ctx.beginPath()
+          ctx.arc(rivetX, rivetY, rivetSize, 0, Math.PI * 2)
+          ctx.fill()
+          // 铆钉高光
+          ctx.fillStyle = '#5a5a6e'
+          ctx.beginPath()
+          ctx.arc(rivetX - 0.3, rivetY - 0.3, rivetSize * 0.6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#3a3a4e'
         }
       }
+
+      // 左侧舱壁金属纹理（划痕和磨损）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 0.5
+      ctx.globalAlpha = 0.3
+      for (let i = 0; i < 15; i++) {
+        const scratchY = leftWallTop + Math.random() * leftWallHeight
+        const scratchLength = 20 + Math.random() * 30
+        // 根据Y位置计算对应的宽度（透视效果：顶部窄，底部宽）
+        const t = (scratchY - leftWallTop) / leftWallHeight // 0=顶部, 1=底部
+        const currentWallWidth = leftWallFarWidth + (leftWallNearWidth - leftWallFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(leftWallFarEdgeX + Math.random() * (currentWallWidth - leftWallFarEdgeX), scratchY)
+        ctx.lineTo(leftWallFarEdgeX + Math.random() * (currentWallWidth - leftWallFarEdgeX), scratchY + scratchLength)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // 左侧舱壁管道（垂直，带透视）
+      const pipeCount = 3
+      for (let i = 0; i < pipeCount; i++) {
+        const pipeRatio = (i + 1) / (pipeCount + 1)
+        // 近端和远端的管道位置
+        const pipeNearX = leftWallNearEdgeX * pipeRatio
+        const pipeFarX = leftWallFarEdgeX * pipeRatio
+        const pipeStartY = leftWallFarY + 40
+        const pipeEndY = leftWallNearY - 40
+        // 管道宽度（近大远小）
+        const pipeNearWidth = 6
+        const pipeFarWidth = 4
+        
+        // 管道主体（透视梯形）
+        ctx.beginPath()
+        ctx.moveTo(pipeFarX - pipeFarWidth / 2, pipeStartY) // 左上
+        ctx.lineTo(pipeFarX + pipeFarWidth / 2, pipeStartY) // 右上
+        ctx.lineTo(pipeNearX + pipeNearWidth / 2, pipeEndY) // 右下
+        ctx.lineTo(pipeNearX - pipeNearWidth / 2, pipeEndY) // 左下
+        ctx.closePath()
+        
+        // 管道渐变
+        const pipeGradient = ctx.createLinearGradient(pipeFarX - pipeFarWidth / 2, pipeStartY, pipeNearX + pipeNearWidth / 2, pipeEndY)
+        pipeGradient.addColorStop(0, '#2a2a3e')
+        pipeGradient.addColorStop(0.5, '#3a3a4e')
+        pipeGradient.addColorStop(1, '#2a2a3e')
+        ctx.fillStyle = pipeGradient
+        ctx.fill()
+        
+        // 管道高光（左侧边缘）
+        ctx.strokeStyle = '#4a4a5e'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(pipeFarX - pipeFarWidth / 2 + 0.5, pipeStartY)
+        ctx.lineTo(pipeNearX - pipeNearWidth / 2 + 0.5, pipeEndY)
+        ctx.stroke()
+        
+        // 管道连接环（带透视）
+        for (let ringIndex = 1; ringIndex < 5; ringIndex++) {
+          const ringT = ringIndex / 5
+          const ringY = pipeStartY + (pipeEndY - pipeStartY) * ringT
+          const ringX = pipeFarX + (pipeNearX - pipeFarX) * ringT
+          const ringWidth = pipeFarWidth + (pipeNearWidth - pipeFarWidth) * ringT
+          ctx.strokeStyle = '#1a1a2e'
+          ctx.lineWidth = 1.5 + ringT * 0.5
+          ctx.strokeRect(ringX - ringWidth / 2 - 1, ringY - 2, ringWidth + 2, 4)
+        }
+      }
+
+      // 左侧舱壁线缆（水平，带透视）
+      ctx.strokeStyle = accentColor3
+      ctx.lineWidth = 1.5
+      ctx.globalAlpha = 0.4
+      for (let i = 0; i < 5; i++) {
+        const t = (i + 1) / 6 // 0到1的进度
+        const cableY = leftWallFarY + (leftWallNearY - leftWallFarY) * t
+        const cableNearWidth = leftWallNearEdgeX - 10
+        const cableFarWidth = leftWallFarEdgeX - 10
+        const currentWidth = cableFarWidth + (cableNearWidth - cableFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(10, cableY)
+        ctx.lineTo(10 + currentWidth, cableY)
+        ctx.stroke()
+        // 线缆高光
+        ctx.strokeStyle = accentColor2
+        ctx.lineWidth = 0.5
+        ctx.beginPath()
+        ctx.moveTo(10, cableY - 0.5)
+        ctx.lineTo(10 + currentWidth, cableY - 0.5)
+        ctx.stroke()
+        ctx.strokeStyle = accentColor3
+        ctx.lineWidth = 1.5
+      }
+      ctx.globalAlpha = 1
+
+      // 左侧舱壁边缘高光（带透视）
+      ctx.save()
+      const leftEdgeGradient = ctx.createLinearGradient(0, leftWallNearY, 3, leftWallFarY)
+      leftEdgeGradient.addColorStop(0, 'rgba(0, 255, 255, 0.12)')
+      leftEdgeGradient.addColorStop(1, 'rgba(0, 255, 255, 0.05)')
+      ctx.fillStyle = leftEdgeGradient
+      ctx.beginPath()
+      ctx.moveTo(0, leftWallNearY)
+      ctx.lineTo(3, leftWallNearY)
+      ctx.lineTo(3, leftWallFarY)
+      ctx.lineTo(0, leftWallFarY)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
+      // 左侧舱壁边框（深色金属，带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(0, leftWallNearY)
+      ctx.lineTo(leftWallNearEdgeX, leftWallNearY)
+      ctx.lineTo(leftWallFarEdgeX, leftWallFarY)
+      ctx.lineTo(0, leftWallFarY)
+      ctx.closePath()
+      ctx.stroke()
+      
+      // 左侧舱壁内边框（发光，带透视）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.3
+      ctx.beginPath()
+      ctx.moveTo(2, leftWallNearY - 2)
+      ctx.lineTo(leftWallNearEdgeX - 2, leftWallNearY - 2)
+      ctx.lineTo(leftWallFarEdgeX - 2, leftWallFarY + 2)
+      ctx.lineTo(2, leftWallFarY + 2)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.globalAlpha = 1
+
+      // ========== 左侧舱壁与窗口的连接框架（带透视） ==========
+      // 连接框架（从左侧舱壁延伸到窗口，带透视）
+      const connectionFrameNearWidth = windowLeftEdgeX - leftWallNearEdgeX // 近端宽度
+      const connectionFrameFarWidth = windowLeftEdgeX - leftWallFarEdgeX // 远端宽度（透视缩小）
+      const connectionFrameTop = windowTop
+      const connectionFrameBottom = leftWallBottom
+      
+      // 连接框架基础（深色金属，与舱壁融合，带透视的梯形）
+      ctx.beginPath()
+      ctx.moveTo(leftWallNearEdgeX, connectionFrameBottom) // 左下角（近端）
+      ctx.lineTo(windowLeftEdgeX, connectionFrameBottom) // 右下角（近端）
+      ctx.lineTo(windowLeftEdgeX, connectionFrameTop) // 右上角（远端）
+      ctx.lineTo(leftWallFarEdgeX, connectionFrameTop) // 左上角（远端）
+      ctx.closePath()
+      
+      const connectionGradient = ctx.createLinearGradient(leftWallNearEdgeX, connectionFrameBottom, windowLeftEdgeX, connectionFrameTop)
+      connectionGradient.addColorStop(0, '#1a1a2e')
+      connectionGradient.addColorStop(0.5, '#0f0f1e')
+      connectionGradient.addColorStop(1, '#0a0a1a')
+      ctx.fillStyle = connectionGradient
+      ctx.fill()
+      
+      // 连接框架深度渐变
+      const connectionDepthGradient = ctx.createLinearGradient(leftWallNearEdgeX, connectionFrameBottom, leftWallFarEdgeX, connectionFrameTop)
+      connectionDepthGradient.addColorStop(0, 'rgba(255, 255, 255, 0.03)')
+      connectionDepthGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)')
+      ctx.fillStyle = connectionDepthGradient
+      ctx.fill()
+      
+      // 连接框架的垂直支撑结构（带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 2
+      ctx.globalAlpha = 0.6
+      const supportCount = 3
+      for (let i = 1; i < supportCount; i++) {
+        const ratio = i / supportCount
+        const supportNearX = leftWallNearEdgeX + connectionFrameNearWidth * ratio
+        const supportFarX = leftWallFarEdgeX + connectionFrameFarWidth * ratio
+        ctx.beginPath()
+        ctx.moveTo(supportFarX, connectionFrameTop)
+        ctx.lineTo(supportNearX, connectionFrameBottom)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+      
+      // 连接框架的水平加强筋（带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 1.5
+      ctx.globalAlpha = 0.5
+      for (let i = 1; i < horizontalSeams; i++) {
+        const t = i / horizontalSeams
+        const seamY = connectionFrameTop + (connectionFrameBottom - connectionFrameTop) * t
+        const seamNearX = leftWallNearEdgeX
+        const seamFarX = leftWallFarEdgeX
+        const seamNearEndX = windowLeftEdgeX
+        const seamFarEndX = windowLeftEdgeX
+        const currentStartX = seamFarX + (seamNearX - seamFarX) * t
+        const currentEndX = seamFarEndX + (seamNearEndX - seamFarEndX) * t
+        ctx.beginPath()
+        ctx.moveTo(currentStartX, seamY)
+        ctx.lineTo(currentEndX, seamY)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+      
+      // 连接框架的铆钉（带透视）
+      ctx.fillStyle = '#3a3a4e'
+      for (let row = 0; row < horizontalSeams; row++) {
+        for (let col = 0; col < supportCount; col++) {
+          const rowT = (row + 0.5) / horizontalSeams
+          const colT = (col + 0.5) / supportCount
+          const rivetY = connectionFrameTop + (connectionFrameBottom - connectionFrameTop) * rowT
+          const rivetNearX = leftWallNearEdgeX + connectionFrameNearWidth * colT
+          const rivetFarX = leftWallFarEdgeX + connectionFrameFarWidth * colT
+          const rivetX = rivetFarX + (rivetNearX - rivetFarX) * rowT
+          const rivetSize = 1.2 + rowT * 0.8 // 近处大，远处小
+          ctx.beginPath()
+          ctx.arc(rivetX, rivetY, rivetSize, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#5a5a6e'
+          ctx.beginPath()
+          ctx.arc(rivetX - 0.3, rivetY - 0.3, rivetSize * 0.6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#3a3a4e'
+        }
+      }
+      
+      // 连接框架边缘高光（与窗口框架融合，带透视）
+      ctx.save()
+      const leftConnectionEdgeGradient = ctx.createLinearGradient(windowLeftEdgeX - 3, connectionFrameTop, windowLeftEdgeX, connectionFrameBottom)
+      leftConnectionEdgeGradient.addColorStop(0, 'rgba(0, 255, 255, 0.08)')
+      leftConnectionEdgeGradient.addColorStop(1, 'rgba(0, 255, 255, 0.18)')
+      ctx.fillStyle = leftConnectionEdgeGradient
+      ctx.beginPath()
+      ctx.moveTo(windowLeftEdgeX - 3, connectionFrameTop)
+      ctx.lineTo(windowLeftEdgeX, connectionFrameTop)
+      ctx.lineTo(windowLeftEdgeX, connectionFrameBottom)
+      ctx.lineTo(windowLeftEdgeX - 3, connectionFrameBottom)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+      
+      // 连接框架边框（带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(leftWallNearEdgeX, connectionFrameBottom)
+      ctx.lineTo(windowLeftEdgeX, connectionFrameBottom)
+      ctx.lineTo(windowLeftEdgeX, connectionFrameTop)
+      ctx.lineTo(leftWallFarEdgeX, connectionFrameTop)
+      ctx.closePath()
+      ctx.stroke()
+      
+      // 连接框架内边框（发光，与窗口框架呼应，带透视）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.2
+      ctx.beginPath()
+      ctx.moveTo(leftWallNearEdgeX + 2, connectionFrameBottom - 2)
+      ctx.lineTo(windowLeftEdgeX - 2, connectionFrameBottom - 2)
+      ctx.lineTo(windowLeftEdgeX - 2, connectionFrameTop + 2)
+      ctx.lineTo(leftWallFarEdgeX + 2, connectionFrameTop + 2)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.globalAlpha = 1
+
+      // ========== 绘制右侧舱壁（带透视效果，近大远小） ==========
+      const rightWallTop = windowTop
+      const rightWallHeight = windowBottom - windowTop  // 窗口区域的高度
+      const rightWallBottom = rightWallTop + rightWallHeight
+      
+      // 右侧舱壁的近端（底部，靠近观察者）和远端（顶部，远离观察者）
+      const rightWallNearWidth = width - (panelLeft + panelWidth) // 近端宽度（底部）
+      const rightWallFarWidth = rightWallNearWidth * wallPerspectiveScale // 远端宽度（顶部，透视缩小）
+      const rightWallNearY = rightWallBottom // 近端Y位置（底部）
+      const rightWallFarY = rightWallTop // 远端Y位置（顶部）
+      
+      // 右侧舱壁的边缘位置
+      const rightWallNearEdgeX = panelLeft + panelWidth // 近端边缘
+      const rightWallFarEdgeX = width - rightWallFarWidth // 远端边缘
+
+      // 右侧舱壁基础（深色金属，带透视的梯形）
+      ctx.save()
+      ctx.beginPath()
+      // 绘制透视梯形（近大远小）
+      ctx.moveTo(rightWallNearEdgeX, rightWallNearY) // 左下角（近端）
+      ctx.lineTo(width, rightWallNearY) // 右下角（近端）
+      ctx.lineTo(width, rightWallFarY) // 右上角（远端）
+      ctx.lineTo(rightWallFarEdgeX, rightWallFarY) // 左上角（远端）
+      ctx.closePath()
+      
+      // 渐变填充（从近到远，从亮到暗）
+      const rightWallBaseGradient = ctx.createLinearGradient(rightWallNearEdgeX, rightWallNearY, rightWallFarEdgeX, rightWallFarY)
+      rightWallBaseGradient.addColorStop(0, '#0f0f1e')
+      rightWallBaseGradient.addColorStop(0.2, '#1a1a2e')
+      rightWallBaseGradient.addColorStop(0.6, '#1a1a2e')
+      rightWallBaseGradient.addColorStop(1, '#0a0a1a')
+      ctx.fillStyle = rightWallBaseGradient
+      ctx.fill()
+      
+      // 添加深度渐变（从近到远逐渐变暗）
+      const rightDepthGradient = ctx.createLinearGradient(rightWallNearEdgeX, rightWallNearY, rightWallFarEdgeX, rightWallFarY)
+      rightDepthGradient.addColorStop(0, 'rgba(255, 255, 255, 0.05)')
+      rightDepthGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.02)')
+      rightDepthGradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.1)')
+      rightDepthGradient.addColorStop(1, 'rgba(0, 0, 0, 0.2)')
+      ctx.fillStyle = rightDepthGradient
+      ctx.fill()
+      ctx.restore()
+
+      // 右侧舱壁面板接缝（垂直，带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.6
+      for (let i = 1; i < 4; i++) {
+        const ratio = i / 4
+        const nearX = rightWallNearEdgeX + rightWallNearWidth * ratio
+        const farX = rightWallFarEdgeX + rightWallFarWidth * ratio
+        ctx.beginPath()
+        ctx.moveTo(farX, rightWallFarY) // 远端
+        ctx.lineTo(nearX, rightWallNearY) // 近端
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // 右侧舱壁面板接缝（水平，带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.5
+      for (let i = 1; i < horizontalSeams; i++) {
+        const t = i / horizontalSeams
+        const seamY = rightWallFarY + (rightWallNearY - rightWallFarY) * t
+        const seamNearWidth = rightWallNearWidth
+        const seamFarWidth = rightWallFarWidth
+        const currentWidth = seamFarWidth + (seamNearWidth - seamFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(rightWallFarEdgeX, seamY)
+        ctx.lineTo(rightWallFarEdgeX + currentWidth, seamY)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // 右侧舱壁铆钉（沿接缝，带透视）
+      ctx.fillStyle = '#3a3a4e'
+      for (let row = 0; row < horizontalSeams; row++) {
+        for (let col = 0; col < 4; col++) {
+          const t = (row + 0.5) / horizontalSeams
+          const rivetY = rightWallFarY + (rightWallNearY - rightWallFarY) * t
+          const nearX = rightWallNearEdgeX + (rightWallNearWidth / 4) * col + (rightWallNearWidth / 8)
+          const farX = rightWallFarEdgeX + (rightWallFarWidth / 4) * col + (rightWallFarWidth / 8)
+          const rivetX = farX + (nearX - farX) * t
+          const rivetSize = 1.5 + t * 0.5 // 近处大，远处小
+          ctx.beginPath()
+          ctx.arc(rivetX, rivetY, rivetSize, 0, Math.PI * 2)
+          ctx.fill()
+          // 铆钉高光
+          ctx.fillStyle = '#5a5a6e'
+          ctx.beginPath()
+          ctx.arc(rivetX - 0.3, rivetY - 0.3, rivetSize * 0.6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#3a3a4e'
+        }
+      }
+
+      // 右侧舱壁金属纹理（划痕和磨损）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 0.5
+      ctx.globalAlpha = 0.3
+      for (let i = 0; i < 15; i++) {
+        const scratchY = rightWallTop + Math.random() * rightWallHeight
+        const scratchLength = 20 + Math.random() * 30
+        // 根据Y位置计算对应的宽度（透视效果：顶部窄，底部宽）
+        const t = (scratchY - rightWallTop) / rightWallHeight // 0=顶部, 1=底部
+        const currentWallWidth = rightWallFarWidth + (rightWallNearWidth - rightWallFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(rightWallFarEdgeX + Math.random() * (rightWallNearEdgeX - rightWallFarEdgeX), scratchY)
+        ctx.lineTo(rightWallFarEdgeX + Math.random() * (rightWallNearEdgeX - rightWallFarEdgeX), scratchY + scratchLength)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+
+      // 右侧舱壁管道（垂直，带透视）
+      const rightPipeCount = 3
+      for (let i = 0; i < rightPipeCount; i++) {
+        const pipeRatio = (i + 1) / (rightPipeCount + 1)
+        // 近端和远端的管道位置
+        const pipeNearX = rightWallNearEdgeX + rightWallNearWidth * pipeRatio
+        const pipeFarX = rightWallFarEdgeX + rightWallFarWidth * pipeRatio
+        const pipeStartY = rightWallFarY + 40
+        const pipeEndY = rightWallNearY - 40
+        // 管道宽度（近大远小）
+        const pipeNearWidth = 6
+        const pipeFarWidth = 4
+        
+        // 管道主体（透视梯形）
+        ctx.beginPath()
+        ctx.moveTo(pipeFarX - pipeFarWidth / 2, pipeStartY) // 左上
+        ctx.lineTo(pipeFarX + pipeFarWidth / 2, pipeStartY) // 右上
+        ctx.lineTo(pipeNearX + pipeNearWidth / 2, pipeEndY) // 右下
+        ctx.lineTo(pipeNearX - pipeNearWidth / 2, pipeEndY) // 左下
+        ctx.closePath()
+        
+        // 管道渐变
+        const rightPipeGradient = ctx.createLinearGradient(pipeFarX - pipeFarWidth / 2, pipeStartY, pipeNearX + pipeNearWidth / 2, pipeEndY)
+        rightPipeGradient.addColorStop(0, '#2a2a3e')
+        rightPipeGradient.addColorStop(0.5, '#3a3a4e')
+        rightPipeGradient.addColorStop(1, '#2a2a3e')
+        ctx.fillStyle = rightPipeGradient
+        ctx.fill()
+        
+        // 管道高光（左侧边缘）
+        ctx.strokeStyle = '#4a4a5e'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(pipeFarX - pipeFarWidth / 2 + 0.5, pipeStartY)
+        ctx.lineTo(pipeNearX - pipeNearWidth / 2 + 0.5, pipeEndY)
+        ctx.stroke()
+        
+        // 管道连接环（带透视）
+        for (let ringIndex = 1; ringIndex < 5; ringIndex++) {
+          const ringT = ringIndex / 5
+          const ringY = pipeStartY + (pipeEndY - pipeStartY) * ringT
+          const ringX = pipeFarX + (pipeNearX - pipeFarX) * ringT
+          const ringWidth = pipeFarWidth + (pipeNearWidth - pipeFarWidth) * ringT
+          ctx.strokeStyle = '#1a1a2e'
+          ctx.lineWidth = 1.5 + ringT * 0.5
+          ctx.strokeRect(ringX - ringWidth / 2 - 1, ringY - 2, ringWidth + 2, 4)
+        }
+      }
+
+      // 右侧舱壁线缆（水平，带透视）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1.5
+      ctx.globalAlpha = 0.4
+      for (let i = 0; i < 5; i++) {
+        const t = (i + 1) / 6
+        const cableY = rightWallFarY + (rightWallNearY - rightWallFarY) * t
+        const cableNearWidth = rightWallNearWidth - 10
+        const cableFarWidth = rightWallFarWidth - 10
+        const currentWidth = cableFarWidth + (cableNearWidth - cableFarWidth) * t
+        ctx.beginPath()
+        ctx.moveTo(rightWallFarEdgeX + 10, cableY)
+        ctx.lineTo(rightWallFarEdgeX + 10 + currentWidth, cableY)
+        ctx.stroke()
+        // 线缆高光
+        ctx.strokeStyle = accentColor2
+        ctx.lineWidth = 0.5
+        ctx.beginPath()
+        ctx.moveTo(rightWallFarEdgeX + 10, cableY - 0.5)
+        ctx.lineTo(rightWallFarEdgeX + 10 + currentWidth, cableY - 0.5)
+        ctx.stroke()
+        ctx.strokeStyle = accentColor1
+        ctx.lineWidth = 1.5
+      }
+      ctx.globalAlpha = 1
+
+      // 右侧舱壁边缘高光（带透视）
+      ctx.save()
+      const rightEdgeGradient = ctx.createLinearGradient(width - 3, rightWallNearY, width, rightWallFarY)
+      rightEdgeGradient.addColorStop(0, 'rgba(0, 255, 255, 0.12)')
+      rightEdgeGradient.addColorStop(1, 'rgba(0, 255, 255, 0.05)')
+      ctx.fillStyle = rightEdgeGradient
+      ctx.beginPath()
+      ctx.moveTo(width - 3, rightWallNearY)
+      ctx.lineTo(width, rightWallNearY)
+      ctx.lineTo(width, rightWallFarY)
+      ctx.lineTo(width - 3, rightWallFarY)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+
+      // 右侧舱壁边框（深色金属，带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(rightWallNearEdgeX, rightWallNearY)
+      ctx.lineTo(width, rightWallNearY)
+      ctx.lineTo(width, rightWallFarY)
+      ctx.lineTo(rightWallFarEdgeX, rightWallFarY)
+      ctx.closePath()
+      ctx.stroke()
+      
+      // 右侧舱壁内边框（发光，带透视）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.3
+      ctx.beginPath()
+      ctx.moveTo(rightWallNearEdgeX + 2, rightWallNearY - 2)
+      ctx.lineTo(width - 2, rightWallNearY - 2)
+      ctx.lineTo(width - 2, rightWallFarY + 2)
+      ctx.lineTo(rightWallFarEdgeX + 2, rightWallFarY + 2)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.globalAlpha = 1
+
+      // ========== 右侧舱壁与窗口的连接框架（带透视） ==========
+      // 连接框架（从窗口延伸到右侧舱壁，带透视）
+      const rightConnectionFrameNearWidth = rightWallNearEdgeX - windowRightEdgeX // 近端宽度
+      const rightConnectionFrameFarWidth = rightWallFarEdgeX - windowRightEdgeX // 远端宽度（透视缩小）
+      const rightConnectionFrameTop = windowTop
+      const rightConnectionFrameBottom = rightWallBottom
+      
+      // 连接框架基础（深色金属，与舱壁融合，带透视的梯形）
+      ctx.beginPath()
+      ctx.moveTo(windowRightEdgeX, rightConnectionFrameBottom) // 左下角（近端）
+      ctx.lineTo(rightWallNearEdgeX, rightConnectionFrameBottom) // 右下角（近端）
+      ctx.lineTo(rightWallFarEdgeX, rightConnectionFrameTop) // 右上角（远端）
+      ctx.lineTo(windowRightEdgeX, rightConnectionFrameTop) // 左上角（远端）
+      ctx.closePath()
+      
+      const rightConnectionGradient = ctx.createLinearGradient(windowRightEdgeX, rightConnectionFrameBottom, rightWallNearEdgeX, rightConnectionFrameTop)
+      rightConnectionGradient.addColorStop(0, '#0a0a1a')
+      rightConnectionGradient.addColorStop(0.5, '#0f0f1e')
+      rightConnectionGradient.addColorStop(1, '#1a1a2e')
+      ctx.fillStyle = rightConnectionGradient
+      ctx.fill()
+      
+      // 连接框架深度渐变
+      const rightConnectionDepthGradient = ctx.createLinearGradient(windowRightEdgeX, rightConnectionFrameBottom, windowRightEdgeX, rightConnectionFrameTop)
+      rightConnectionDepthGradient.addColorStop(0, 'rgba(255, 255, 255, 0.03)')
+      rightConnectionDepthGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)')
+      ctx.fillStyle = rightConnectionDepthGradient
+      ctx.fill()
+      
+      // 连接框架的垂直支撑结构（带透视）
+      ctx.strokeStyle = '#2a2a3e'
+      ctx.lineWidth = 2
+      ctx.globalAlpha = 0.6
+      for (let i = 1; i < supportCount; i++) {
+        const ratio = i / supportCount
+        const supportNearX = windowRightEdgeX + rightConnectionFrameNearWidth * ratio
+        const supportFarX = windowRightEdgeX + rightConnectionFrameFarWidth * ratio
+        ctx.beginPath()
+        ctx.moveTo(supportFarX, rightConnectionFrameTop)
+        ctx.lineTo(supportNearX, rightConnectionFrameBottom)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+      
+      // 连接框架的水平加强筋（带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 1.5
+      ctx.globalAlpha = 0.5
+      for (let i = 1; i < horizontalSeams; i++) {
+        const t = i / horizontalSeams
+        const seamY = rightConnectionFrameTop + (rightConnectionFrameBottom - rightConnectionFrameTop) * t
+        const seamNearX = windowRightEdgeX
+        const seamFarX = windowRightEdgeX
+        const seamNearEndX = rightWallNearEdgeX
+        const seamFarEndX = rightWallFarEdgeX
+        const currentStartX = seamFarX + (seamNearX - seamFarX) * t
+        const currentEndX = seamFarEndX + (seamNearEndX - seamFarEndX) * t
+        ctx.beginPath()
+        ctx.moveTo(currentStartX, seamY)
+        ctx.lineTo(currentEndX, seamY)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = 1
+      
+      // 连接框架的铆钉（带透视）
+      ctx.fillStyle = '#3a3a4e'
+      for (let row = 0; row < horizontalSeams; row++) {
+        for (let col = 0; col < supportCount; col++) {
+          const rowT = (row + 0.5) / horizontalSeams
+          const colT = (col + 0.5) / supportCount
+          const rivetY = rightConnectionFrameTop + (rightConnectionFrameBottom - rightConnectionFrameTop) * rowT
+          const rivetNearX = windowRightEdgeX + rightConnectionFrameNearWidth * colT
+          const rivetFarX = windowRightEdgeX + rightConnectionFrameFarWidth * colT
+          const rivetX = rivetFarX + (rivetNearX - rivetFarX) * rowT
+          const rivetSize = 1.2 + rowT * 0.8 // 近处大，远处小
+          ctx.beginPath()
+          ctx.arc(rivetX, rivetY, rivetSize, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#5a5a6e'
+          ctx.beginPath()
+          ctx.arc(rivetX - 0.3, rivetY - 0.3, rivetSize * 0.6, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.fillStyle = '#3a3a4e'
+        }
+      }
+      
+      // 连接框架边缘高光（与窗口框架融合，带透视）
+      ctx.save()
+      const rightConnectionEdgeGradient = ctx.createLinearGradient(windowRightEdgeX, rightConnectionFrameTop, windowRightEdgeX + 3, rightConnectionFrameBottom)
+      rightConnectionEdgeGradient.addColorStop(0, 'rgba(0, 255, 255, 0.18)')
+      rightConnectionEdgeGradient.addColorStop(1, 'rgba(0, 255, 255, 0.08)')
+      ctx.fillStyle = rightConnectionEdgeGradient
+      ctx.beginPath()
+      ctx.moveTo(windowRightEdgeX, rightConnectionFrameTop)
+      ctx.lineTo(windowRightEdgeX + 3, rightConnectionFrameTop)
+      ctx.lineTo(windowRightEdgeX + 3, rightConnectionFrameBottom)
+      ctx.lineTo(windowRightEdgeX, rightConnectionFrameBottom)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+      
+      // 连接框架边框（带透视）
+      ctx.strokeStyle = '#1a1a2e'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(windowRightEdgeX, rightConnectionFrameBottom)
+      ctx.lineTo(rightWallNearEdgeX, rightConnectionFrameBottom)
+      ctx.lineTo(rightWallFarEdgeX, rightConnectionFrameTop)
+      ctx.lineTo(windowRightEdgeX, rightConnectionFrameTop)
+      ctx.closePath()
+      ctx.stroke()
+      
+      // 连接框架内边框（发光，与窗口框架呼应，带透视）
+      ctx.strokeStyle = accentColor1
+      ctx.lineWidth = 1
+      ctx.globalAlpha = 0.2
+      ctx.beginPath()
+      ctx.moveTo(windowRightEdgeX + 2, rightConnectionFrameBottom - 2)
+      ctx.lineTo(rightWallNearEdgeX - 2, rightConnectionFrameBottom - 2)
+      ctx.lineTo(rightWallFarEdgeX - 2, rightConnectionFrameTop + 2)
+      ctx.lineTo(windowRightEdgeX + 2, rightConnectionFrameTop + 2)
+      ctx.closePath()
+      ctx.stroke()
+      ctx.globalAlpha = 1
+
+      // ========== 添加空间深度指示元素（已移除，因为不再有左右侧舱壁） ==========
 
       // 绘制底部控制台
-      const bottomPanelTop = panelTop + panelHeight
-      const bottomPanelHeight = height - bottomPanelTop
+      const bottomConsoleTop = panelTop + panelHeight
+      const bottomConsoleHeight = height - bottomConsoleTop
 
       ctx.fillStyle = panelColor
-      ctx.fillRect(0, bottomPanelTop, width, bottomPanelHeight)
+      ctx.fillRect(0, bottomConsoleTop, width, bottomConsoleHeight)
 
       // 底部装饰线条
       for (let i = 0; i < 3; i++) {
-        const y = bottomPanelTop + 10 + i * 20
+        const y = bottomConsoleTop + 10 + i * 20
         ctx.strokeStyle = accentColor1
         ctx.lineWidth = 1
         ctx.globalAlpha = 0.4 - i * 0.1
@@ -2196,36 +2373,26 @@ export default function CockpitOverlay() {
       ctx.font = 'bold 12px monospace'
       ctx.textAlign = 'center'
       const statusText = `SYSTEM STATUS: ALL SYSTEMS OPERATIONAL | TIME: ${new Date().toLocaleTimeString()}`
-      ctx.fillText(statusText, width / 2, bottomPanelTop + bottomPanelHeight - 15)
+      ctx.fillText(statusText, width / 2, bottomConsoleTop + bottomConsoleHeight - 15)
+
+      // ========== 统一的光照效果（简化版，因为不再有左右侧舱壁） ==========
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      // 中心区域的环境光（让窗口区域稍微更亮）
+      const windowCenterRadius = Math.max(middleWindowWidth, middleSectionHeight) / 2
+      const centerLightGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, windowCenterRadius * 1.5)
+      centerLightGradient.addColorStop(0, 'rgba(0, 255, 255, 0.03)')
+      centerLightGradient.addColorStop(0.4, 'rgba(0, 255, 255, 0.015)')
+      centerLightGradient.addColorStop(0.8, 'rgba(0, 255, 255, 0.008)')
+      centerLightGradient.addColorStop(1, 'transparent')
+      ctx.fillStyle = centerLightGradient
+      ctx.fillRect(middleWindowLeft, middleSectionTop, middleWindowWidth, middleSectionHeight)
+      ctx.restore()
 
 
-      // 绘制侧边装饰元素（管道、线路等）
-      const pipeSpacing = 30
-      for (let i = 0; i < Math.floor(leftConsoleHeight / pipeSpacing); i++) {
-        const y = leftConsoleTop + i * pipeSpacing + 15
-        ctx.strokeStyle = accentColor3
-        ctx.lineWidth = 2
-        ctx.globalAlpha = 0.3
-        ctx.beginPath()
-        ctx.moveTo(10, y)
-        ctx.lineTo(leftConsoleWidth - 10, y)
-        ctx.stroke()
-        ctx.globalAlpha = 1
-      }
-
-      // 绘制连接线（科技感）
-      ctx.strokeStyle = accentColor2
-      ctx.lineWidth = 1
-      ctx.globalAlpha = 0.2
-      for (let i = 0; i < 10; i++) {
-        const x = leftConsoleWidth + (panelLeft - leftConsoleWidth) * (i / 10)
-        ctx.beginPath()
-        ctx.moveTo(x, leftConsoleTop)
-        ctx.lineTo(x, panelTop)
-        ctx.stroke()
-      }
-      ctx.globalAlpha = 1
-
+      // 侧边装饰元素已在舱壁绘制中完成
+      */
+      
       // ========== 列表按钮（在上传按钮左侧） ==========
       const listBtnX = listButtonInfo.x
       const listBtnY = listButtonInfo.y
@@ -2420,6 +2587,65 @@ export default function CockpitOverlay() {
         ctx.fill()
         ctx.globalAlpha = 1
       }
+
+      // ========== 清除窗口内部区域，使其透明（在所有绘制完成后，最后执行） ==========
+      // 注意：这个操作必须在所有绘制操作（包括底部控制台、按钮等）完成后执行，才能正确显示星空背景
+      ctx.save()
+      ctx.globalCompositeOperation = 'destination-out'
+      
+      // 清除三段式窗口区域：上段左右三角形 + 中段长方形（完全透明）
+      ctx.fillStyle = 'rgba(0, 0, 0, 1)'
+      const clearMargin = 2 // 清除边距，避免清除框架
+      
+      // 清除左三角形窗口区域（使用曲线路径，与框架一致）
+      ctx.beginPath()
+      ctx.moveTo(clearMargin, topSectionTop + clearMargin)
+      // 使用曲线连接到中段（与框架曲线一致）
+      ctx.quadraticCurveTo(
+        middleWindowLeft * 0.5,
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.7,
+        middleWindowLeft - clearMargin,
+        middleSectionTop + clearMargin
+      )
+      ctx.quadraticCurveTo(
+        (middleWindowLeft + topTrapezoidBottomLeft) / 2,
+        (middleSectionTop + topSectionBottom) / 2,
+        topTrapezoidBottomLeft - clearMargin,
+        topSectionBottom - clearMargin
+      )
+      ctx.lineTo(topTrapezoidTopLeft + clearMargin, topSectionTop + clearMargin)
+      ctx.closePath()
+      ctx.fill()
+      
+      // 清除中段长方形窗口区域（完全透明）
+      ctx.beginPath()
+      ctx.moveTo(middleWindowLeft + clearMargin, middleSectionTop + clearMargin)
+      ctx.lineTo(middleWindowRight - clearMargin, middleSectionTop + clearMargin)
+      ctx.lineTo(middleWindowRight - clearMargin, middleSectionBottom - clearMargin)
+      ctx.lineTo(middleWindowLeft + clearMargin, middleSectionBottom - clearMargin)
+      ctx.closePath()
+      ctx.fill()
+      
+      // 清除右三角形窗口区域（使用曲线路径，与框架一致）
+      ctx.beginPath()
+      ctx.moveTo(width - clearMargin, topSectionTop + clearMargin)
+      ctx.quadraticCurveTo(
+        middleWindowRight + (width - middleWindowRight) * 0.5,
+        topSectionTop + (middleSectionTop - topSectionTop) * 0.7,
+        middleWindowRight + clearMargin,
+        middleSectionTop + clearMargin
+      )
+      ctx.quadraticCurveTo(
+        (middleWindowRight + topTrapezoidBottomRight) / 2,
+        (middleSectionTop + topSectionBottom) / 2,
+        topTrapezoidBottomRight + clearMargin,
+        topSectionBottom - clearMargin
+      )
+      ctx.lineTo(topTrapezoidTopRight - clearMargin, topSectionTop + clearMargin)
+      ctx.closePath()
+      ctx.fill()
+      
+      ctx.restore()
     }
 
     // 动画循环
@@ -2473,13 +2699,16 @@ export default function CockpitOverlay() {
     const width = canvas.width / dpr
     const height = canvas.height / dpr
     const centerX = width / 2
-    const windowRadius = Math.min(width, height) * 0.7
-    const windowTop = height * 0.05
-    const windowCenterY = windowTop + windowRadius
     
-    const panelTop = windowCenterY + 5
-    const panelHeight = windowRadius * 0.4
-    const panelWidth = windowRadius * 2
+    // 使用新的三段式结构变量
+    const topSectionBottom = height * 0.25 // 上段底部位置
+    const middleSectionTop = topSectionBottom
+    const middleSectionBottom = height * 0.65 // 中段底部位置
+    const bottomSectionTop = middleSectionBottom
+    
+    const panelTop = bottomSectionTop  // 控制面板顶部位置（下段）
+    const panelHeight = height - bottomSectionTop  // 控制面板高度（下段高度）
+    const panelWidth = width * 0.85  // 控制面板宽度
     const panelLeft = centerX - panelWidth / 2
     
     // 按钮位置计算（与绘制函数中的逻辑一致）
@@ -2526,7 +2755,9 @@ export default function CockpitOverlay() {
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            setIsHudOpen(true)
+            if (listButtonPosition) {
+              setIsHudOpen(true)
+            }
           }}
           onMouseEnter={() => setIsHoveringList(true)}
           onMouseLeave={() => setIsHoveringList(false)}
