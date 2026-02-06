@@ -72,7 +72,7 @@ export default function ParticleBackground() {
         x: centerX + Math.cos(angle) * radius,
         y: centerY + Math.sin(angle) * radius,
         z: Math.random() * 3000 + 100, // 初始深度范围更大
-        size: Math.random() * 1.5 + 0.3, // 减小粒子大小：0.3-1.8
+        size: Math.random() * 2.0 + 0.5, // 增大粒子大小：0.5-2.5
         speed: Math.random() * 20 + 15, // 更快的飞行速度
         color: color,
         trail: []
@@ -117,7 +117,7 @@ export default function ParticleBackground() {
           const alpha = Math.min(projected.scale * 0.5 * (1 - progress * 0.6), 0.5)
           
           // 根据深度计算线条宽度（越近越粗）
-          const lineWidth = Math.max(size * 0.4 * (1 - progress * 0.4), 0.3)
+          const lineWidth = Math.max(size * 0.5 * (1 - progress * 0.4), 0.4)
           
           ctx.beginPath()
           ctx.moveTo(x1, y1)
@@ -143,7 +143,7 @@ export default function ParticleBackground() {
         gradient.addColorStop(1, particle.color + '00')
 
         ctx.beginPath()
-        ctx.arc(projected.x, projected.y, size * 0.8, 0, Math.PI * 2) // 减小粒子半径
+        ctx.arc(projected.x, projected.y, size * 1.0, 0, Math.PI * 2) // 增大粒子半径
         ctx.fillStyle = gradient
         ctx.fill()
 
@@ -192,7 +192,7 @@ export default function ParticleBackground() {
           particle.trail = []
           // 随机改变速度和大小，增加变化
           particle.speed = Math.random() * 20 + 15
-          particle.size = Math.random() * 1.5 + 0.3 // 重新随机大小
+          particle.size = Math.random() * 2.0 + 0.5 // 重新随机大小，增大范围
           
           // 重新随机颜色（保持80%星星色，20%彩色）
           const useStarColor = Math.random() < 0.8
