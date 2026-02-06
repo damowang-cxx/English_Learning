@@ -11,10 +11,6 @@ interface Sentence {
   startTime: number
   endTime: number
   order: number
-  userNotes?: {
-    words: string
-    notes: string
-  }
 }
 
 interface EditSentence {
@@ -38,10 +34,10 @@ export default function TrainingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
-  const [showTranslations, setShowTranslations] = useState(true)
+  const [showTranslations, setShowTranslations] = useState(false)
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
-  const [userNotes, setUserNotes] = useState<Record<string, { words: string; notes: string }>>({})
+  const [userNotes, setUserNotes] = useState<Record<string, { words: string }>>({})
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const [audioLoaded, setAudioLoaded] = useState(false)
@@ -279,7 +275,7 @@ export default function TrainingDetailPage() {
 
   const fetchUserNotes = async () => {
     if (!item) return
-    const notes: Record<string, { words: string; notes: string }> = {}
+    const notes: Record<string, { words: string }> = {}
     for (const sentence of item.sentences) {
       try {
         const response = await fetch(
@@ -287,14 +283,48 @@ export default function TrainingDetailPage() {
         )
         const data = await response.json()
         notes[sentence.id] = {
-          words: data.words || '',
-          notes: data.notes || ''
+          words: data.words || ''
         }
       } catch (error) {
         console.error('Error fetching user notes:', error)
       }
     }
     setUserNotes(notes)
+  }
+
+  const toggleNotes = (sentenceId: string) => {
+    const newExpanded = new Set(expandedNotes)
+    if (newExpanded.has(sentenceId)) {
+      newExpanded.delete(sentenceId)
+    } else {
+      newExpanded.add(sentenceId)
+    }
+    setExpandedNotes(newExpanded)
+  }
+
+  const handleNotesChange = async (sentenceId: string, value: string) => {
+    const updated = {
+      words: value
+    }
+    setUserNotes({
+      ...userNotes,
+      [sentenceId]: updated
+    })
+
+    try {
+      await fetch('/api/user-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentenceId,
+          words: updated.words || '',
+          notes: '',
+          userId: 'default'
+        })
+      })
+    } catch (error) {
+      console.error('Error saving user notes:', error)
+    }
   }
 
   const handleTimeUpdate = () => {
@@ -372,41 +402,6 @@ export default function TrainingDetailPage() {
     }
   }
 
-  const toggleNotes = (sentenceId: string) => {
-    const newExpanded = new Set(expandedNotes)
-    if (newExpanded.has(sentenceId)) {
-      newExpanded.delete(sentenceId)
-    } else {
-      newExpanded.add(sentenceId)
-    }
-    setExpandedNotes(newExpanded)
-  }
-
-  const handleNotesChange = async (sentenceId: string, field: 'words' | 'notes', value: string) => {
-    const updated = {
-      ...userNotes[sentenceId],
-      [field]: value
-    }
-    setUserNotes({
-      ...userNotes,
-      [sentenceId]: updated
-    })
-
-    try {
-      await fetch('/api/user-notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sentenceId,
-          words: updated.words || '',
-          notes: updated.notes || '',
-          userId: 'default'
-        })
-      })
-    } catch (error) {
-      console.error('Error saving user notes:', error)
-    }
-  }
 
   if (loading) {
     return (
@@ -662,7 +657,7 @@ export default function TrainingDetailPage() {
                 const isActive = currentSentenceIndex === index
                 const isRepeating = repeatMode === index
                 const isNotesExpanded = expandedNotes.has(sentence.id)
-                const notes = userNotes[sentence.id] || { words: '', notes: '' }
+                const notes = userNotes[sentence.id] || { words: '' }
 
                 return (
                   <div
@@ -716,46 +711,30 @@ export default function TrainingDetailPage() {
                       TIME: [{sentence.startTime.toFixed(2)}s - {sentence.endTime.toFixed(2)}s]
                     </div>
 
-                    {/* 用户笔记 */}
+                    {/* 用户词汇 */}
                     <div className="border-t border-green-500/20 pt-3 mt-3">
                       <button
                         onClick={() => toggleNotes(sentence.id)}
                         className="w-full text-left text-xs text-green-400/70 hover:text-green-300 flex items-center justify-between font-mono transition-colors uppercase tracking-wider"
                       >
-                        <span>📝 NOTES & VOCABULARY</span>
+                        <span>📝 VOCABULARY</span>
                         <span>{isNotesExpanded ? '▼' : '▶'}</span>
                       </button>
 
                       {isNotesExpanded && (
-                        <div className="mt-4 space-y-4">
-                          <div>
-                            <label className="block text-green-300 font-mono text-xs mb-2 uppercase tracking-wider">
-                              VOCABULARY
-                            </label>
-                            <textarea
-                              value={notes.words}
-                              onChange={(e) =>
-                                handleNotesChange(sentence.id, 'words', e.target.value)
-                              }
-                              placeholder="Record vocabulary..."
-                              className="w-full px-4 py-2 bg-black/40 border border-green-500/30 text-gray-200 font-mono text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
-                              rows={2}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-green-300 font-mono text-xs mb-2 uppercase tracking-wider">
-                              NOTES
-                            </label>
-                            <textarea
-                              value={notes.notes}
-                              onChange={(e) =>
-                                handleNotesChange(sentence.id, 'notes', e.target.value)
-                              }
-                              placeholder="Add notes..."
-                              className="w-full px-4 py-2 bg-black/40 border border-green-500/30 text-gray-200 font-mono text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
-                              rows={3}
-                            />
-                          </div>
+                        <div className="mt-4">
+                          <label className="block text-green-300 font-mono text-xs mb-2 uppercase tracking-wider">
+                            VOCABULARY
+                          </label>
+                          <textarea
+                            value={notes.words}
+                            onChange={(e) =>
+                              handleNotesChange(sentence.id, e.target.value)
+                            }
+                            placeholder="Record vocabulary..."
+                            className="w-full px-4 py-2 bg-black/40 border border-green-500/30 text-gray-200 font-mono text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
+                            rows={2}
+                          />
                         </div>
                       )}
                     </div>
