@@ -4,10 +4,12 @@ import path from 'path'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const filePath = params.path.join('/')
+    // 等待 params Promise 解析
+    const { path: pathArray } = await params
+    const filePath = pathArray.join('/')
     
     // 安全检查：防止路径遍历攻击
     if (filePath.includes('..') || filePath.startsWith('/')) {
