@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from '@/contexts/TranslationContext'
 
 interface Sentence {
   id: string
@@ -34,7 +35,7 @@ export default function TrainingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
-  const [showTranslations, setShowTranslations] = useState(false)
+  const { showTranslations, setShowTranslations } = useTranslation()
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [userNotes, setUserNotes] = useState<Record<string, { words: string }>>({})
@@ -117,18 +118,6 @@ export default function TrainingDetailPage() {
         case ' ':
           e.preventDefault()
           handlePlayPause()
-          break
-        case 'ArrowLeft':
-          e.preventDefault()
-          if (audioRef.current) {
-            audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
-          }
-          break
-        case 'ArrowRight':
-          e.preventDefault()
-          if (audioRef.current && duration) {
-            audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 5)
-          }
           break
         case 'Escape':
           if (isEditing) {
@@ -487,18 +476,6 @@ export default function TrainingDetailPage() {
     }
   }
 
-  const handleSeekBackward = () => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
-    }
-  }
-
-  const handleSeekForward = () => {
-    if (audioRef.current && duration) {
-      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 5)
-    }
-  }
-
   const handleSpeedChange = (rate: number) => {
     setPlaybackRate(rate)
   }
@@ -551,12 +528,50 @@ export default function TrainingDetailPage() {
           {/* 主HUD屏幕 - 半透明 */}
           <div className={`relative backdrop-blur-md border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] transition-all duration-300 ${
             isFullscreen ? 'bg-black/30 h-full' : 'bg-black/40'
-          }`}>
-            {/* 顶部装饰栏 */}
-            <div className="relative border-b-2 border-green-500/50 bg-gradient-to-r from-green-900/20 via-transparent to-transparent p-4">
+          }`} style={{
+            boxShadow: '0 0 40px rgba(10,255,10,0.25), inset 0 0 30px rgba(10,255,10,0.1), 0 0 60px rgba(10,255,10,0.15)'
+          }}>
+            {/* 边框发光效果 */}
+            <div className="absolute inset-0 border-2 border-green-400/20 rounded-lg pointer-events-none animate-pulse" style={{
+              boxShadow: 'inset 0 0 15px rgba(10,255,10,0.2), 0 0 20px rgba(10,255,10,0.15)'
+            }}></div>
+            
+            {/* 能量波动效果 */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(10,255,10,0.04)_40%,transparent_70%)] animate-pulse" style={{ animationDuration: '3s' }}></div>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,transparent_0%,rgba(10,255,10,0.03)_30%,transparent_60%)] animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }}></div>
+            </div>
+
+            {/* 粒子背景效果 */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(15)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 bg-green-400/20 rounded-full animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${2 + Math.random() * 2}s`,
+                    boxShadow: '0 0 3px rgba(10,255,10,0.4)'
+                  }}
+                ></div>
+              ))}
+            </div>
+            {/* 顶部装饰栏 - 增强版 */}
+            <div className="relative border-b-2 border-green-500/50 bg-gradient-to-r from-green-900/20 via-transparent to-transparent p-4 overflow-hidden">
+              {/* 背景光效 */}
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/3 via-transparent to-transparent"></div>
+              
+              {/* 扫描线效果 */}
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent animate-shimmer"></div>
+              
+              {/* 装饰点 */}
+              <div className="absolute top-2 left-4 w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ boxShadow: '0 0 3px rgba(10,255,10,0.5)' }}></div>
+              <div className="absolute top-2 right-4 w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ boxShadow: '0 0 3px rgba(10,255,10,0.5)', animationDelay: '0.5s' }}></div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(10,255,10,0.8)]"></div>
+                  <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-green-400/70 rounded-full animate-pulse shadow-[0_0_6px_rgba(10,255,10,0.6)]"></div>
                   <h1 className="text-2xl cyber-title text-green-400 cyber-neon">
                     [ TRAINING MODULE ]
                   </h1>
@@ -565,9 +580,13 @@ export default function TrainingDetailPage() {
                   {/* 编辑按钮 */}
                   <button
                     onClick={handleEditClick}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2 group/btn"
                     style={{ zIndex: 100 }}
                   >
+                    {/* 按钮光效 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
+                    {/* 按钮扫描线 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -576,10 +595,14 @@ export default function TrainingDetailPage() {
                   {/* 放大/缩小按钮 */}
                   <button
                     onClick={toggleFullscreen}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2 group/btn"
                     style={{ zIndex: 100 }}
                     title={isFullscreen ? '缩小' : '全屏'}
                   >
+                    {/* 按钮光效 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
+                    {/* 按钮扫描线 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
                     {isFullscreen ? (
                       <>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -599,9 +622,13 @@ export default function TrainingDetailPage() {
                   {/* 返回按钮 */}
                   <button
                     onClick={() => router.push('/')}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer group/btn"
                     style={{ zIndex: 100 }}
                   >
+                    {/* 按钮光效 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
+                    {/* 按钮扫描线 */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
                     ← BACK
                   </button>
                 </div>
@@ -611,17 +638,81 @@ export default function TrainingDetailPage() {
               </div>
             </div>
 
-          {/* HUD网格背景 */}
+          {/* HUD网格背景 - 增强版 */}
           <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
+          
+          {/* 网格光点效果 */}
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(20)].map((_, i) => {
+              const x = (i % 5) * 25 + 12.5
+              const y = Math.floor(i / 5) * 20 + 10
+              return (
+                <div
+                  key={i}
+                  className="absolute w-0.5 h-0.5 bg-green-400/25 rounded-full animate-pulse"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    animationDelay: `${i * 0.2}s`,
+                    animationDuration: '2s',
+                    boxShadow: '0 0 2px rgba(10,255,10,0.5)'
+                  }}
+                ></div>
+              )
+            })}
+          </div>
 
-          {/* 扫描线效果 */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.03),rgba(10,255,10,0.01),rgba(10,255,10,0.03))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-40"></div>
+          {/* 扫描线效果 - 多层 */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.02),rgba(10,255,10,0.01),rgba(10,255,10,0.02))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-30"></div>
+          
+          {/* 垂直扫描线 */}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(10,255,10,0.05)_50%,transparent_100%)] bg-[length:100%_4px] pointer-events-none opacity-20 animate-scan-vertical" style={{ animationDuration: '3s' }}></div>
+          
+          {/* 水平扫描线 */}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(10,255,10,0.04)_50%,transparent_100%)] bg-[length:4px_100%] pointer-events-none opacity-15 animate-shimmer" style={{ animationDuration: '4s' }}></div>
 
-          {/* 角落装饰 */}
-          <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50"></div>
-          <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50"></div>
-          <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50"></div>
-          <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50"></div>
+          {/* 角落装饰 - 增强版 */}
+          {/* 左上角 */}
+          <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50 pointer-events-none">
+            <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-green-400/40"></div>
+            <div className="absolute top-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+            {/* 发光线条 */}
+            <div className="absolute top-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
+            <div className="absolute top-0 left-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
+          </div>
+          
+          {/* 右上角 */}
+          <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50 pointer-events-none">
+            <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-green-400/40"></div>
+            <div className="absolute top-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+            {/* 发光线条 */}
+            <div className="absolute top-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
+            <div className="absolute top-0 right-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
+          </div>
+          
+          {/* 左下角 */}
+          <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50 pointer-events-none">
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-green-400/40"></div>
+            <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+            {/* 发光线条 */}
+            <div className="absolute bottom-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
+          </div>
+          
+          {/* 右下角 */}
+          <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50 pointer-events-none">
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b border-r border-green-400/40"></div>
+            <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+            {/* 发光线条 */}
+            <div className="absolute bottom-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
+            <div className="absolute bottom-0 right-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
+          </div>
+          
+          {/* 边缘光效 */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+          <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+          <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
 
           {/* 通知提示 */}
           {notification && (
@@ -647,13 +738,16 @@ export default function TrainingDetailPage() {
           {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
           <div 
             ref={contentRef}
-            className="relative p-8 training-hud-content pr-6" 
+            className="relative training-hud-content" 
             style={{ 
               maxHeight: isFullscreen ? 'calc(98vh - 120px)' : '75vh', 
               overflowY: 'auto',
               overflowX: 'hidden',
               height: isFullscreen ? 'calc(98vh - 120px)' : 'auto',
-              paddingRight: '2rem'
+              paddingLeft: '2.5rem',
+              paddingRight: '2rem',
+              paddingTop: '1rem',
+              paddingBottom: '1rem'
             }}
           >
 
@@ -708,19 +802,7 @@ export default function TrainingDetailPage() {
                   </div>
 
                   {/* 控制按钮和时间显示 */}
-                  <div className="flex items-center justify-between gap-4">
-                    {/* 快退按钮 */}
-                    <button
-                      onClick={handleSeekBackward}
-                      className="w-10 h-10 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all"
-                      title="快退5秒 (←)"
-                    >
-                      <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
-                        <path d="M10 12l-2-2v4l2-2z"/>
-                      </svg>
-                    </button>
-
+                  <div className="flex items-center justify-center gap-4">
                     {/* 播放/暂停按钮 */}
                     <button
                       onClick={handlePlayPause}
@@ -737,18 +819,6 @@ export default function TrainingDetailPage() {
                           <path d="M8 5v14l11-7z"/>
                         </svg>
                       )}
-                    </button>
-
-                    {/* 快进按钮 */}
-                    <button
-                      onClick={handleSeekForward}
-                      className="w-10 h-10 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all"
-                      title="快进5秒 (→)"
-                    >
-                      <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
-                        <path d="M14 12l2-2v4l-2-2z"/>
-                      </svg>
                     </button>
 
                     {/* 时间显示 */}
@@ -819,21 +889,10 @@ export default function TrainingDetailPage() {
               )}
             </div>
 
-            {/* 控制选项 */}
-            <div className="p-4 mb-6 flex items-center gap-4 bg-black/30 border border-green-500/20 rounded">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showTranslations}
-                  onChange={(e) => setShowTranslations(e.target.checked)}
-                  className="w-5 h-5 accent-green-500"
-                />
-                <span className="text-green-300 cyber-label text-sm">SHOW TRANSLATIONS</span>
-              </label>
-            </div>
+            {/* 控制选项 - 翻译显示已移至右下角按钮 */}
 
             {/* 句子列表 */}
-            <div className="space-y-4">
+            <div className="space-y-5">
               {item.sentences.map((sentence, index) => {
                 const isActive = currentSentenceIndex === index
                 const isRepeating = repeatMode === index
@@ -846,7 +905,7 @@ export default function TrainingDetailPage() {
                     ref={(el) => {
                       sentenceRefs.current[index] = el
                     }}
-                    className="p-5 transition-all duration-300 rounded"
+                    className="pl-8 pr-4 py-3 transition-all duration-300 rounded"
                     style={isActive ? {
                       background: 'rgba(10,255,10,0.15)',
                       border: '2px solid rgba(10,255,10,0.6)',
@@ -861,17 +920,17 @@ export default function TrainingDetailPage() {
                     }}
                   >
                     {/* 句子文本 */}
-                    <div className="flex items-start gap-4 mb-3">
-                      <button
+                    <div className="flex items-start gap-3 mb-2">
+                      <div
                         onClick={() => handleSentenceClick(sentence)}
-                        className={`flex-1 text-left p-3 cyber-text transition-all rounded ${
+                        className={`flex-1 text-left px-2 py-2 cyber-text transition-all rounded cursor-pointer select-text ${
                           isActive
                             ? 'text-green-200 bg-green-500/10'
                             : 'text-gray-200 hover:text-green-300 hover:bg-green-500/5'
                         }`}
                       >
-                        <p className="text-base cyber-font font-bold">{sentence.text}</p>
-                      </button>
+                        <p className="text-base cyber-font font-bold leading-relaxed select-text">{sentence.text}</p>
+                      </div>
                       <button
                         onClick={() => handleRepeatClick(index)}
                         className={`px-3 py-2 cyber-button-text text-sm transition-all border rounded ${
@@ -887,18 +946,18 @@ export default function TrainingDetailPage() {
 
                     {/* 翻译 */}
                     {showTranslations && sentence.translation && (
-                      <div className="mb-3 pl-3 border-l-2 border-green-500/40">
-                        <p className="text-green-300/80 cyber-text text-sm">{sentence.translation}</p>
+                      <div className="mb-2 px-2 py-2 border-l-2 border-green-500/40 select-text">
+                        <p className="text-green-300/80 cyber-text text-sm leading-relaxed select-text">{sentence.translation}</p>
                       </div>
                     )}
 
                     {/* 时间信息 */}
-                    <div className="text-xs cyber-label text-green-500/60 mb-3">
+                    <div className="text-xs cyber-label text-green-500/60 mb-2 px-2">
                       TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]
                     </div>
 
                     {/* 用户词汇 */}
-                    <div className="border-t border-green-500/20 pt-3 mt-3">
+                    <div className="border-t border-green-500/20 pt-2 mt-2 px-2">
                       <button
                         onClick={() => toggleNotes(sentence.id)}
                         className="w-full text-left text-xs cyber-label text-green-400/70 hover:text-green-300 flex items-center justify-between transition-colors"
@@ -1055,13 +1114,13 @@ export default function TrainingDetailPage() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-xs cyber-number cyber-tabular text-green-500/70">#{index + 1}</span>
-                                <p className="cyber-text text-gray-200 text-sm">{sentence.text}</p>
+                                <p className="cyber-text text-gray-200 text-sm select-text">{sentence.text}</p>
                                 {editingSentenceIndex === index && (
                                   <span className="text-xs cyber-text text-yellow-400/70 animate-pulse">[编辑中]</span>
                                 )}
                               </div>
                               {sentence.translation && (
-                                <p className="text-xs cyber-text text-gray-400 mb-2 ml-6">{sentence.translation}</p>
+                                <p className="text-xs cyber-text text-gray-400 mb-2 ml-6 select-text">{sentence.translation}</p>
                               )}
                               <p className="text-xs cyber-label text-green-500/60 ml-6">
                                 TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]

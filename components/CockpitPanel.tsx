@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Rocket, Activity, Shield, Target, Menu, X, Home } from 'lucide-react'
+import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from '@/contexts/TranslationContext'
 
 interface TrainingItem {
   id: string
@@ -132,6 +133,16 @@ export default function CockpitPanel() {
   
   // 判断是否在首页
   const isHomePage = pathname === '/'
+  // 判断是否在训练页面
+  const isTrainingPage = pathname?.startsWith('/training')
+  
+  // 翻译显示状态（只在训练页面使用）
+  let translationContext = null
+  try {
+    translationContext = useTranslation()
+  } catch (e) {
+    // Context未提供时忽略错误
+  }
   
   // 用于存储按钮的原始位置和目标位置
   const centerButtonsRef = React.useRef<HTMLDivElement>(null)
@@ -321,6 +332,13 @@ export default function CockpitPanel() {
   // 处理HOME按钮点击 - 返回首页
   const handleHome = () => {
     router.push('/')
+  }
+
+  // 处理TRANSLATIONS按钮点击 - 切换翻译显示
+  const handleTranslations = () => {
+    if (translationContext) {
+      translationContext.toggleTranslations()
+    }
   }
 
   // 获取训练条目列表
@@ -1208,6 +1226,51 @@ export default function CockpitPanel() {
               : 'opacity 0s linear 0s, transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), left 0s linear 0s, top 0s linear 0s, bottom 0s linear 0s, right 0s linear 0s, gap 0.3s ease-out 0s',
           }}
         >
+          {/* TRANSLATIONS 按钮 - 只在训练页面显示，在WARP左侧 */}
+          {isTrainingPage && (
+            <div className="text-center group cursor-pointer relative" onClick={handleTranslations}>
+              {/* 按钮容器 */}
+              <div className={`relative w-16 h-16 rounded-full border-2 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-all duration-300 overflow-hidden ${
+                translationContext?.showTranslations
+                  ? 'border-green-500/80 bg-green-900/20 shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)]'
+                  : 'border-green-500/50 bg-green-900/10 shadow-[0_0_15px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20 group-hover:shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)] group-active:shadow-[0_0_35px_rgba(34,197,94,0.8),inset_0_0_20px_rgba(34,197,94,0.2)]'
+              }`}>
+                {/* 背景网格 */}
+                <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(34,197,94,.1)_49%,rgba(34,197,94,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(34,197,94,.1)_49%,rgba(34,197,94,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* 扫描线效果 */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(34,197,94,0.3)_50%,transparent_100%)] bg-[length:100%_4px] opacity-0 group-hover:opacity-100 animate-scan-vertical transition-opacity duration-300"></div>
+                
+                {/* 旋转光环 - 正向 */}
+                <div className="absolute inset-0 rounded-full border border-green-500/30 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow transition-opacity duration-300"></div>
+                {/* 旋转光环 - 反向 */}
+                <div className="absolute inset-[-2px] rounded-full border border-green-500/20 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow-reverse transition-opacity duration-300"></div>
+                
+                {/* 中心光点 */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={`w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)] transition-opacity duration-300 ${
+                    translationContext?.showTranslations ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
+                  }`}></div>
+                </div>
+                
+                {/* 点击波纹效果 */}
+                <div className="absolute inset-0 rounded-full bg-green-500/20 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500 pointer-events-none"></div>
+                
+                {/* 图标 */}
+                <Languages className={`relative z-10 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.8)] ${
+                  translationContext?.showTranslations
+                    ? 'text-green-300'
+                    : 'text-green-400 group-hover:text-green-300'
+                }`} size={24} />
+              </div>
+              <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
+                translationContext?.showTranslations
+                  ? 'text-green-300'
+                  : 'text-green-400 group-hover:text-green-300'
+              }`}>TRANSL</div>
+            </div>
+          )}
+
           {/* WARP 按钮 - 在AUTOPILOT左侧 */}
           <div className="text-center group cursor-pointer relative" onClick={handleWarp}>
             {/* 按钮容器 */}

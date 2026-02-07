@@ -12,14 +12,28 @@ export async function GET(
     const filePath = pathArray.join('/')
     
     // 安全检查：防止路径遍历攻击
-    if (filePath.includes('..') || filePath.startsWith('/')) {
+    // 检查路径片段中是否有 '..' 作为单独的组件（真正的路径遍历）
+    const pathSegments = filePath.split('/')
+    if (pathSegments.some(segment => segment === '..' || segment === '.')) {
       return NextResponse.json(
         { error: 'Invalid file path' },
         { status: 400 }
       )
     }
 
-    const audioPath = path.join(process.cwd(), 'public', 'audio', filePath)
+    // 构建完整路径
+    const audioDir = path.join(process.cwd(), 'public', 'audio')
+    const audioPath = path.join(audioDir, filePath)
+    
+    // 使用 path.resolve 和 path.relative 确保路径在目标目录内（防止路径遍历）
+    const resolvedPath = path.resolve(audioPath)
+    const resolvedDir = path.resolve(audioDir)
+    if (!resolvedPath.startsWith(resolvedDir)) {
+      return NextResponse.json(
+        { error: 'Invalid file path' },
+        { status: 400 }
+      )
+    }
     
     // 检查文件是否存在
     if (!fs.existsSync(audioPath)) {

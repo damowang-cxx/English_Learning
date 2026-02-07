@@ -449,6 +449,19 @@ body:has(.training-fullscreen) .cockpit-panel {
   animation: scan-vertical 2s linear infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
 /* 输入框样式 */
 .cyber-input {
   background: rgba(232, 244, 255, 0.04);
