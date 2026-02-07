@@ -165,6 +165,12 @@ export default function UploadPage() {
       return
     }
 
+    // 检查音频文件是否存在
+    if (!audioFile) {
+      setErrors({ audio: '请选择音频文件' })
+      return
+    }
+
     setIsUploading(true)
     try {
       const formData = new FormData()

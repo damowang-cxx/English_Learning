@@ -671,7 +671,9 @@ export default function TrainingDetailPage() {
               {/* 隐藏的原生音频控件，用于实际播放 */}
               <audio
                 ref={audioRef}
-                src={item.audioUrl}
+                src={item.audioUrl.startsWith('/audio/') 
+                  ? `/api/audio/${item.audioUrl.replace('/audio/', '')}` 
+                  : item.audioUrl}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onLoadedData={() => setAudioLoaded(true)}
