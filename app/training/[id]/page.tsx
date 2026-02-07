@@ -56,6 +56,11 @@ export default function TrainingDetailPage() {
   })
   const [isUpdating, setIsUpdating] = useState(false)
   const [editingSentenceIndex, setEditingSentenceIndex] = useState<number | null>(null)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
+  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
+  const sentenceRefs = useRef<Record<number, HTMLDivElement | null>>({})
+  const contentRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchTrainingItem()
@@ -100,6 +105,76 @@ export default function TrainingDetailPage() {
     }
   }, [])
 
+  // 键盘快捷键支持
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // 如果正在输入，不处理快捷键
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      switch (e.key) {
+        case ' ':
+          e.preventDefault()
+          handlePlayPause()
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          if (audioRef.current) {
+            audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
+          }
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          if (audioRef.current && duration) {
+            audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 5)
+          }
+          break
+        case 'Escape':
+          if (isEditing) {
+            setIsEditing(false)
+          }
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isPlaying, duration, isEditing])
+
+  // 播放速度控制
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate
+    }
+  }, [playbackRate])
+
+  // 自动滚动到当前播放的句子
+  useEffect(() => {
+    if (currentSentenceIndex >= 0 && sentenceRefs.current[currentSentenceIndex] && contentRef.current) {
+      const sentenceElement = sentenceRefs.current[currentSentenceIndex]
+      const container = contentRef.current
+      
+      const containerRect = container.getBoundingClientRect()
+      const sentenceRect = sentenceElement.getBoundingClientRect()
+      
+      // 如果句子不在可视区域内，滚动到句子位置
+      if (sentenceRect.top < containerRect.top || sentenceRect.bottom > containerRect.bottom) {
+        sentenceElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [currentSentenceIndex])
+
+  // 通知自动消失
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
+
   const fetchTrainingItem = async () => {
     try {
       const response = await fetch(`/api/training-items/${params.id}`)
@@ -108,7 +183,7 @@ export default function TrainingDetailPage() {
       setItem(data)
     } catch (error) {
       console.error('Error fetching training item:', error)
-      alert('加载失败')
+      setNotification({ type: 'error', message: '加载失败，请刷新页面重试' })
     } finally {
       setLoading(false)
     }
@@ -136,11 +211,11 @@ export default function TrainingDetailPage() {
 
   const handleEditAddSentence = () => {
     if (!editCurrentSentence.text.trim()) {
-      alert('请填写英语句子')
+      setNotification({ type: 'error', message: '请填写英语句子' })
       return
     }
     if (editCurrentSentence.startTime < 0 || editCurrentSentence.endTime <= editCurrentSentence.startTime) {
-      alert('请填写有效的开始时间和结束时间（结束时间必须大于开始时间）')
+      setNotification({ type: 'error', message: '请填写有效的开始时间和结束时间（结束时间必须大于开始时间）' })
       return
     }
     
@@ -198,6 +273,10 @@ export default function TrainingDetailPage() {
   }
 
   const handleEditRemoveSentence = (index: number) => {
+    const sentence = editSentences[index]
+    const confirmDelete = window.confirm(`确定要删除句子 "${sentence.text.substring(0, 30)}${sentence.text.length > 30 ? '...' : ''}" 吗？`)
+    if (!confirmDelete) return
+
     setEditSentences(editSentences.filter((_, i) => i !== index))
     // 如果删除的是正在编辑的句子，取消编辑状态
     if (editingSentenceIndex === index) {
@@ -206,6 +285,7 @@ export default function TrainingDetailPage() {
       // 如果删除的句子在正在编辑的句子之前，需要调整编辑索引
       setEditingSentenceIndex(editingSentenceIndex - 1)
     }
+    setNotification({ type: 'info', message: '句子已删除' })
   }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -218,14 +298,14 @@ export default function TrainingDetailPage() {
     let finalSentences = [...editSentences]
     
     if (hasUnsaved) {
-      const shouldAdd = confirm('检测到未保存的句子分段，是否先添加到列表？\n\n如果选择"取消"，将只提交已保存的句子。')
+      const shouldAdd = window.confirm('检测到未保存的句子分段，是否先添加到列表？\n\n如果选择"取消"，将只提交已保存的句子。')
       if (shouldAdd) {
         if (!editCurrentSentence.text.trim()) {
-          alert('请填写英语句子')
+          setNotification({ type: 'error', message: '请填写英语句子' })
           return
         }
         if (editCurrentSentence.startTime < 0 || editCurrentSentence.endTime <= editCurrentSentence.startTime) {
-          alert('请填写有效的开始时间和结束时间（结束时间必须大于开始时间）')
+          setNotification({ type: 'error', message: '请填写有效的开始时间和结束时间（结束时间必须大于开始时间）' })
           return
         }
         finalSentences = [...editSentences, { ...editCurrentSentence }]
@@ -233,7 +313,7 @@ export default function TrainingDetailPage() {
     }
     
     if (!editTitle || finalSentences.length === 0) {
-      alert('请填写标题和至少一个句子分段')
+      setNotification({ type: 'error', message: '请填写标题和至少一个句子分段' })
       return
     }
 
@@ -260,10 +340,10 @@ export default function TrainingDetailPage() {
       const data = await response.json()
       setItem(data)
       setIsEditing(false)
-      alert('更新成功')
+      setNotification({ type: 'success', message: '更新成功！' })
     } catch (error) {
       console.error('Update error:', error)
-      alert(`更新失败，请重试: ${error instanceof Error ? error.message : '未知错误'}`)
+      setNotification({ type: 'error', message: `更新失败，请重试: ${error instanceof Error ? error.message : '未知错误'}` })
     } finally {
       setIsUpdating(false)
     }
@@ -311,6 +391,9 @@ export default function TrainingDetailPage() {
       [sentenceId]: updated
     })
 
+    // 显示保存状态
+    setSavingNotes(prev => ({ ...prev, [sentenceId]: true }))
+
     try {
       await fetch('/api/user-notes', {
         method: 'POST',
@@ -322,8 +405,22 @@ export default function TrainingDetailPage() {
           userId: 'default'
         })
       })
+      // 延迟隐藏保存状态，让用户看到保存成功
+      setTimeout(() => {
+        setSavingNotes(prev => {
+          const newState = { ...prev }
+          delete newState[sentenceId]
+          return newState
+        })
+      }, 500)
     } catch (error) {
       console.error('Error saving user notes:', error)
+      setSavingNotes(prev => {
+        const newState = { ...prev }
+        delete newState[sentenceId]
+        return newState
+      })
+      setNotification({ type: 'error', message: '保存词汇失败，请重试' })
     }
   }
 
@@ -386,7 +483,24 @@ export default function TrainingDetailPage() {
     if (audioRef.current) {
       audioRef.current.currentTime = sentence.startTime
       audioRef.current.play()
+      setIsPlaying(true)
     }
+  }
+
+  const handleSeekBackward = () => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5)
+    }
+  }
+
+  const handleSeekForward = () => {
+    if (audioRef.current && duration) {
+      audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 5)
+    }
+  }
+
+  const handleSpeedChange = (rate: number) => {
+    setPlaybackRate(rate)
   }
 
   const handleRepeatClick = (index: number) => {
@@ -406,7 +520,7 @@ export default function TrainingDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-cyan-400 font-mono text-xl animate-pulse">[ 加载中... ]</div>
+        <div className="text-cyan-400 cyber-title text-xl animate-pulse cyber-neon">[ 加载中... ]</div>
       </div>
     )
   }
@@ -414,7 +528,7 @@ export default function TrainingDetailPage() {
   if (!item) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-400 font-mono text-xl">[ 未找到训练条目 ]</div>
+        <div className="text-red-400 cyber-title text-xl">[ 未找到训练条目 ]</div>
       </div>
     )
   }
@@ -443,9 +557,7 @@ export default function TrainingDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(10,255,10,0.8)]"></div>
-                  <h1 className="text-2xl font-bold font-mono text-green-400 tracking-wider" style={{
-                    textShadow: '0 0 10px rgba(10,255,10,0.8)'
-                  }}>
+                  <h1 className="text-2xl cyber-title text-green-400 cyber-neon">
                     [ TRAINING MODULE ]
                   </h1>
                 </div>
@@ -453,7 +565,7 @@ export default function TrainingDetailPage() {
                   {/* 编辑按钮 */}
                   <button
                     onClick={handleEditClick}
-                    className="text-green-400/70 hover:text-green-300 font-mono text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
                     style={{ zIndex: 100 }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,7 +576,7 @@ export default function TrainingDetailPage() {
                   {/* 放大/缩小按钮 */}
                   <button
                     onClick={toggleFullscreen}
-                    className="text-green-400/70 hover:text-green-300 font-mono text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2"
                     style={{ zIndex: 100 }}
                     title={isFullscreen ? '缩小' : '全屏'}
                   >
@@ -487,14 +599,14 @@ export default function TrainingDetailPage() {
                   {/* 返回按钮 */}
                   <button
                     onClick={() => router.push('/')}
-                    className="text-green-400/70 hover:text-green-300 font-mono text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer"
+                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer"
                     style={{ zIndex: 100 }}
                   >
                     ← BACK
                   </button>
                 </div>
               </div>
-              <div className="mt-2 text-xs text-green-500/60 font-mono tracking-widest">
+              <div className="mt-2 text-xs cyber-label text-green-500/60">
                 {item.title.toUpperCase()}
               </div>
             </div>
@@ -511,8 +623,30 @@ export default function TrainingDetailPage() {
           <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50"></div>
           <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50"></div>
 
+          {/* 通知提示 */}
+          {notification && (
+            <div className={`fixed top-4 right-4 z-[300] px-6 py-4 rounded-lg border-2 shadow-lg backdrop-blur-md transition-all ${
+              notification.type === 'success' 
+                ? 'bg-green-500/20 border-green-500/50 text-green-300'
+                : notification.type === 'error'
+                ? 'bg-red-500/20 border-red-500/50 text-red-300'
+                : 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="cyber-button-text text-sm">{notification.message}</span>
+                <button
+                  onClick={() => setNotification(null)}
+                  className="text-current hover:opacity-70 transition-opacity"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
           <div 
+            ref={contentRef}
             className="relative p-8 training-hud-content pr-6" 
             style={{ 
               maxHeight: isFullscreen ? 'calc(98vh - 120px)' : '75vh', 
@@ -531,7 +665,7 @@ export default function TrainingDetailPage() {
               {/* 标题 */}
               <div className="flex items-center gap-2 mb-4 relative z-10">
                 <div className="w-1 h-4 bg-green-500"></div>
-                <h3 className="text-green-400 font-mono text-sm uppercase tracking-wider">AUDIO PLAYER</h3>
+                <h3 className="text-green-400 cyber-label text-sm">AUDIO PLAYER</h3>
               </div>
 
               {/* 隐藏的原生音频控件，用于实际播放 */}
@@ -549,7 +683,7 @@ export default function TrainingDetailPage() {
 
               {!audioLoaded ? (
                 <div className="text-center py-8">
-                  <div className="inline-flex items-center gap-2 text-green-400/70 font-mono text-sm">
+                  <div className="inline-flex items-center gap-2 cyber-text text-green-400/70 text-sm">
                     <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                     <span>[ LOADING AUDIO... ]</span>
                   </div>
@@ -572,12 +706,25 @@ export default function TrainingDetailPage() {
                   </div>
 
                   {/* 控制按钮和时间显示 */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* 快退按钮 */}
+                    <button
+                      onClick={handleSeekBackward}
+                      className="w-10 h-10 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all"
+                      title="快退5秒 (←)"
+                    >
+                      <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                        <path d="M10 12l-2-2v4l2-2z"/>
+                      </svg>
+                    </button>
+
                     {/* 播放/暂停按钮 */}
                     <button
                       onClick={handlePlayPause}
                       className="w-12 h-12 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all group"
                       style={{ boxShadow: '0 0 15px rgba(10,255,10,0.3)' }}
+                      title="播放/暂停 (空格)"
                     >
                       {isPlaying ? (
                         <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
@@ -590,18 +737,30 @@ export default function TrainingDetailPage() {
                       )}
                     </button>
 
+                    {/* 快进按钮 */}
+                    <button
+                      onClick={handleSeekForward}
+                      className="w-10 h-10 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all"
+                      title="快进5秒 (→)"
+                    >
+                      <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                        <path d="M14 12l2-2v4l-2-2z"/>
+                      </svg>
+                    </button>
+
                     {/* 时间显示 */}
                     <div className="flex items-center gap-4">
                       <div className="text-center">
-                        <div className="text-xs text-green-500/60 font-mono uppercase tracking-wider mb-1">CURRENT</div>
-                        <div className="text-lg font-bold text-green-400 font-mono tabular-nums" style={{ textShadow: '0 0 8px rgba(10,255,10,0.6)' }}>
+                        <div className="text-xs cyber-label text-green-500/60 mb-1">CURRENT</div>
+                        <div className="text-lg cyber-number cyber-tabular text-green-400 cyber-glow-pulse">
                           {formatTime(currentTime)}
                         </div>
                       </div>
-                      <div className="text-green-500/40 font-mono">/</div>
+                      <div className="text-green-500/40 cyber-text">/</div>
                       <div className="text-center">
-                        <div className="text-xs text-green-500/60 font-mono uppercase tracking-wider mb-1">TOTAL</div>
-                        <div className="text-lg font-bold text-green-400/80 font-mono tabular-nums">
+                        <div className="text-xs cyber-label text-green-500/60 mb-1">TOTAL</div>
+                        <div className="text-lg cyber-number cyber-tabular text-green-400/80">
                           {formatTime(duration)}
                         </div>
                       </div>
@@ -609,10 +768,30 @@ export default function TrainingDetailPage() {
 
                     {/* 进度百分比 */}
                     <div className="text-right">
-                      <div className="text-xs text-green-500/60 font-mono uppercase tracking-wider mb-1">PROGRESS</div>
-                      <div className="text-lg font-bold text-green-400 font-mono" style={{ textShadow: '0 0 8px rgba(10,255,10,0.6)' }}>
+                      <div className="text-xs cyber-label text-green-500/60 mb-1">PROGRESS</div>
+                      <div className="text-lg cyber-number cyber-tabular text-green-400 cyber-glow-pulse">
                         {duration > 0 ? Math.round((currentTime / duration) * 100) : 0}%
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 播放速度控制 */}
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-green-500/20">
+                    <span className="text-xs cyber-label text-green-500/60">SPEED:</span>
+                    <div className="flex gap-2">
+                      {[0.5, 0.75, 1, 1.25, 1.5].map((rate) => (
+                        <button
+                          key={rate}
+                          onClick={() => handleSpeedChange(rate)}
+                          className={`px-3 py-1 rounded border transition-all cyber-button-text text-xs ${
+                            playbackRate === rate
+                              ? 'bg-green-500/30 border-green-500/70 text-green-300'
+                              : 'bg-black/40 border-green-500/30 text-green-400/70 hover:bg-green-500/10 hover:border-green-500/50'
+                          }`}
+                        >
+                          {rate}x
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -647,7 +826,7 @@ export default function TrainingDetailPage() {
                   onChange={(e) => setShowTranslations(e.target.checked)}
                   className="w-5 h-5 accent-green-500"
                 />
-                <span className="text-green-300 font-mono text-sm uppercase tracking-wider">SHOW TRANSLATIONS</span>
+                <span className="text-green-300 cyber-label text-sm">SHOW TRANSLATIONS</span>
               </label>
             </div>
 
@@ -662,33 +841,38 @@ export default function TrainingDetailPage() {
                 return (
                   <div
                     key={sentence.id}
-                    className="p-5 transition-all rounded"
+                    ref={(el) => {
+                      sentenceRefs.current[index] = el
+                    }}
+                    className="p-5 transition-all duration-300 rounded"
                     style={isActive ? {
-                      background: 'rgba(10,255,10,0.1)',
-                      border: '2px solid rgba(10,255,10,0.5)',
-                      boxShadow: '0 0 20px rgba(10,255,10,0.3), inset 0 0 10px rgba(10,255,10,0.1)',
-                      backdropFilter: 'blur(4px)'
+                      background: 'rgba(10,255,10,0.15)',
+                      border: '2px solid rgba(10,255,10,0.6)',
+                      boxShadow: '0 0 25px rgba(10,255,10,0.4), inset 0 0 15px rgba(10,255,10,0.15)',
+                      backdropFilter: 'blur(4px)',
+                      transform: 'scale(1.02)'
                     } : {
                       background: 'rgba(10,255,10,0.03)',
                       border: '1px solid rgba(10,255,10,0.2)',
-                      backdropFilter: 'blur(4px)'
+                      backdropFilter: 'blur(4px)',
+                      transform: 'scale(1)'
                     }}
                   >
                     {/* 句子文本 */}
                     <div className="flex items-start gap-4 mb-3">
                       <button
                         onClick={() => handleSentenceClick(sentence)}
-                        className={`flex-1 text-left p-3 font-mono transition-all rounded ${
+                        className={`flex-1 text-left p-3 cyber-text transition-all rounded ${
                           isActive
                             ? 'text-green-200 bg-green-500/10'
                             : 'text-gray-200 hover:text-green-300 hover:bg-green-500/5'
                         }`}
                       >
-                        <p className="text-base font-bold">{sentence.text}</p>
+                        <p className="text-base cyber-font font-bold">{sentence.text}</p>
                       </button>
                       <button
                         onClick={() => handleRepeatClick(index)}
-                        className={`px-3 py-2 font-mono text-sm transition-all border rounded ${
+                        className={`px-3 py-2 cyber-button-text text-sm transition-all border rounded ${
                           isRepeating
                             ? 'bg-red-500/20 text-red-300 border-red-400/50'
                             : 'border-green-500/30 text-green-300 hover:text-green-200 hover:border-green-500/50 bg-green-500/5 hover:bg-green-500/10'
@@ -702,28 +886,35 @@ export default function TrainingDetailPage() {
                     {/* 翻译 */}
                     {showTranslations && sentence.translation && (
                       <div className="mb-3 pl-3 border-l-2 border-green-500/40">
-                        <p className="text-green-300/80 font-mono text-sm">{sentence.translation}</p>
+                        <p className="text-green-300/80 cyber-text text-sm">{sentence.translation}</p>
                       </div>
                     )}
 
                     {/* 时间信息 */}
-                    <div className="text-xs text-green-500/60 mb-3 font-mono">
-                      TIME: [{sentence.startTime.toFixed(2)}s - {sentence.endTime.toFixed(2)}s]
+                    <div className="text-xs cyber-label text-green-500/60 mb-3">
+                      TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]
                     </div>
 
                     {/* 用户词汇 */}
                     <div className="border-t border-green-500/20 pt-3 mt-3">
                       <button
                         onClick={() => toggleNotes(sentence.id)}
-                        className="w-full text-left text-xs text-green-400/70 hover:text-green-300 flex items-center justify-between font-mono transition-colors uppercase tracking-wider"
+                        className="w-full text-left text-xs cyber-label text-green-400/70 hover:text-green-300 flex items-center justify-between transition-colors"
                       >
-                        <span>📝 VOCABULARY</span>
-                        <span>{isNotesExpanded ? '▼' : '▶'}</span>
+                        <span className="flex items-center gap-2">
+                          📝 VOCABULARY
+                          {savingNotes[sentence.id] && (
+                            <span className="text-[10px] text-green-400/60 animate-pulse">[保存中...]</span>
+                          )}
+                        </span>
+                        <span className="transition-transform duration-200" style={{ transform: isNotesExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                          {isNotesExpanded ? '▼' : '▶'}
+                        </span>
                       </button>
 
                       {isNotesExpanded && (
-                        <div className="mt-4">
-                          <label className="block text-green-300 font-mono text-xs mb-2 uppercase tracking-wider">
+                        <div className="mt-4 animate-fade-in">
+                          <label className="block text-green-300 cyber-label text-xs mb-2">
                             VOCABULARY
                           </label>
                           <textarea
@@ -732,9 +923,12 @@ export default function TrainingDetailPage() {
                               handleNotesChange(sentence.id, e.target.value)
                             }
                             placeholder="Record vocabulary..."
-                            className="w-full px-4 py-2 bg-black/40 border border-green-500/30 text-gray-200 font-mono text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
+                            className="w-full px-4 py-2 bg-black/40 border border-green-500/30 cyber-input-font text-gray-200 text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
                             rows={2}
                           />
+                          <div className="mt-1 text-[9px] cyber-label text-green-500/50">
+                            自动保存中...
+                          </div>
                         </div>
                       )}
                     </div>
@@ -755,18 +949,18 @@ export default function TrainingDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(10,255,10,0.8)]"></div>
-                  <h1 className="text-2xl font-bold font-mono text-green-400 tracking-wider">
+                  <h1 className="text-2xl cyber-title text-green-400 cyber-neon">
                     [ EDIT MODULE ]
                   </h1>
                 </div>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="text-green-400/70 hover:text-green-300 font-mono text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 rounded"
+                  className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-green-500/30 hover:border-green-500/50 rounded"
                 >
                   ✕ CLOSE
                 </button>
               </div>
-              <div className="mt-2 text-xs text-green-500/60 font-mono tracking-widest">
+              <div className="mt-2 text-xs cyber-label text-green-500/60">
                 TRAINING ITEM EDIT INTERFACE
               </div>
             </div>
@@ -789,7 +983,7 @@ export default function TrainingDetailPage() {
                 {/* 基础信息区域 */}
                 <div className="space-y-6">
                   <div className="border-l-2 border-green-500/50 pl-4">
-                    <label className="block text-green-400 font-mono text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <label className="block text-green-400 cyber-label text-sm mb-3 flex items-center gap-2">
                       <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                       TITLE *
                     </label>
@@ -797,14 +991,14 @@ export default function TrainingDetailPage() {
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-200 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
+                      className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-input-font text-gray-200 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
                       placeholder="Enter training item title..."
                       required
                     />
                   </div>
 
                   <div className="border-l-2 border-green-500/50 pl-4">
-                    <label className="block text-green-400 font-mono text-sm mb-3 uppercase tracking-wider flex items-center gap-2">
+                    <label className="block text-green-400 cyber-label text-sm mb-3 flex items-center gap-2">
                       <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                       AUDIO FILE (OPTIONAL - 留空则保持原文件)
                     </label>
@@ -813,15 +1007,15 @@ export default function TrainingDetailPage() {
                         type="file"
                         accept="audio/*"
                         onChange={(e) => setEditAudioFile(e.target.files?.[0] || null)}
-                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-300 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-green-500/20 file:text-green-400 file:font-mono file:text-sm file:cursor-pointer hover:file:bg-green-500/30"
+                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-input-font text-gray-300 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-green-500/20 file:text-green-400 file:cyber-button-text file:text-sm file:cursor-pointer hover:file:bg-green-500/30"
                       />
                       {editAudioFile && (
-                        <div className="mt-2 text-xs text-green-400/70 font-mono">
+                        <div className="mt-2 text-xs cyber-text text-green-400/70">
                           Selected: {editAudioFile.name}
                         </div>
                       )}
                       {!editAudioFile && item && (
-                        <div className="mt-2 text-xs text-green-400/50 font-mono">
+                        <div className="mt-2 text-xs cyber-text text-green-400/50">
                           Current: {item.audioUrl.split('/').pop()}
                         </div>
                       )}
@@ -833,12 +1027,12 @@ export default function TrainingDetailPage() {
                 <div className="border-t-2 border-green-500/30 pt-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="h-[2px] w-8 bg-green-500"></div>
-                    <h2 className="text-xl font-bold text-green-400 font-mono tracking-wider">SENTENCE SEGMENTS</h2>
+                    <h2 className="text-xl cyber-title text-green-400">SENTENCE SEGMENTS</h2>
                     <div className="flex-1 h-[1px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-green-500/60 font-mono">COUNT: {editSentences.length}</span>
+                      <span className="text-xs cyber-label text-green-500/60">COUNT: <span className="cyber-number cyber-tabular">{editSentences.length}</span></span>
                       {hasUnsavedEditSentence && (
-                        <span className="text-xs text-yellow-400/70 font-mono animate-pulse">(+1 UNSAVED)</span>
+                        <span className="text-xs cyber-text text-yellow-400/70 animate-pulse">(+1 UNSAVED)</span>
                       )}
                     </div>
                   </div>
@@ -858,24 +1052,24 @@ export default function TrainingDetailPage() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs text-green-500/70 font-mono">#{index + 1}</span>
-                                <p className="font-mono text-gray-200 text-sm">{sentence.text}</p>
+                                <span className="text-xs cyber-number cyber-tabular text-green-500/70">#{index + 1}</span>
+                                <p className="cyber-text text-gray-200 text-sm">{sentence.text}</p>
                                 {editingSentenceIndex === index && (
-                                  <span className="text-xs text-yellow-400/70 font-mono animate-pulse">[编辑中]</span>
+                                  <span className="text-xs cyber-text text-yellow-400/70 animate-pulse">[编辑中]</span>
                                 )}
                               </div>
                               {sentence.translation && (
-                                <p className="text-xs text-gray-400 font-mono mb-2 ml-6">{sentence.translation}</p>
+                                <p className="text-xs cyber-text text-gray-400 mb-2 ml-6">{sentence.translation}</p>
                               )}
-                              <p className="text-xs text-green-500/60 font-mono ml-6">
-                                TIME: [{sentence.startTime.toFixed(2)}s - {sentence.endTime.toFixed(2)}s]
+                              <p className="text-xs cyber-label text-green-500/60 ml-6">
+                                TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleEditSentence(index)}
-                                className={`text-green-400/60 hover:text-green-400 font-mono text-xs transition-colors px-2 py-1 border rounded ${
+                                className={`text-green-400/60 hover:text-green-400 cyber-button-text text-xs transition-colors px-2 py-1 border rounded ${
                                   editingSentenceIndex === index
                                     ? 'border-green-500/60 bg-green-500/20 text-green-300'
                                     : 'border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10'
@@ -887,7 +1081,7 @@ export default function TrainingDetailPage() {
                               <button
                                 type="button"
                                 onClick={() => handleEditRemoveSentence(index)}
-                                className="text-red-400/60 hover:text-red-400 font-mono text-xs transition-colors px-2 py-1 border border-red-500/30 hover:border-red-500/50 rounded"
+                                className="text-red-400/60 hover:text-red-400 cyber-button-text text-xs transition-colors px-2 py-1 border border-red-500/30 hover:border-red-500/50 rounded"
                               >
                                 DEL
                               </button>
@@ -903,15 +1097,17 @@ export default function TrainingDetailPage() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <div className="w-1 h-4 bg-green-500"></div>
-                        <h3 className="text-green-400 font-mono text-sm uppercase tracking-wider">
-                          {editingSentenceIndex !== null ? `EDIT SEGMENT #${editingSentenceIndex + 1}` : 'ADD NEW SEGMENT'}
+                        <h3 className="text-green-400 cyber-label text-sm">
+                          {editingSentenceIndex !== null ? (
+                            <>EDIT SEGMENT #<span className="cyber-number cyber-tabular">{editingSentenceIndex + 1}</span></>
+                          ) : 'ADD NEW SEGMENT'}
                         </h3>
                       </div>
                       {editingSentenceIndex !== null && (
                         <button
                           type="button"
                           onClick={handleCancelEdit}
-                          className="text-gray-400/70 hover:text-gray-300 font-mono text-xs transition-colors px-3 py-1 border border-gray-600/30 hover:border-gray-500/50 rounded"
+                          className="text-gray-400/70 hover:text-gray-300 cyber-button-text text-xs transition-colors px-3 py-1 border border-gray-600/30 hover:border-gray-500/50 rounded"
                         >
                           CANCEL EDIT
                         </button>
@@ -919,7 +1115,7 @@ export default function TrainingDetailPage() {
                     </div>
 
                     <div>
-                      <label className="block text-green-400/80 font-mono text-xs mb-2 uppercase tracking-wider flex items-center gap-2">
+                      <label className="block text-green-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
                         <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                         ENGLISH TEXT *
                       </label>
@@ -928,7 +1124,7 @@ export default function TrainingDetailPage() {
                         onChange={(e) =>
                           setEditCurrentSentence({ ...editCurrentSentence, text: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-200 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
+                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-input-font text-gray-200 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
                         rows={3}
                         placeholder="Enter English sentence..."
                         required
@@ -936,7 +1132,7 @@ export default function TrainingDetailPage() {
                     </div>
 
                     <div>
-                      <label className="block text-green-400/80 font-mono text-xs mb-2 uppercase tracking-wider flex items-center gap-2">
+                      <label className="block text-green-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
                         <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                         CHINESE TRANSLATION
                       </label>
@@ -946,14 +1142,14 @@ export default function TrainingDetailPage() {
                         onChange={(e) =>
                           setEditCurrentSentence({ ...editCurrentSentence, translation: e.target.value })
                         }
-                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-200 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
+                        className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-input-font text-gray-200 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
                         placeholder="Enter Chinese translation (optional)..."
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-green-400/80 font-mono text-xs mb-2 uppercase tracking-wider flex items-center gap-2">
+                        <label className="block text-green-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
                           <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                           START TIME (S) *
                         </label>
@@ -967,13 +1163,13 @@ export default function TrainingDetailPage() {
                               startTime: parseFloat(e.target.value) || 0
                             })
                           }
-                          className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-200 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
+                          className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-number cyber-tabular text-gray-200 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-green-400/80 font-mono text-xs mb-2 uppercase tracking-wider flex items-center gap-2">
+                        <label className="block text-green-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
                           <span className="w-1 h-1 bg-green-400 rounded-full"></span>
                           END TIME (S) *
                         </label>
@@ -987,7 +1183,7 @@ export default function TrainingDetailPage() {
                               endTime: parseFloat(e.target.value) || 0
                             })
                           }
-                          className="w-full px-4 py-3 bg-black/40 border border-green-500/30 text-gray-200 font-mono focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
+                          className="w-full px-4 py-3 bg-black/40 border border-green-500/30 cyber-number cyber-tabular text-gray-200 focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all"
                           required
                         />
                       </div>
@@ -996,7 +1192,7 @@ export default function TrainingDetailPage() {
                     <button
                       type="button"
                       onClick={handleEditAddSentence}
-                      className="w-full px-6 py-3 bg-green-500/10 border-2 border-green-500/50 text-green-400 font-mono text-sm uppercase tracking-wider hover:bg-green-500/20 hover:border-green-500/70 hover:text-green-300 transition-all duration-300"
+                      className="w-full px-6 py-3 bg-green-500/10 border-2 border-green-500/50 cyber-button-text text-green-400 text-sm hover:bg-green-500/20 hover:border-green-500/70 hover:text-green-300 transition-all duration-300"
                     >
                       {editingSentenceIndex !== null ? '✓ UPDATE SEGMENT' : '+ ADD SEGMENT'}
                     </button>
@@ -1008,19 +1204,19 @@ export default function TrainingDetailPage() {
                   <button
                     type="submit"
                     disabled={isUpdating}
-                    className="flex-1 px-8 py-4 bg-green-500/20 border-2 border-green-500/60 text-green-400 font-mono text-sm uppercase tracking-wider hover:bg-green-500/30 hover:border-green-500/80 hover:text-green-300 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-green-500/20 disabled:hover:border-green-500/60 disabled:hover:text-green-400 cursor-pointer relative"
-                    style={{ zIndex: 100 }}
-                  >
-                    {isUpdating ? '[ UPDATING... ]' : '[ UPDATE ]'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-8 py-4 bg-black/40 border-2 border-gray-600/50 text-gray-400 font-mono text-sm uppercase tracking-wider hover:bg-black/60 hover:border-gray-500/70 hover:text-gray-300 transition-all duration-300 cursor-pointer relative"
-                    style={{ zIndex: 100 }}
-                  >
-                    [ CANCEL ]
-                  </button>
+                    className="flex-1 px-8 py-4 bg-green-500/20 border-2 border-green-500/60 cyber-button-text text-green-400 text-sm hover:bg-green-500/30 hover:border-green-500/80 hover:text-green-300 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-green-500/20 disabled:hover:border-green-500/60 disabled:hover:text-green-400 cursor-pointer relative"
+                  style={{ zIndex: 100 }}
+                >
+                  {isUpdating ? '[ UPDATING... ]' : '[ UPDATE ]'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-8 py-4 bg-black/40 border-2 border-gray-600/50 cyber-button-text text-gray-400 text-sm hover:bg-black/60 hover:border-gray-500/70 hover:text-gray-300 transition-all duration-300 cursor-pointer relative"
+                  style={{ zIndex: 100 }}
+                >
+                  [ CANCEL ]
+                </button>
                 </div>
               </form>
             </div>

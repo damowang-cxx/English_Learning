@@ -535,3 +535,217 @@ input[type="checkbox"]:checked {
   content: '';
   animation: loading-dots 1.5s steps(4, end) infinite;
 }
+
+/* ============================================
+   赛博朋克字体样式
+   ============================================ */
+
+/* 基础等宽字体 - 强化 */
+.cyber-font {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* 标题字体 - 大号等宽，带发光效果 */
+.cyber-title {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+/* 数字显示 - LCD风格 */
+.cyber-number {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 
+    0 0 3px currentColor,
+    0 0 6px currentColor;
+}
+
+/* 标签文字 - 小号等宽 */
+.cyber-label {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 400;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+/* 正文等宽字体 */
+.cyber-text {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.6;
+}
+
+/* 输入框字体 */
+.cyber-input-font {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+/* 按钮文字 */
+.cyber-button-text {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* 霓虹灯文字效果 */
+@keyframes neon-flicker {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 
+      0 0 2px currentColor,
+      0 0 5px currentColor,
+      0 0 8px currentColor,
+      0 0 12px currentColor;
+  }
+}
+
+.cyber-neon {
+  animation: neon-flicker 2s ease-in-out infinite;
+}
+
+/* 扫描线文字效果 */
+@keyframes text-scan {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 0% 100%;
+  }
+}
+
+.cyber-text-scan {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    currentColor 50%,
+    transparent 100%
+  );
+  background-size: 100% 4px;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: text-scan 3s linear infinite;
+}
+
+/* 数字闪烁效果 */
+@keyframes number-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.cyber-number-blink {
+  animation: number-blink 1.5s ease-in-out infinite;
+}
+
+/* 文字发光脉冲 */
+@keyframes text-glow-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor;
+  }
+  50% {
+    text-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor;
+  }
+}
+
+.cyber-glow-pulse {
+  animation: text-glow-pulse 2s ease-in-out infinite;
+}
+
+/* 文字扫描线覆盖 */
+.cyber-text-overlay {
+  position: relative;
+}
+
+.cyber-text-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 100% 3px;
+  animation: text-scan 2s linear infinite;
+  pointer-events: none;
+}
+
+/* 等宽数字显示 */
+.cyber-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* 文字边框效果 */
+.cyber-text-border {
+  text-shadow: 
+    -1px -1px 0 currentColor,
+    1px -1px 0 currentColor,
+    -1px 1px 0 currentColor,
+    1px 1px 0 currentColor,
+    0 0 5px currentColor;
+}
+
+/* 文字描边效果 */
+.cyber-text-stroke {
+  -webkit-text-stroke: 1px currentColor;
+  text-stroke: 1px currentColor;
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor;
+}
+
+/* 淡入动画 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
