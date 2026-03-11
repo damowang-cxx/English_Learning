@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { getAudioSrc, withBasePath } from '@/lib/base-path'
 
 interface Sentence {
   id: string
@@ -166,7 +167,7 @@ export default function TrainingDetailPage() {
 
   const fetchTrainingItem = async () => {
     try {
-      const response = await fetch(`/api/training-items/${params.id}`)
+      const response = await fetch(withBasePath(`/api/training-items/${params.id}`))
       if (!response.ok) throw new Error('Failed to fetch')
       const data = await response.json()
       setItem(data)
@@ -315,7 +316,7 @@ export default function TrainingDetailPage() {
       }
       formData.append('sentences', JSON.stringify(finalSentences))
 
-      const response = await fetch(`/api/training-items/${params.id}`, {
+      const response = await fetch(withBasePath(`/api/training-items/${params.id}`), {
         method: 'PUT',
         body: formData
       })
@@ -348,7 +349,7 @@ export default function TrainingDetailPage() {
     for (const sentence of item.sentences) {
       try {
         const response = await fetch(
-          `/api/user-notes?sentenceId=${sentence.id}&userId=default`
+          withBasePath(`/api/user-notes?sentenceId=${sentence.id}&userId=default`)
         )
         const data = await response.json()
         notes[sentence.id] = {
@@ -384,7 +385,7 @@ export default function TrainingDetailPage() {
     setSavingNotes(prev => ({ ...prev, [sentenceId]: true }))
 
     try {
-      await fetch('/api/user-notes', {
+      await fetch(withBasePath('/api/user-notes'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -765,9 +766,7 @@ export default function TrainingDetailPage() {
               {/* 隐藏的原生音频控件，用于实际播放 */}
               <audio
                 ref={audioRef}
-                src={item.audioUrl.startsWith('/audio/') 
-                  ? `/api/audio/${item.audioUrl.replace('/audio/', '')}` 
-                  : item.audioUrl}
+                src={getAudioSrc(item.audioUrl)}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onLoadedData={() => setAudioLoaded(true)}

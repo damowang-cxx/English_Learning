@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma'
 import fs from 'fs'
 import path from 'path'
 
+interface SentenceInput {
+  text: string
+  translation?: string | null
+  startTime: number
+  endTime: number
+}
+
 // 获取单个训练条目详情
 export async function GET(
   request: NextRequest,
@@ -99,7 +106,7 @@ export async function PUT(
     }
 
     // 解析句子数据
-    const sentences = JSON.parse(sentencesData)
+    const sentences = JSON.parse(sentencesData) as SentenceInput[]
 
     // 删除所有旧的句子
     await prisma.sentence.deleteMany({
@@ -113,7 +120,7 @@ export async function PUT(
         title,
         audioUrl: audioPath,
         sentences: {
-          create: sentences.map((s: any, index: number) => ({
+          create: sentences.map((s, index: number) => ({
             text: s.text,
             translation: s.translation || null,
             startTime: s.startTime,

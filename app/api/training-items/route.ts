@@ -3,6 +3,13 @@ import { prisma } from '@/lib/prisma'
 import fs from 'fs'
 import path from 'path'
 
+interface SentenceInput {
+  text: string
+  translation?: string | null
+  startTime: number
+  endTime: number
+}
+
 // 获取所有训练条目
 export async function GET() {
   try {
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest) {
     fs.writeFileSync(path.join(audioDir, audioFileName), buffer)
 
     // 解析句子数据
-    const sentences = JSON.parse(sentencesData)
+    const sentences = JSON.parse(sentencesData) as SentenceInput[]
 
     // 创建训练条目和句子
     const trainingItem = await prisma.trainingItem.create({
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
         title,
         audioUrl: audioPath,
         sentences: {
-          create: sentences.map((s: any, index: number) => ({
+          create: sentences.map((s, index: number) => ({
             text: s.text,
             translation: s.translation || null,
             startTime: s.startTime,

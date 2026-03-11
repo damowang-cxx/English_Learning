@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { withBasePath } from '@/lib/base-path'
 
 interface Sentence {
   text: string
@@ -82,7 +83,7 @@ export default function UploadPage() {
     // Ctrl/Cmd + Enter 提交表单
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault()
-      handleSubmit(e as any)
+      void submitForm()
       return
     }
     
@@ -113,9 +114,7 @@ export default function UploadPage() {
     setSentences(sentences.filter((_, i) => i !== index))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const submitForm = async () => {
     // 验证表单
     const newErrors: { [key: string]: string } = {}
     
@@ -179,7 +178,7 @@ export default function UploadPage() {
       formData.append('sentences', JSON.stringify(finalSentences))
 
       console.log('Sending request...', { sentencesCount: finalSentences.length })
-      const response = await fetch('/api/training-items', {
+      const response = await fetch(withBasePath('/api/training-items'), {
         method: 'POST',
         body: formData
       })
@@ -200,6 +199,11 @@ export default function UploadPage() {
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    await submitForm()
   }
 
   // 时间快捷调整函数

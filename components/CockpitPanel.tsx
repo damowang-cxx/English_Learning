@@ -5,6 +5,7 @@ import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages } from 'luci
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { stripBasePath, withBasePath } from '@/lib/base-path'
 
 interface TrainingItem {
   id: string
@@ -112,6 +113,8 @@ const EnergyBar = ({ label, color, value }: { label: string; color: string; valu
 export default function CockpitPanel() {
   const router = useRouter()
   const pathname = usePathname()
+  const appPathname = stripBasePath(pathname || '/')
+  const translationContext = useTranslation()
   const [currentTime, setCurrentTime] = useState('')
   const [engineLevel, setEngineLevel] = useState(85)
   const [shieldLevel, setShieldLevel] = useState(100)
@@ -132,15 +135,15 @@ export default function CockpitPanel() {
   const [uptimeMinutes, setUptimeMinutes] = useState(15)
   
   // 判断是否在首页
-  const isHomePage = pathname === '/'
+  const isHomePage = appPathname === '/'
   // 判断是否在训练页面
-  const isTrainingPage = pathname?.startsWith('/training')
+  const isTrainingPage = appPathname.startsWith('/training')
   
   // 翻译显示状态（只在训练页面使用）
-  let translationContext = null
+  void translationContext
   try {
-    translationContext = useTranslation()
-  } catch (e) {
+    void translationContext
+  } catch {
     // Context未提供时忽略错误
   }
   
@@ -336,16 +339,14 @@ export default function CockpitPanel() {
 
   // 处理TRANSLATIONS按钮点击 - 切换翻译显示
   const handleTranslations = () => {
-    if (translationContext) {
-      translationContext.toggleTranslations()
-    }
+    translationContext.toggleTranslations()
   }
 
   // 获取训练条目列表
   const fetchTrainingItems = async () => {
     setLoadingItems(true)
     try {
-      const response = await fetch('/api/training-items')
+      const response = await fetch(withBasePath('/api/training-items'))
       if (response.ok) {
         const data = await response.json()
         setTrainingItems(data)

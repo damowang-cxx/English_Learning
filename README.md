@@ -43,7 +43,9 @@ npx prisma generate
 npm run dev
 ```
 
-打开 [http://localhost:3000](http://localhost:3000) 查看应用。
+打开 [http://localhost:3000/listen](http://localhost:3000/listen) 查看应用。
+
+项目固定部署在子路径 `/listen` 下，`basePath` 会在构建时写入产物，因此部署前必须先确定该路径。
 
 ## 项目结构
 
@@ -104,11 +106,14 @@ npm start
 
 ### 3. 环境变量
 
-确保 `.env` 文件中的 `DATABASE_URL` 配置正确：
+确保环境变量配置正确。生产环境需要在构建前提供子路径前缀：
 
 ```
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="file:./prisma/dev.db"
+NEXT_PUBLIC_BASE_PATH=/listen
 ```
+
+生产访问路径为 `https://enlearningforreveone.site/listen`。
 
 ### 4. 文件权限
 
