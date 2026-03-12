@@ -93,6 +93,7 @@ body::-webkit-scrollbar {
 .training-hud-content {
   scrollbar-width: thin;
   scrollbar-color: rgba(10, 255, 10, 0.6) rgba(10, 255, 10, 0.1);
+  scrollbar-gutter: stable both-edges;
   /* 确保滚动条在容器内部 */
   position: relative;
   overflow-y: auto;
@@ -151,6 +152,38 @@ body::-webkit-scrollbar {
 /* 滚动条角落 */
 .training-hud-content::-webkit-scrollbar-corner {
   background: rgba(10, 255, 10, 0.05);
+}
+
+.training-subpanel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(10, 255, 10, 0.45) rgba(10, 255, 10, 0.08);
+}
+
+.training-subpanel-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.training-subpanel-scroll::-webkit-scrollbar-track {
+  background: rgba(10, 255, 10, 0.08);
+  border-radius: 999px;
+}
+
+.training-subpanel-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 255, 10, 0.7) 0%,
+    rgba(10, 255, 10, 0.45) 100%
+  );
+  border-radius: 999px;
+  border: 1px solid rgba(10, 255, 10, 0.18);
+}
+
+.training-subpanel-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 255, 10, 0.85) 0%,
+    rgba(10, 255, 10, 0.6) 100%
+  );
 }
 
 /* 确保训练页面时 body 和 html 不显示滚动条 */
@@ -559,6 +592,13 @@ input[type="checkbox"]:checked {
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.cyber-font-readable {
+  font-family: 'Courier New', 'Monaco', 'Consolas', 'Lucida Console', monospace;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: none;
 }
 
 /* 标题字体 - 大号等宽，带发光效果 */

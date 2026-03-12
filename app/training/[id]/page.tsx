@@ -2,9 +2,25 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
+import {
+  areVocabularyListsEqual,
+  buildVocabularyBook,
+  buildVocabularyEntryFromForm,
+  createEmptyVocabularyFormState,
+  createEmptyVocabularySenseDraft,
+  formatVocabularyEntry,
+  getVocabularyEntryKey,
+  isVocabularyEntryStructured,
+  isVocabularyFormSubmittable,
+  mergeVocabularyWords,
+  parseVocabularyWords,
+  serializeVocabularyWords,
+  type VocabularyEntry,
+  type VocabularyFormSenseDraft,
+  type VocabularyFormState,
+} from '@/lib/vocabulary'
 
 interface Sentence {
   id: string
@@ -29,6 +45,22 @@ interface TrainingItem {
   sentences: Sentence[]
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+interface SentenceVocabularyState {
+  items: VocabularyEntry[]
+  form: VocabularyFormState
+  saveStatus: SaveStatus
+}
+
+const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
+  items: [],
+  form: createEmptyVocabularyFormState(),
+  saveStatus: 'idle',
+})
+
+const PLAYER_VISUALIZER_BARS = [28, 46, 34, 58, 42, 66, 38, 62, 36, 54, 30, 48]
+
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -36,10 +68,13 @@ export default function TrainingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
-  const { showTranslations, setShowTranslations } = useTranslation()
+  const { showTranslations } = useTranslation()
+  const [expandedTranslations, setExpandedTranslations] = useState<Set<string>>(new Set())
+  const [collapsedGlobalTranslations, setCollapsedGlobalTranslations] = useState<Set<string>>(new Set())
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
-  const [userNotes, setUserNotes] = useState<Record<string, { words: string }>>({})
+  const [sentenceVocabulary, setSentenceVocabulary] = useState<Record<string, SentenceVocabularyState>>({})
+  const [isVocabularyBookExpanded, setIsVocabularyBookExpanded] = useState(true)
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const [audioLoaded, setAudioLoaded] = useState(false)
@@ -60,9 +95,12 @@ export default function TrainingDetailPage() {
   const [editingSentenceIndex, setEditingSentenceIndex] = useState<number | null>(null)
   const [playbackRate, setPlaybackRate] = useState(1)
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
-  const [savingNotes, setSavingNotes] = useState<Record<string, boolean>>({})
   const sentenceRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const contentRef = useRef<HTMLDivElement>(null)
+  const vocabularySaveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const vocabularySaveResetTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const pendingVocabularySaveRef = useRef<Record<string, VocabularyEntry[]>>({})
+  const vocabularySaveInFlightRef = useRef<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchTrainingItem()
@@ -73,6 +111,17 @@ export default function TrainingDetailPage() {
       fetchUserNotes()
     }
   }, [item])
+
+  useEffect(() => {
+    setExpandedTranslations(new Set())
+    setCollapsedGlobalTranslations(new Set())
+  }, [item?.id])
+
+  useEffect(() => {
+    if (showTranslations) {
+      setCollapsedGlobalTranslations(new Set())
+    }
+  }, [showTranslations])
 
   // 全屏模式下隐藏仪表盘
   useEffect(() => {
@@ -164,6 +213,56 @@ export default function TrainingDetailPage() {
       return () => clearTimeout(timer)
     }
   }, [notification])
+
+  useEffect(() => {
+    const flushPendingVocabularySaves = () => {
+      for (const [sentenceId, items] of Object.entries(pendingVocabularySaveRef.current)) {
+        const timer = vocabularySaveTimersRef.current[sentenceId]
+        if (timer) {
+          clearTimeout(timer)
+          delete vocabularySaveTimersRef.current[sentenceId]
+        }
+
+        const body = JSON.stringify({
+          sentenceId,
+          words: serializeVocabularyWords(items),
+          notes: '',
+          userId: 'default',
+        })
+
+        if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+          const sent = navigator.sendBeacon(
+            withBasePath('/api/user-notes'),
+            new Blob([body], { type: 'application/json' })
+          )
+
+          if (sent) {
+            continue
+          }
+        }
+
+        void fetch(withBasePath('/api/user-notes'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true,
+        })
+      }
+    }
+
+    const handlePageHide = () => {
+      flushPendingVocabularySaves()
+    }
+
+    window.addEventListener('pagehide', handlePageHide)
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide)
+      flushPendingVocabularySaves()
+      Object.values(vocabularySaveTimersRef.current).forEach((timer) => clearTimeout(timer))
+      Object.values(vocabularySaveResetTimersRef.current).forEach((timer) => clearTimeout(timer))
+    }
+  }, [])
 
   const fetchTrainingItem = async () => {
     try {
@@ -343,23 +442,159 @@ export default function TrainingDetailPage() {
                                   editCurrentSentence.startTime >= 0 && 
                                   editCurrentSentence.endTime > editCurrentSentence.startTime
 
-  const fetchUserNotes = async () => {
-    if (!item) return
-    const notes: Record<string, { words: string }> = {}
-    for (const sentence of item.sentences) {
-      try {
-        const response = await fetch(
-          withBasePath(`/api/user-notes?sentenceId=${sentence.id}&userId=default`)
-        )
-        const data = await response.json()
-        notes[sentence.id] = {
-          words: data.words || ''
-        }
-      } catch (error) {
-        console.error('Error fetching user notes:', error)
+  const updateSentenceVocabularyState = (
+    sentenceId: string,
+    updater: (current: SentenceVocabularyState) => SentenceVocabularyState
+  ) => {
+    setSentenceVocabulary((prev) => {
+      const current = prev[sentenceId] || createEmptySentenceVocabularyState()
+      return {
+        ...prev,
+        [sentenceId]: updater(current),
+      }
+    })
+  }
+
+  const setSentenceVocabularySaveStatus = (sentenceId: string, saveStatus: SaveStatus) => {
+    const resetTimer = vocabularySaveResetTimersRef.current[sentenceId]
+    if (resetTimer) {
+      clearTimeout(resetTimer)
+      delete vocabularySaveResetTimersRef.current[sentenceId]
+    }
+
+    updateSentenceVocabularyState(sentenceId, (current) => ({
+      ...current,
+      saveStatus,
+    }))
+
+    if (saveStatus === 'saved') {
+      vocabularySaveResetTimersRef.current[sentenceId] = setTimeout(() => {
+        updateSentenceVocabularyState(sentenceId, (current) => (
+          current.saveStatus === 'saved'
+            ? { ...current, saveStatus: 'idle' }
+            : current
+        ))
+        delete vocabularySaveResetTimersRef.current[sentenceId]
+      }, 1200)
+    }
+  }
+
+  const runVocabularySave = async (sentenceId: string) => {
+    const itemsToSave = pendingVocabularySaveRef.current[sentenceId] || []
+
+    if (vocabularySaveInFlightRef.current[sentenceId]) {
+      return
+    }
+
+    const pendingTimer = vocabularySaveTimersRef.current[sentenceId]
+    if (pendingTimer) {
+      clearTimeout(pendingTimer)
+      delete vocabularySaveTimersRef.current[sentenceId]
+    }
+
+    vocabularySaveInFlightRef.current[sentenceId] = true
+    setSentenceVocabularySaveStatus(sentenceId, 'saving')
+
+    const serializedItems = serializeVocabularyWords(itemsToSave)
+    let shouldSaveLatestSnapshot = false
+
+    try {
+      const response = await fetch(withBasePath('/api/user-notes'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentenceId,
+          words: serializedItems,
+          notes: '',
+          userId: 'default',
+        }),
+        keepalive: true,
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save vocabulary for sentence ${sentenceId}`)
+      }
+
+      const latestPendingItems = pendingVocabularySaveRef.current[sentenceId] || []
+      shouldSaveLatestSnapshot = !areVocabularyListsEqual(latestPendingItems, itemsToSave)
+
+      if (!shouldSaveLatestSnapshot) {
+        delete pendingVocabularySaveRef.current[sentenceId]
+        setSentenceVocabularySaveStatus(sentenceId, 'saved')
+      }
+    } catch (error) {
+      console.error('Error saving user notes:', error)
+      setSentenceVocabularySaveStatus(sentenceId, 'error')
+      setNotification({ type: 'error', message: '淇濆瓨璇嶆眹澶辫触锛岃閲嶈瘯' })
+    } finally {
+      vocabularySaveInFlightRef.current[sentenceId] = false
+
+      if (shouldSaveLatestSnapshot) {
+        void runVocabularySave(sentenceId)
       }
     }
-    setUserNotes(notes)
+  }
+
+  const queueVocabularySave = (
+    sentenceId: string,
+    items: VocabularyEntry[],
+    options?: { immediate?: boolean }
+  ) => {
+    pendingVocabularySaveRef.current[sentenceId] = items
+
+    const existingTimer = vocabularySaveTimersRef.current[sentenceId]
+    if (existingTimer) {
+      clearTimeout(existingTimer)
+    }
+
+    if (options?.immediate) {
+      void runVocabularySave(sentenceId)
+      return
+    }
+
+    vocabularySaveTimersRef.current[sentenceId] = setTimeout(() => {
+      void runVocabularySave(sentenceId)
+    }, 400)
+  }
+
+  const fetchUserNotes = async () => {
+    if (!item) return
+
+    Object.values(vocabularySaveTimersRef.current).forEach((timer) => clearTimeout(timer))
+    Object.values(vocabularySaveResetTimersRef.current).forEach((timer) => clearTimeout(timer))
+    vocabularySaveTimersRef.current = {}
+    vocabularySaveResetTimersRef.current = {}
+    pendingVocabularySaveRef.current = {}
+    vocabularySaveInFlightRef.current = {}
+
+    const vocabularyEntries = await Promise.all(
+      item.sentences.map(async (sentence) => {
+        try {
+          const response = await fetch(
+            withBasePath(`/api/user-notes?sentenceId=${sentence.id}&userId=default`)
+          )
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch vocabulary for sentence ${sentence.id}`)
+          }
+
+          const data = await response.json()
+          return [
+            sentence.id,
+            {
+              items: parseVocabularyWords(data.words || ''),
+              form: createEmptyVocabularyFormState(),
+              saveStatus: 'idle' as const,
+            },
+          ] as const
+        } catch (error) {
+          console.error('Error fetching user notes:', error)
+          return [sentence.id, createEmptySentenceVocabularyState()] as const
+        }
+      })
+    )
+
+    setSentenceVocabulary(Object.fromEntries(vocabularyEntries))
   }
 
   const toggleNotes = (sentenceId: string) => {
@@ -372,46 +607,151 @@ export default function TrainingDetailPage() {
     setExpandedNotes(newExpanded)
   }
 
-  const handleNotesChange = async (sentenceId: string, value: string) => {
-    const updated = {
-      words: value
+  const toggleSentenceTranslation = (sentenceId: string) => {
+    if (showTranslations) {
+      setCollapsedGlobalTranslations((prev) => {
+        const next = new Set(prev)
+        if (next.has(sentenceId)) {
+          next.delete(sentenceId)
+        } else {
+          next.add(sentenceId)
+        }
+        return next
+      })
+      return
     }
-    setUserNotes({
-      ...userNotes,
-      [sentenceId]: updated
+
+    setExpandedTranslations((prev) => {
+      const next = new Set(prev)
+      if (next.has(sentenceId)) {
+        next.delete(sentenceId)
+      } else {
+        next.add(sentenceId)
+      }
+      return next
+    })
+  }
+
+  const addVocabularyItemsToSentence = (
+    sentenceId: string,
+    nextEntries: VocabularyEntry[],
+    options?: { immediate?: boolean; resetForm?: boolean }
+  ) => {
+    const current = sentenceVocabulary[sentenceId] || createEmptySentenceVocabularyState()
+    const mergedItems = mergeVocabularyWords(current.items, nextEntries)
+    const didChange = !areVocabularyListsEqual(current.items, mergedItems)
+
+    updateSentenceVocabularyState(sentenceId, () => ({
+      ...current,
+      items: mergedItems,
+      form: options?.resetForm ? createEmptyVocabularyFormState() : current.form,
+      saveStatus: 'idle',
+    }))
+
+    if (didChange) {
+      queueVocabularySave(sentenceId, mergedItems, { immediate: options?.immediate })
+    }
+  }
+
+  const updateVocabularyFormState = (
+    sentenceId: string,
+    updater: (form: VocabularyFormState) => VocabularyFormState
+  ) => {
+    updateSentenceVocabularyState(sentenceId, (current) => ({
+      ...current,
+      form: updater(current.form),
+      saveStatus: 'idle',
+    }))
+  }
+
+  const handleVocabularyHeadwordChange = (sentenceId: string, value: string) => {
+    updateVocabularyFormState(sentenceId, (form) => ({
+      ...form,
+      headword: value,
+    }))
+  }
+
+  const handleVocabularySenseChange = (
+    sentenceId: string,
+    index: number,
+    field: keyof VocabularyFormSenseDraft,
+    value: string
+  ) => {
+    updateVocabularyFormState(sentenceId, (form) => ({
+      ...form,
+      senses: form.senses.map((sense, senseIndex) => (
+        senseIndex === index
+          ? { ...sense, [field]: value }
+          : sense
+      )),
+    }))
+  }
+
+  const handleVocabularyAddSense = (sentenceId: string) => {
+    updateVocabularyFormState(sentenceId, (form) => ({
+      ...form,
+      senses: [...form.senses, createEmptyVocabularySenseDraft()],
+    }))
+  }
+
+  const handleVocabularyRemoveSense = (sentenceId: string, index: number) => {
+    updateVocabularyFormState(sentenceId, (form) => {
+      const nextSenses = form.senses.filter((_, senseIndex) => senseIndex !== index)
+
+      return {
+        ...form,
+        senses: nextSenses.length > 0 ? nextSenses : [createEmptyVocabularySenseDraft()],
+      }
+    })
+  }
+
+  const handleVocabularySubmit = (sentenceId: string) => {
+    const current = sentenceVocabulary[sentenceId] || createEmptySentenceVocabularyState()
+    const nextEntry = buildVocabularyEntryFromForm(current.form)
+
+    if (!nextEntry) {
+      setNotification({ type: 'error', message: 'Please enter a headword, part of speech, and meaning.' })
+      return
+    }
+
+    addVocabularyItemsToSentence(sentenceId, [nextEntry], {
+      immediate: true,
+      resetForm: true,
+    })
+  }
+
+  const handleVocabularyRemove = (sentenceId: string, entry: VocabularyEntry) => {
+    const targetKey = getVocabularyEntryKey(entry)
+    const current = sentenceVocabulary[sentenceId] || createEmptySentenceVocabularyState()
+    const nextItems = current.items.filter((item) => getVocabularyEntryKey(item) !== targetKey)
+    const didChange = !areVocabularyListsEqual(current.items, nextItems)
+
+    updateSentenceVocabularyState(sentenceId, () => ({
+      ...current,
+      items: nextItems,
+      saveStatus: 'idle',
+    }))
+
+    if (didChange) {
+      queueVocabularySave(sentenceId, nextItems, { immediate: true })
+    }
+  }
+
+  const scrollToSentence = (sentenceId: string) => {
+    if (!item) return
+
+    setExpandedNotes((prev) => {
+      const next = new Set(prev)
+      next.add(sentenceId)
+      return next
     })
 
-    // 显示保存状态
-    setSavingNotes(prev => ({ ...prev, [sentenceId]: true }))
-
-    try {
-      await fetch(withBasePath('/api/user-notes'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sentenceId,
-          words: updated.words || '',
-          notes: '',
-          userId: 'default'
-        })
-      })
-      // 延迟隐藏保存状态，让用户看到保存成功
-      setTimeout(() => {
-        setSavingNotes(prev => {
-          const newState = { ...prev }
-          delete newState[sentenceId]
-          return newState
-        })
-      }, 500)
-    } catch (error) {
-      console.error('Error saving user notes:', error)
-      setSavingNotes(prev => {
-        const newState = { ...prev }
-        delete newState[sentenceId]
-        return newState
-      })
-      setNotification({ type: 'error', message: '保存词汇失败，请重试' })
+    const sentenceIndex = item.sentences.findIndex((sentence) => sentence.id === sentenceId)
+    if (sentenceIndex === -1) {
+      return
     }
+
+    sentenceRefs.current[sentenceIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   const handleTimeUpdate = () => {
@@ -494,6 +834,54 @@ export default function TrainingDetailPage() {
     }
   }
 
+  const vocabularyBook = item
+    ? buildVocabularyBook(item.sentences, sentenceVocabulary)
+    : []
+  const totalVocabularyEntries = item
+    ? item.sentences.reduce(
+        (total, sentence) => (
+          total
+          + (sentenceVocabulary[sentence.id]?.items.filter(isVocabularyEntryStructured).length || 0)
+        ),
+        0
+      )
+    : 0
+  const activeSentenceLabel =
+    item && currentSentenceIndex >= 0
+      ? `S${item.sentences[currentSentenceIndex].order + 1}`
+      : null
+  const trainingShellClassName = isFullscreen
+    ? 'relative z-10 flex h-full flex-col gap-6 px-10 py-8 md:gap-7 md:px-12 md:py-9 xl:gap-8 xl:px-16 xl:py-12'
+    : 'relative z-10 flex flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
+  const trainingOuterInsetClassName = isFullscreen
+    ? 'mx-4 md:mx-6 xl:mx-8'
+    : 'mx-2 md:mx-3 xl:mx-4'
+  const hudPanelClassName =
+    'relative overflow-hidden rounded-xl border border-green-500/25 bg-black/30 backdrop-blur-sm shadow-[0_0_18px_rgba(10,255,10,0.08),inset_0_0_20px_rgba(10,255,10,0.08)]'
+  const hudPanelHeaderClassName =
+    'relative z-10 mb-4 flex items-center justify-between gap-3 border-b border-green-500/15 pb-3'
+  const getVocabularySaveStatusMeta = (saveStatus: SaveStatus) => {
+    switch (saveStatus) {
+      case 'saving':
+        return {
+          label: '[SAVING...]',
+          className: 'text-amber-300/80',
+        }
+      case 'saved':
+        return {
+          label: '[SAVED]',
+          className: 'text-green-300/80',
+        }
+      case 'error':
+        return {
+          label: '[ERROR]',
+          className: 'text-red-300/80',
+        }
+      default:
+        return null
+    }
+  }
+
 
   if (loading) {
     return (
@@ -527,11 +915,15 @@ export default function TrainingDetailPage() {
           style={{ zIndex: isFullscreen ? 100 : 50 }}
         >
           {/* 主HUD屏幕 - 半透明 */}
-          <div className={`relative backdrop-blur-md border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] transition-all duration-300 ${
+          <div
+            data-training-frame
+            className={`relative backdrop-blur-md border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] transition-all duration-300 ${
             isFullscreen ? 'bg-black/30 h-full' : 'bg-black/40'
-          }`} style={{
+          }`}
+            style={{
             boxShadow: '0 0 40px rgba(10,255,10,0.25), inset 0 0 30px rgba(10,255,10,0.1), 0 0 60px rgba(10,255,10,0.15)'
-          }}>
+          }}
+          >
             {/* 边框发光效果 */}
             <div className="absolute inset-0 border-2 border-green-400/20 rounded-lg pointer-events-none animate-pulse" style={{
               boxShadow: 'inset 0 0 15px rgba(10,255,10,0.2), 0 0 20px rgba(10,255,10,0.15)'
@@ -559,86 +951,6 @@ export default function TrainingDetailPage() {
                 ></div>
               ))}
             </div>
-            {/* 顶部装饰栏 - 增强版 */}
-            <div className="relative border-b-2 border-green-500/50 bg-gradient-to-r from-green-900/20 via-transparent to-transparent p-4 overflow-hidden">
-              {/* 背景光效 */}
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/3 via-transparent to-transparent"></div>
-              
-              {/* 扫描线效果 */}
-              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent animate-shimmer"></div>
-              
-              {/* 装饰点 */}
-              <div className="absolute top-2 left-4 w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ boxShadow: '0 0 3px rgba(10,255,10,0.5)' }}></div>
-              <div className="absolute top-2 right-4 w-1 h-1 bg-green-400/60 rounded-full animate-pulse" style={{ boxShadow: '0 0 3px rgba(10,255,10,0.5)', animationDelay: '0.5s' }}></div>
-              <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-400/70 rounded-full animate-pulse shadow-[0_0_6px_rgba(10,255,10,0.6)]"></div>
-                  <h1 className="text-2xl cyber-title text-green-400 cyber-neon">
-                    [ TRAINING MODULE ]
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* 编辑按钮 */}
-                  <button
-                    onClick={handleEditClick}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2 group/btn"
-                    style={{ zIndex: 100 }}
-                  >
-                    {/* 按钮光效 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
-                    {/* 按钮扫描线 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span>EDIT</span>
-                  </button>
-                  {/* 放大/缩小按钮 */}
-                  <button
-                    onClick={toggleFullscreen}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer flex items-center gap-2 group/btn"
-                    style={{ zIndex: 100 }}
-                    title={isFullscreen ? '缩小' : '全屏'}
-                  >
-                    {/* 按钮光效 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
-                    {/* 按钮扫描线 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
-                    {isFullscreen ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-                        </svg>
-                        <span>MINIMIZE</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                        </svg>
-                        <span>MAXIMIZE</span>
-                      </>
-                    )}
-                  </button>
-                  {/* 返回按钮 */}
-                  <button
-                    onClick={() => router.push('/')}
-                    className="text-green-400/70 hover:text-green-300 cyber-button-text text-sm transition-all px-3 py-1 border border-green-500/30 hover:border-green-500/50 hover:bg-green-500/10 rounded relative z-50 cursor-pointer group/btn"
-                    style={{ zIndex: 100 }}
-                  >
-                    {/* 按钮光效 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity rounded"></div>
-                    {/* 按钮扫描线 */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/12 to-transparent opacity-0 group-hover/btn:opacity-100 animate-shimmer transition-opacity rounded" style={{ width: '50%' }}></div>
-                    ← BACK
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2 text-xs cyber-label text-green-500/60">
-                {item.title.toUpperCase()}
-              </div>
-            </div>
-
           {/* HUD网格背景 - 增强版 */}
           <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
           
@@ -736,269 +1048,618 @@ export default function TrainingDetailPage() {
             </div>
           )}
 
-          {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
-          <div 
-            ref={contentRef}
-            className="relative training-hud-content" 
-            style={{ 
-              maxHeight: isFullscreen ? 'calc(98vh - 120px)' : '75vh', 
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              height: isFullscreen ? 'calc(98vh - 120px)' : 'auto',
-              paddingLeft: '2.5rem',
-              paddingRight: '2rem',
-              paddingTop: '1rem',
-              paddingBottom: '1rem'
-            }}
-          >
-
-            {/* 音频播放器 - HUD风格 */}
-            <div className="p-6 mb-6 bg-black/40 border-2 border-green-500/40 rounded-lg relative overflow-hidden">
-              {/* 背景装饰 */}
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_49%,rgba(10,255,10,0.05)_50%,transparent_51%)] bg-[length:20px_100%] opacity-30"></div>
-              
-              {/* 标题 */}
-              <div className="flex items-center gap-2 mb-4 relative z-10">
-                <div className="w-1 h-4 bg-green-500"></div>
-                <h3 className="text-green-400 cyber-label text-sm">AUDIO PLAYER</h3>
-              </div>
-
-              {/* 隐藏的原生音频控件，用于实际播放 */}
-              <audio
-                ref={audioRef}
-                src={getAudioSrc(item.audioUrl)}
-                onTimeUpdate={handleTimeUpdate}
-                onLoadedMetadata={handleLoadedMetadata}
-                onLoadedData={() => setAudioLoaded(true)}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onEnded={() => setIsPlaying(false)}
-                className="hidden"
-              />
-
-              {!audioLoaded ? (
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center gap-2 cyber-text text-green-400/70 text-sm">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span>[ LOADING AUDIO... ]</span>
+          <div className={trainingShellClassName}>
+            <div className={`relative ${trainingOuterInsetClassName} overflow-hidden rounded-xl border border-green-500/20 bg-gradient-to-r from-green-900/16 via-black/15 to-black/10 px-4 py-3 shadow-[0_0_18px_rgba(10,255,10,0.06),inset_0_0_18px_rgba(10,255,10,0.05)] md:px-5 md:py-4`}>
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.04)_0%,transparent_42%)]"></div>
+              <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent"></div>
+              <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-green-500/18 bg-black/20 px-2.5 py-1 text-[10px] cyber-label tracking-[0.28em] text-green-400/75">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-400/70 shadow-[0_0_4px_rgba(10,255,10,0.45)]"></span>
+                    <span>TRAINING MODULE</span>
+                  </div>
+                  <h1 className="mt-3 max-w-4xl break-words text-2xl leading-tight text-green-100 md:text-3xl xl:text-[2rem] cyber-title">
+                    {item.title}
+                  </h1>
+                  <div className="mt-2 text-[11px] cyber-label tracking-[0.18em] text-green-500/45">
+                    FOCUSED LISTENING SESSION
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4 relative z-10">
-                  {/* 进度条 */}
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min="0"
-                      max={duration || 0}
-                      value={currentTime}
-                      onChange={handleSeek}
-                      className="w-full h-2 bg-black/60 rounded-lg appearance-none cursor-pointer audio-slider"
-                      style={{
-                        background: `linear-gradient(to right, rgba(10,255,10,0.5) 0%, rgba(10,255,10,0.5) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) 100%)`
-                      }}
+                <div className="flex flex-wrap items-center gap-2 xl:max-w-[42%] xl:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleEditClick}
+                    className="group/btn relative flex cursor-pointer items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    style={{ zIndex: 100 }}
+                  >
+                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    <span className="relative z-10 cyber-button-text">EDIT</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    className="group/btn relative flex cursor-pointer items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    style={{ zIndex: 100 }}
+                    title={isFullscreen ? '缩小' : '全屏'}
+                  >
+                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    {isFullscreen ? (
+                      <>
+                        <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                        </svg>
+                        <span className="relative z-10 cyber-button-text">MINIMIZE</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        <span className="relative z-10 cyber-button-text">MAXIMIZE</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/')}
+                    className="group/btn relative cursor-pointer rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    style={{ zIndex: 100 }}
+                  >
+                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <span className="relative z-10 cyber-button-text">← BACK</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
+            <div
+              ref={contentRef}
+              className={`relative ${trainingOuterInsetClassName} training-hud-content min-h-0 rounded-xl border border-green-500/15 bg-black/15 shadow-[0_0_18px_rgba(10,255,10,0.06),inset_0_0_18px_rgba(10,255,10,0.05)] ${
+                isFullscreen ? 'flex-1' : ''
+              }`}
+              style={{
+                maxHeight: isFullscreen ? undefined : '75vh',
+              }}
+            >
+              <div className="relative px-4 py-4 md:px-5 md:py-5 xl:px-6 xl:py-6">
+                <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+              <aside className="order-1 xl:order-2 xl:sticky xl:top-0">
+                <div className="space-y-6">
+                  <div className={`${hudPanelClassName} p-4 md:p-5`}>
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.05)_0%,transparent_55%)] opacity-60"></div>
+                    <div className={hudPanelHeaderClassName}>
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-1 bg-green-500/80"></div>
+                        <div>
+                          <h3 className="text-sm cyber-label tracking-[0.28em] text-green-300">AUDIO PLAYER</h3>
+                          <div className="mt-1 text-[10px] cyber-label text-green-500/50">
+                            TIMELINE / PLAYBACK / SPEED
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <audio
+                      ref={audioRef}
+                      src={getAudioSrc(item.audioUrl)}
+                      onTimeUpdate={handleTimeUpdate}
+                      onLoadedMetadata={handleLoadedMetadata}
+                      onLoadedData={() => setAudioLoaded(true)}
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
+                      onEnded={() => setIsPlaying(false)}
+                      className="hidden"
                     />
+
+                    {!audioLoaded ? (
+                      <div className="relative z-10 py-8 text-center">
+                        <div className="inline-flex items-center gap-2 text-sm cyber-text text-green-400/70">
+                          <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
+                          <span>[ LOADING AUDIO... ]</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative z-10 space-y-4">
+                        <div className="relative">
+                          <input
+                            type="range"
+                            min="0"
+                            max={duration || 0}
+                            value={currentTime}
+                            onChange={handleSeek}
+                            className="audio-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-black/60"
+                            style={{
+                              background: `linear-gradient(to right, rgba(10,255,10,0.58) 0%, rgba(10,255,10,0.58) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) 100%)`
+                            }}
+                          />
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+                          <button
+                            type="button"
+                            onClick={handlePlayPause}
+                            className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-green-500/45 bg-green-500/10 transition-all hover:border-green-500/70 hover:bg-green-500/20"
+                            style={{ boxShadow: '0 0 15px rgba(10,255,10,0.25)' }}
+                            title="播放/暂停 (空格)"
+                          >
+                            {isPlaying ? (
+                              <svg className="h-6 w-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                              </svg>
+                            ) : (
+                              <svg className="ml-1 h-6 w-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            )}
+                          </button>
+
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">CURRENT</div>
+                              <div className="text-sm cyber-number cyber-tabular text-green-300">{formatTime(currentTime)}</div>
+                            </div>
+                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">TOTAL</div>
+                              <div className="text-sm cyber-number cyber-tabular text-green-300/80">{formatTime(duration)}</div>
+                            </div>
+                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">PROGRESS</div>
+                              <div className="text-sm cyber-number cyber-tabular text-green-300">
+                                {duration > 0 ? Math.round((currentTime / duration) * 100) : 0}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-green-500/15 pt-3">
+                          <div className="mb-2 text-[10px] cyber-label tracking-[0.24em] text-green-500/50">
+                            SPEED CONTROL
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {[0.5, 0.75, 1, 1.25, 1.5].map((rate) => (
+                              <button
+                                key={rate}
+                                type="button"
+                                onClick={() => handleSpeedChange(rate)}
+                                className={`rounded border px-3 py-1 text-xs cyber-button-text transition-all ${
+                                  playbackRate === rate
+                                    ? 'border-green-500/70 bg-green-500/25 text-green-200'
+                                    : 'border-green-500/25 bg-black/35 text-green-400/70 hover:border-green-500/45 hover:bg-green-500/10'
+                                }`}
+                              >
+                                {rate}x
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border border-green-500/15 bg-black/20 px-3 py-2">
+                          <div className="flex h-4 items-end gap-1">
+                            {PLAYER_VISUALIZER_BARS.map((height, index) => (
+                              <div
+                                key={index}
+                                className="flex-1 rounded-t bg-green-500/35 transition-all duration-150"
+                                style={{
+                                  height: `${height}%`,
+                                  opacity: isPlaying ? 0.95 : 0.45,
+                                  boxShadow: isPlaying ? '0 0 5px rgba(10,255,10,0.35)' : 'none',
+                                }}
+                              ></div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 控制按钮和时间显示 */}
-                  <div className="flex items-center justify-center gap-4">
-                    {/* 播放/暂停按钮 */}
+                  <div className={`${hudPanelClassName} p-4 md:p-5`}>
                     <button
-                      onClick={handlePlayPause}
-                      className="w-12 h-12 rounded-full border-2 border-green-500/50 bg-green-500/10 flex items-center justify-center hover:bg-green-500/20 hover:border-green-500/70 transition-all group"
-                      style={{ boxShadow: '0 0 15px rgba(10,255,10,0.3)' }}
-                      title="播放/暂停 (空格)"
+                      type="button"
+                      onClick={() => setIsVocabularyBookExpanded((prev) => !prev)}
+                      className="block w-full text-left"
                     >
-                      {isPlaying ? (
-                        <svg className="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
-                        </svg>
-                      ) : (
-                        <svg className="w-6 h-6 text-green-400 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      )}
+                      <div className={`${hudPanelHeaderClassName} mb-0`}>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="h-4 w-1 bg-green-500/80"></div>
+                          <div className="min-w-0">
+                            <div className="text-sm cyber-label tracking-[0.28em] text-green-300">VOCABULARY BOOK</div>
+                            <div className="mt-1 text-[10px] cyber-label text-green-500/50">
+                              {vocabularyBook.length} UNIQUE / {totalVocabularyEntries} TOTAL
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
+                          style={{ transform: isVocabularyBookExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                        >
+                          {isVocabularyBookExpanded ? '▼' : '▶'}
+                        </span>
+                      </div>
                     </button>
 
-                    {/* 时间显示 */}
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <div className="text-xs cyber-label text-green-500/60 mb-1">CURRENT</div>
-                        <div className="text-lg cyber-number cyber-tabular text-green-400 cyber-glow-pulse">
-                          {formatTime(currentTime)}
-                        </div>
+                    {isVocabularyBookExpanded && (
+                      <div className="mt-4 animate-fade-in">
+                        {vocabularyBook.length === 0 ? (
+                          <div className="rounded-lg border border-dashed border-green-500/20 bg-black/20 px-4 py-5 text-center">
+                            <div className="text-sm cyber-text text-green-300/75">No vocabulary recorded on this page yet.</div>
+                            <div className="mt-2 text-[10px] cyber-label text-green-500/50">
+                              Add structured entries under any sentence to build the notebook.
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="training-subpanel-scroll max-h-[320px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
+                            {vocabularyBook.map((entry) => (
+                              <div
+                                key={entry.normalizedKey}
+                                className="rounded-lg border border-green-500/15 bg-black/20 px-4 py-3"
+                              >
+                                <div className="flex flex-col gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => scrollToSentence(entry.sentences[0].sentenceId)}
+                                    className="text-left transition-colors hover:text-green-200"
+                                  >
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-sm cyber-font-readable font-bold text-green-200">{entry.label}</span>
+                                      <span className="text-[10px] cyber-label text-green-500/70">[x{entry.count}]</span>
+                                    </div>
+                                  </button>
+                                  <div className="flex flex-wrap gap-2">
+                                    {entry.sentences.map((source) => (
+                                      <button
+                                        type="button"
+                                        key={`${entry.normalizedKey}-${source.sentenceId}`}
+                                        onClick={() => scrollToSentence(source.sentenceId)}
+                                        title={source.sentenceText}
+                                        className="rounded border border-green-500/25 bg-green-500/5 px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/45 hover:bg-green-500/10"
+                                      >
+                                        S{source.sentenceOrder}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-green-500/40 cyber-text">/</div>
-                      <div className="text-center">
-                        <div className="text-xs cyber-label text-green-500/60 mb-1">TOTAL</div>
-                        <div className="text-lg cyber-number cyber-tabular text-green-400/80">
-                          {formatTime(duration)}
-                        </div>
+                    )}
+                  </div>
+                </div>
+              </aside>
+
+              <section className="order-2 min-w-0 xl:order-1">
+                <div className="pt-2 pb-6 md:pt-3 md:pb-8">
+                  <div className="mb-6 flex flex-col gap-3 border-b border-green-500/[0.12] pb-5 md:mb-7 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <div className="text-[10px] cyber-label tracking-[0.3em] text-green-400/72">SENTENCE STREAM</div>
+                      <div className="mt-1 text-[11px] cyber-label text-green-500/45">
+                        Read line by line. Let the English stay in front.
                       </div>
                     </div>
-
-                    {/* 进度百分比 */}
-                    <div className="text-right">
-                      <div className="text-xs cyber-label text-green-500/60 mb-1">PROGRESS</div>
-                      <div className="text-lg cyber-number cyber-tabular text-green-400 cyber-glow-pulse">
-                        {duration > 0 ? Math.round((currentTime / duration) * 100) : 0}%
-                      </div>
+                    <div className="flex flex-wrap gap-2 text-[10px] cyber-label text-green-500/60">
+                      <span className="rounded-full border border-green-500/[0.16] bg-black/20 px-2.5 py-1">
+                        {item.sentences.length} SEGMENTS
+                      </span>
+                      {activeSentenceLabel && (
+                        <span className="rounded-full border border-green-400/[0.18] bg-green-500/[0.08] px-2.5 py-1 text-green-300/80">
+                          ACTIVE {activeSentenceLabel}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* 播放速度控制 */}
-                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-green-500/20">
-                    <span className="text-xs cyber-label text-green-500/60">SPEED:</span>
-                    <div className="flex gap-2">
-                      {[0.5, 0.75, 1, 1.25, 1.5].map((rate) => (
-                        <button
-                          key={rate}
-                          onClick={() => handleSpeedChange(rate)}
-                          className={`px-3 py-1 rounded border transition-all cyber-button-text text-xs ${
-                            playbackRate === rate
-                              ? 'bg-green-500/30 border-green-500/70 text-green-300'
-                              : 'bg-black/40 border-green-500/30 text-green-400/70 hover:bg-green-500/10 hover:border-green-500/50'
-                          }`}
-                        >
-                          {rate}x
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <div className="pl-5 md:pl-5 xl:pl-5 space-y-6 md:space-y-7 xl:space-y-8">
+                    {item.sentences.map((sentence, index) => {
+                      const isActive = currentSentenceIndex === index
+                      const isRepeating = repeatMode === index
+                      const isNotesExpanded = expandedNotes.has(sentence.id)
+                      const vocabularyState =
+                        sentenceVocabulary[sentence.id] || createEmptySentenceVocabularyState()
+                      const vocabularyCount = vocabularyState.items.length
+                      const isVocabularyFormReady = isVocabularyFormSubmittable(vocabularyState.form)
+                      const saveStatusMeta = getVocabularySaveStatusMeta(vocabularyState.saveStatus)
+                      const hasTranslation = Boolean(sentence.translation)
+                      const isTranslationVisible =
+                        hasTranslation &&
+                        (showTranslations
+                          ? !collapsedGlobalTranslations.has(sentence.id)
+                          : expandedTranslations.has(sentence.id))
 
-                  {/* 波形可视化装饰 */}
-                  <div className="flex items-end justify-center gap-1 h-8 mt-2">
-                    {[...Array(20)].map((_, i) => {
-                      const isActive = Math.random() > 0.7
-                      const height = isActive ? Math.random() * 0.6 + 0.4 : Math.random() * 0.3 + 0.1
                       return (
                         <div
-                          key={i}
-                          className="w-1 bg-green-500/40 rounded-t transition-all duration-100"
-                          style={{
-                            height: `${height * 100}%`,
-                            opacity: isActive && isPlaying ? 1 : 0.4,
-                            boxShadow: isActive && isPlaying ? '0 0 4px rgba(10,255,10,0.8)' : 'none'
+                          key={sentence.id}
+                          ref={(el) => {
+                            sentenceRefs.current[index] = el
                           }}
-                        ></div>
+                          className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
+                            isActive
+                              ? 'border-green-400/[0.22] bg-green-500/[0.045] shadow-[0_0_10px_rgba(10,255,10,0.09),inset_0_0_10px_rgba(10,255,10,0.05)]'
+                              : 'border-green-500/[0.08] bg-black/[0.14] hover:border-green-500/[0.14] hover:bg-black/[0.18]'
+                          }`}
+                        >
+                          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.025)_0%,transparent_60%)] opacity-55"></div>
+                          {isActive && (
+                            <div className="absolute inset-y-6 left-0 w-[2px] rounded-r-full bg-green-400/75 shadow-[0_0_6px_rgba(10,255,10,0.32)]"></div>
+                          )}
+                          <div
+                            className={`pointer-events-none absolute bottom-0 left-8 right-6 h-px bg-gradient-to-r from-transparent via-green-500/[0.16] to-transparent ${
+                              isActive ? 'opacity-75' : 'opacity-40'
+                            }`}
+                          ></div>
+
+                          <div className="relative z-10 pr-4 pl-5 py-[14px] md:pr-[18px] md:pl-6 md:py-4 xl:pr-5 xl:pl-7 xl:py-[18px]">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
+                                <span
+                                  className={`inline-flex min-w-[3.25rem] justify-center rounded-full border px-2 py-1 ${
+                                    isActive
+                                      ? 'border-green-400/35 bg-green-500/15 text-green-200'
+                                      : 'border-green-500/20 bg-black/30 text-green-400/70'
+                                  }`}
+                                >
+                                  S{sentence.order + 1}
+                                </span>
+                                <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2.5 py-1 text-green-500/[0.58]">
+                                  {sentence.startTime.toFixed(2)}s - {sentence.endTime.toFixed(2)}s
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => hasTranslation && toggleSentenceTranslation(sentence.id)}
+                                  disabled={!hasTranslation}
+                                  className={`flex items-center justify-center rounded-md border px-2 py-1.5 text-xs transition-all ${
+                                    hasTranslation
+                                      ? isTranslationVisible
+                                        ? 'border-green-400/[0.24] bg-green-500/[0.09] text-green-200'
+                                        : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                      : 'cursor-not-allowed border-green-500/[0.08] bg-black/[0.1] text-green-500/[0.3]'
+                                  }`}
+                                  title={hasTranslation ? 'Toggle translation' : 'No translation'}
+                                  aria-label={hasTranslation ? 'Toggle translation for this sentence' : 'No translation for this sentence'}
+                                >
+                                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                    <path d="M4 5h10" />
+                                    <path d="M9 3v2c0 4-1.8 7.4-5 10" />
+                                    <path d="M6 11c1.4 0 3.5.5 5.5 2.5" />
+                                    <path d="M14 13h6" />
+                                    <path d="M17 7l4 10" />
+                                    <path d="M13 17l4-10" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRepeatClick(index)}
+                                  className={`rounded-md border px-2 py-1.5 text-xs cyber-button-text transition-all ${
+                                    isRepeating
+                                      ? 'border-red-400/50 bg-red-500/20 text-red-300'
+                                      : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                  }`}
+                                title="单句重复播放"
+                              >
+                                🔁
+                              </button>
+                              </div>
+                            </div>
+
+                            <div
+                              onClick={() => handleSentenceClick(sentence)}
+                              className={`mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
+                                  isActive
+                                    ? 'text-green-100'
+                                    : 'text-gray-100 hover:text-green-100'
+                                }`}
+                            >
+                              <p className="max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px]">
+                                {sentence.text}
+                              </p>
+                            </div>
+
+                            <div className="mt-3.5 border-t border-green-500/[0.08] pt-2.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleNotes(sentence.id)}
+                                className="flex w-full items-center justify-between gap-3 text-left"
+                              >
+                                <span className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs cyber-label tracking-[0.24em] text-green-300/90">VOCABULARY</span>
+                                  <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-[10px] cyber-label text-green-500/[0.6]">
+                                    {vocabularyCount} ITEMS
+                                  </span>
+                                  {saveStatusMeta && (
+                                    <span className={`text-[10px] cyber-label ${saveStatusMeta.className}`}>
+                                      {saveStatusMeta.label}
+                                    </span>
+                                  )}
+                                </span>
+                                <span
+                                  className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
+                                  style={{ transform: isNotesExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                                >
+                                  {isNotesExpanded ? '▼' : '▶'}
+                                </span>
+                              </button>
+
+                              {isTranslationVisible && sentence.translation && (
+                                <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+                                  <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
+                                    TRANSLATION
+                                  </div>
+                                  <p className="max-w-[44rem] text-[13px] leading-[1.75] text-green-200/60 md:text-sm">
+                                    {sentence.translation}
+                                  </p>
+                                </div>
+                              )}
+
+                              {isNotesExpanded && (
+                                <div className="mt-2.5 animate-fade-in rounded-xl border border-green-500/15 bg-black/20 p-3">
+                                  {vocabularyCount > 0 ? (
+                                    <div className="mb-3 space-y-2.5">
+                                      {vocabularyState.items.map((entry) => {
+                                        const entryLabel = formatVocabularyEntry(entry)
+                                        const isLegacyEntry = !isVocabularyEntryStructured(entry)
+
+                                        return (
+                                          <div
+                                            key={`${sentence.id}-${getVocabularyEntryKey(entry)}`}
+                                            className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 ${
+                                              isLegacyEntry
+                                                ? 'border-dashed border-amber-400/30 bg-amber-500/[0.06]'
+                                                : 'border-green-500/20 bg-green-500/[0.05]'
+                                            }`}
+                                          >
+                                            <div className="min-w-0">
+                                              <div className="break-words text-sm cyber-font-readable text-green-100">
+                                                {entryLabel}
+                                              </div>
+                                              {isLegacyEntry && (
+                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px]">
+                                                  <span className="rounded-full border border-amber-400/30 bg-amber-500/[0.08] px-2 py-0.5 cyber-label text-amber-200/80">
+                                                    LEGACY
+                                                  </span>
+                                                  <span className="cyber-label text-amber-100/65">
+                                                    Delete and re-enter this item in the new format.
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleVocabularyRemove(sentence.id, entry)}
+                                              className={`shrink-0 transition-colors ${
+                                                isLegacyEntry
+                                                  ? 'text-amber-200/75 hover:text-red-300'
+                                                  : 'text-green-300/80 hover:text-red-300'
+                                              }`}
+                                              aria-label={`Remove ${entryLabel}`}
+                                              title={`Remove ${entryLabel}`}
+                                            >
+                                              ×
+                                            </button>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <div className="mb-3 rounded-md border border-dashed border-green-500/20 bg-black/20 px-3 py-3 text-[10px] cyber-label text-green-500/50">
+                                      No vocabulary yet. Add a structured entry below.
+                                    </div>
+                                  )}
+
+                                  <form
+                                    onSubmit={(event) => {
+                                      event.preventDefault()
+                                      handleVocabularySubmit(sentence.id)
+                                    }}
+                                    className="space-y-3 rounded-lg border border-green-500/20 bg-black/25 p-3"
+                                  >
+                                    <div>
+                                      <label className="mb-2 block text-[10px] cyber-label tracking-[0.24em] text-green-500/55">
+                                        HEADWORD
+                                      </label>
+                                      <input
+                                        value={vocabularyState.form.headword}
+                                        onChange={(event) => handleVocabularyHeadwordChange(sentence.id, event.target.value)}
+                                        placeholder="separate"
+                                        spellCheck={false}
+                                        className="w-full rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                      />
+                                    </div>
+
+                                    <div className="space-y-2.5">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <label className="text-[10px] cyber-label tracking-[0.24em] text-green-500/55">
+                                          SENSES
+                                        </label>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleVocabularyAddSense(sentence.id)}
+                                          className="rounded border border-green-500/20 bg-black/30 px-2.5 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200"
+                                        >
+                                          + POS
+                                        </button>
+                                      </div>
+
+                                      {vocabularyState.form.senses.map((sense, senseIndex) => (
+                                        <div
+                                          key={`${sentence.id}-sense-${senseIndex}`}
+                                          className="grid gap-2 md:grid-cols-[96px_minmax(0,1fr)_auto]"
+                                        >
+                                          <input
+                                            value={sense.pos}
+                                            onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'pos', event.target.value)}
+                                            placeholder="v."
+                                            spellCheck={false}
+                                            className="rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                          />
+                                          <input
+                                            value={sense.meaning}
+                                            onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'meaning', event.target.value)}
+                                            placeholder="使分离"
+                                            spellCheck={false}
+                                            className="rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => handleVocabularyRemoveSense(sentence.id, senseIndex)}
+                                            className="rounded-md border border-green-500/16 bg-black/20 px-3 py-2 text-[10px] cyber-button-text text-green-300/70 transition-colors hover:border-red-400/35 hover:text-red-300 disabled:cursor-not-allowed disabled:text-green-500/35"
+                                            disabled={vocabularyState.form.senses.length === 1}
+                                            aria-label={`Remove sense ${senseIndex + 1}`}
+                                            title={`Remove sense ${senseIndex + 1}`}
+                                          >
+                                            REMOVE
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <div className="rounded-md border border-green-500/10 bg-black/20 px-3 py-2">
+                                      <div className="text-[10px] cyber-label text-green-500/50">
+                                        Stored as <span className="cyber-font-readable text-green-200/80">headword:pos.meaning；pos.meaning</span>
+                                      </div>
+                                      <div className="mt-1 text-[10px] cyber-label text-green-500/45">
+                                        Example: <span className="cyber-font-readable text-green-200/75">separate:v.使分离；n.可以搭配的单件衣服；adj.单独的分开的</span>
+                                      </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                      <div className="text-[10px] cyber-label text-green-500/50">
+                                        One headword can include multiple parts of speech.
+                                      </div>
+                                      <button
+                                        type="submit"
+                                        disabled={!isVocabularyFormReady}
+                                        className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
+                                          isVocabularyFormReady
+                                            ? 'border-green-500/28 bg-green-500/[0.08] text-green-200 hover:border-green-500/45 hover:bg-green-500/[0.12]'
+                                            : 'cursor-not-allowed border-green-500/12 bg-black/25 text-green-500/35'
+                                        }`}
+                                      >
+                                        ADD ENTRY
+                                      </button>
+                                    </div>
+                                  </form>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       )
                     })}
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* 控制选项 - 翻译显示已移至右下角按钮 */}
-
-            {/* 句子列表 */}
-            <div className="space-y-5">
-              {item.sentences.map((sentence, index) => {
-                const isActive = currentSentenceIndex === index
-                const isRepeating = repeatMode === index
-                const isNotesExpanded = expandedNotes.has(sentence.id)
-                const notes = userNotes[sentence.id] || { words: '' }
-
-                return (
-                  <div
-                    key={sentence.id}
-                    ref={(el) => {
-                      sentenceRefs.current[index] = el
-                    }}
-                    className="pl-8 pr-4 py-3 transition-all duration-300 rounded"
-                    style={isActive ? {
-                      background: 'rgba(10,255,10,0.15)',
-                      border: '2px solid rgba(10,255,10,0.6)',
-                      boxShadow: '0 0 25px rgba(10,255,10,0.4), inset 0 0 15px rgba(10,255,10,0.15)',
-                      backdropFilter: 'blur(4px)',
-                      transform: 'scale(1.02)'
-                    } : {
-                      background: 'rgba(10,255,10,0.03)',
-                      border: '1px solid rgba(10,255,10,0.2)',
-                      backdropFilter: 'blur(4px)',
-                      transform: 'scale(1)'
-                    }}
-                  >
-                    {/* 句子文本 */}
-                    <div className="flex items-start gap-3 mb-2">
-                      <div
-                        onClick={() => handleSentenceClick(sentence)}
-                        className={`flex-1 text-left px-2 py-2 cyber-text transition-all rounded cursor-pointer select-text ${
-                          isActive
-                            ? 'text-green-200 bg-green-500/10'
-                            : 'text-gray-200 hover:text-green-300 hover:bg-green-500/5'
-                        }`}
-                      >
-                        <p className="text-base cyber-font font-bold leading-relaxed select-text">{sentence.text}</p>
-                      </div>
-                      <button
-                        onClick={() => handleRepeatClick(index)}
-                        className={`px-3 py-2 cyber-button-text text-sm transition-all border rounded ${
-                          isRepeating
-                            ? 'bg-red-500/20 text-red-300 border-red-400/50'
-                            : 'border-green-500/30 text-green-300 hover:text-green-200 hover:border-green-500/50 bg-green-500/5 hover:bg-green-500/10'
-                        }`}
-                        title="单句重复播放"
-                      >
-                        🔁
-                      </button>
-                    </div>
-
-                    {/* 翻译 */}
-                    {showTranslations && sentence.translation && (
-                      <div className="mb-2 px-2 py-2 border-l-2 border-green-500/40 select-text">
-                        <p className="text-green-300/80 cyber-text text-sm leading-relaxed select-text">{sentence.translation}</p>
-                      </div>
-                    )}
-
-                    {/* 时间信息 */}
-                    <div className="text-xs cyber-label text-green-500/60 mb-2 px-2">
-                      TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]
-                    </div>
-
-                    {/* 用户词汇 */}
-                    <div className="border-t border-green-500/20 pt-2 mt-2 px-2">
-                      <button
-                        onClick={() => toggleNotes(sentence.id)}
-                        className="w-full text-left text-xs cyber-label text-green-400/70 hover:text-green-300 flex items-center justify-between transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          📝 VOCABULARY
-                          {savingNotes[sentence.id] && (
-                            <span className="text-[10px] text-green-400/60 animate-pulse">[保存中...]</span>
-                          )}
-                        </span>
-                        <span className="transition-transform duration-200" style={{ transform: isNotesExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
-                          {isNotesExpanded ? '▼' : '▶'}
-                        </span>
-                      </button>
-
-                      {isNotesExpanded && (
-                        <div className="mt-4 animate-fade-in">
-                          <label className="block text-green-300 cyber-label text-xs mb-2">
-                            VOCABULARY
-                          </label>
-                          <textarea
-                            value={notes.words}
-                            onChange={(e) =>
-                              handleNotesChange(sentence.id, e.target.value)
-                            }
-                            placeholder="Record vocabulary..."
-                            className="w-full px-4 py-2 bg-black/40 border border-green-500/30 cyber-input-font text-gray-200 text-sm focus:outline-none focus:border-green-500/60 focus:bg-black/60 transition-all resize-none"
-                            rows={2}
-                          />
-                          <div className="mt-1 text-[9px] cyber-label text-green-500/50">
-                            自动保存中...
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+              </section>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
       {/* 编辑模态框 */}
       {isEditing && (

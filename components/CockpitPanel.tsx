@@ -7,6 +7,14 @@ import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
+const DEFAULT_DOCK_SCALE = 0.5
+const TRAINING_DOCK_SCALE = 0.62
+const TRAINING_DOCK_BUTTON_SIZE = 48
+const TRAINING_DOCK_BUTTON_GAP = 12
+const TRAINING_DOCK_VIEWPORT_PADDING = 12
+const TRAINING_DOCK_FRAME_CLEARANCE = 10
+const TRAINING_DOCK_BOTTOM_OFFSET = 28
+
 interface TrainingItem {
   id: string
   title: string
@@ -153,6 +161,21 @@ export default function CockpitPanel() {
   const [buttonEndPos, setButtonEndPos] = useState<{ x: number; y: number } | null>(null)
   const [isAnimatingDown, setIsAnimatingDown] = useState(false)
   const [isAnimatingUp, setIsAnimatingUp] = useState(false)
+  const useTrainingDockLayout = isTrainingPage && !isHomePage && !isAnimatingDown
+  const floatingDockScale = isHomePage || isAnimatingDown
+    ? 1
+    : isTrainingPage
+    ? TRAINING_DOCK_SCALE
+    : DEFAULT_DOCK_SCALE
+  const floatingButtonsClassName = isHomePage || isAnimatingDown
+    ? 'items-center gap-8'
+    : isTrainingPage
+    ? 'flex-col items-center gap-3'
+    : 'items-center gap-2'
+  const floatingButtonShellSizeClassName = isTrainingPage ? 'h-12 w-12' : 'h-16 w-16'
+  const floatingButtonHoverScaleClassName = isTrainingPage ? 'group-hover:scale-[1.06]' : 'group-hover:scale-110'
+  const floatingButtonIconSize = isTrainingPage ? 20 : 24
+  const showFloatingButtonLabels = !isTrainingPage
   
   // 监听路由变化，控制动画阶段
   useEffect(() => {
@@ -210,39 +233,97 @@ export default function CockpitPanel() {
     }
     
     // 立即更新一次
+    const getTrainingDockTarget = () => {
+      const frame = document.querySelector<HTMLElement>('[data-training-frame]')
+
+      if (!frame) {
+        return {
+          x: window.innerWidth - 52,
+          y: Math.max(120, window.innerHeight - 240),
+        }
+      }
+
+      const rect = frame.getBoundingClientRect()
+      const visualButtonSize = TRAINING_DOCK_BUTTON_SIZE * TRAINING_DOCK_SCALE
+      const visualStackHeight =
+        (TRAINING_DOCK_BUTTON_SIZE * 4 + TRAINING_DOCK_BUTTON_GAP * 3) * TRAINING_DOCK_SCALE
+      const availableGap = Math.max(window.innerWidth - rect.right, 0)
+      const centeredX = rect.right + (availableGap - visualButtonSize) / 2
+      const minX = rect.right + TRAINING_DOCK_FRAME_CLEARANCE
+      const maxX = window.innerWidth - TRAINING_DOCK_VIEWPORT_PADDING - visualButtonSize
+      const x = minX <= maxX
+        ? Math.min(Math.max(centeredX, minX), maxX)
+        : window.innerWidth - TRAINING_DOCK_VIEWPORT_PADDING - visualButtonSize
+      const y = Math.max(
+        rect.top + 24,
+        rect.bottom - visualStackHeight - TRAINING_DOCK_BOTTOM_OFFSET,
+      )
+
+      return { x, y }
+    }
+
     updateButtonPositions()
     
     // 延迟更新确保DOM渲染完成（特别是返回首页时）
+    let resizeObserver: ResizeObserver | null = null
+    const bindTrainingFrameObserver = () => {
+      if (!isTrainingPage || typeof ResizeObserver === 'undefined') {
+        return
+      }
+
+      const frame = document.querySelector<HTMLElement>('[data-training-frame]')
+      if (!frame) {
+        return
+      }
+
+      resizeObserver?.disconnect()
+      resizeObserver = new ResizeObserver(() => {
+        updateEndPos()
+      })
+      resizeObserver.observe(frame)
+    }
+
+    const syncButtonLayout = () => {
+      updateButtonPositions()
+      updateEndPos()
+      bindTrainingFrameObserver()
+    }
+
     const timers: NodeJS.Timeout[] = []
     for (let i = 1; i <= 5; i++) {
       timers.push(setTimeout(() => {
-        updateButtonPositions()
+        syncButtonLayout()
       }, i * 100))
     }
     
     // 始终更新右下角位置（基于窗口大小）
     const updateEndPos = () => {
-      setButtonEndPos({ 
-        x: window.innerWidth - 88, 
-        y: window.innerHeight - 24 
+      if (isTrainingPage) {
+        setButtonEndPos(getTrainingDockTarget())
+        return
+      }
+
+      setButtonEndPos({
+        x: window.innerWidth - 88,
+        y: window.innerHeight - 24,
       })
     }
     updateEndPos()
+    bindTrainingFrameObserver()
     
     // 监听窗口大小变化和路由变化
-    window.addEventListener('resize', () => {
-      updateButtonPositions()
-      updateEndPos()
-    })
+    const handleResize = () => {
+      syncButtonLayout()
+    }
+
+    window.addEventListener('resize', handleResize)
     
     return () => {
-      window.removeEventListener('resize', () => {
-        updateButtonPositions()
-        updateEndPos()
-      })
+      window.removeEventListener('resize', handleResize)
+      resizeObserver?.disconnect()
       timers.forEach(timer => clearTimeout(timer))
     }
-  }, [isHomePage, pathname])
+  }, [isHomePage, isTrainingPage, pathname])
 
   // 动态更新左侧仪表盘数值
   useEffect(() => {
@@ -1184,18 +1265,24 @@ export default function CockpitPanel() {
       {/* 确保按钮始终渲染，即使位置还在计算中 */}
       {(buttonStartPos && buttonEndPos) ? (
         <div 
-          key={`buttons-${isHomePage}-${isAnimatingDown}-${isAnimatingUp}`}
-          className={`fixed z-50 flex items-center pointer-events-auto ${
-            isHomePage ? 'gap-8' : 'gap-2'
-          }`}
+          key={`buttons-${isHomePage}-${isTrainingPage}-${isAnimatingDown}-${isAnimatingUp}`}
+          className={`fixed z-[80] flex pointer-events-auto ${floatingButtonsClassName}`}
           style={{
             // 根据动画阶段切换定位方式
             // 首页或向下隐藏阶段：使用left/top定位在中间
             // 向上移动阶段：使用bottom/right定位在右下角（最终位置）
-            left: (isHomePage || isAnimatingDown) ? `${buttonStartPos.x}px` : 'auto',
-            top: (isHomePage || isAnimatingDown) ? `${buttonStartPos.y}px` : 'auto',
-            bottom: (isHomePage || isAnimatingDown) ? 'auto' : '24px',
-            right: (isHomePage || isAnimatingDown) ? 'auto' : '24px',
+            left: (isHomePage || isAnimatingDown)
+              ? `${buttonStartPos.x}px`
+              : useTrainingDockLayout
+              ? `${buttonEndPos.x}px`
+              : 'auto',
+            top: (isHomePage || isAnimatingDown)
+              ? `${buttonStartPos.y}px`
+              : useTrainingDockLayout
+              ? `${buttonEndPos.y}px`
+              : 'auto',
+            bottom: (isHomePage || isAnimatingDown || useTrainingDockLayout) ? 'auto' : '24px',
+            right: (isHomePage || isAnimatingDown || useTrainingDockLayout) ? 'auto' : '24px',
             // 使用transform来实现位置移动、缩放和垂直移动
             // 首页时：居中显示，按钮在AUTOPILOT两侧
             // 向下隐藏阶段：保持居中，但向下移动 translateY(100vh)
@@ -1206,8 +1293,13 @@ export default function CockpitPanel() {
               : isAnimatingDown
               ? 'translate(-50%, -50%) translateY(100vh) scale(1)'
               : isAnimatingUp
-              ? 'translate(0, 100vh) scale(0.5)'
-              : 'translate(0, 0) scale(0.5)',
+              ? `translate(0, 100vh) scale(${floatingDockScale})`
+              : `translate(0, 0) scale(${floatingDockScale})`,
+            transformOrigin: (isHomePage || isAnimatingDown)
+              ? 'center center'
+              : useTrainingDockLayout
+              ? 'top left'
+              : 'bottom right',
             // 首页时：正常显示；非首页时：先向下隐藏，然后从屏幕外向上移动
             opacity: isHomePage ? 1 : 1,
             // 确保按钮始终可见
@@ -1229,9 +1321,9 @@ export default function CockpitPanel() {
         >
           {/* TRANSLATIONS 按钮 - 只在训练页面显示，在WARP左侧 */}
           {isTrainingPage && (
-            <div className="text-center group cursor-pointer relative" onClick={handleTranslations}>
+            <div className="text-center group cursor-pointer relative" onClick={handleTranslations} title="Translations">
               {/* 按钮容器 */}
-              <div className={`relative w-16 h-16 rounded-full border-2 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-all duration-300 overflow-hidden ${
+              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
                 translationContext?.showTranslations
                   ? 'border-green-500/80 bg-green-900/20 shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)]'
                   : 'border-green-500/50 bg-green-900/10 shadow-[0_0_15px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20 group-hover:shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)] group-active:shadow-[0_0_35px_rgba(34,197,94,0.8),inset_0_0_20px_rgba(34,197,94,0.2)]'
@@ -1262,20 +1354,22 @@ export default function CockpitPanel() {
                   translationContext?.showTranslations
                     ? 'text-green-300'
                     : 'text-green-400 group-hover:text-green-300'
-                }`} size={24} />
+                }`} size={floatingButtonIconSize} />
               </div>
-              <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
-                translationContext?.showTranslations
-                  ? 'text-green-300'
-                  : 'text-green-400 group-hover:text-green-300'
-              }`}>TRANSL</div>
+              {showFloatingButtonLabels && (
+                <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
+                  translationContext?.showTranslations
+                    ? 'text-green-300'
+                    : 'text-green-400 group-hover:text-green-300'
+                }`}>TRANSL</div>
+              )}
             </div>
           )}
 
           {/* WARP 按钮 - 在AUTOPILOT左侧 */}
-          <div className="text-center group cursor-pointer relative" onClick={handleWarp}>
+          <div className="text-center group cursor-pointer relative" onClick={handleWarp} title="Warp">
             {/* 按钮容器 */}
-            <div className="relative w-16 h-16 rounded-full border-2 border-red-500/50 flex items-center justify-center bg-red-900/10 group-hover:bg-red-500/20 group-hover:scale-110 group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(255,0,0,0.3)] group-hover:shadow-[0_0_25px_rgba(255,0,0,0.6),0_0_50px_rgba(255,0,0,0.3)] group-active:shadow-[0_0_35px_rgba(255,0,0,0.8),inset_0_0_20px_rgba(255,0,0,0.2)] overflow-hidden">
+            <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-red-500/50 flex items-center justify-center bg-red-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(255,0,0,0.3)] group-hover:shadow-[0_0_25px_rgba(255,0,0,0.6),0_0_50px_rgba(255,0,0,0.3)] group-active:shadow-[0_0_35px_rgba(255,0,0,0.8),inset_0_0_20px_rgba(255,0,0,0.2)] overflow-hidden`}>
               {/* 背景网格 */}
               <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(255,0,0,.1)_49%,rgba(255,0,0,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(255,0,0,.1)_49%,rgba(255,0,0,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -1296,9 +1390,11 @@ export default function CockpitPanel() {
               <div className="absolute inset-0 rounded-full bg-red-500/20 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500 pointer-events-none"></div>
               
               {/* 图标 */}
-              <Rocket className="text-red-400 relative z-10 group-hover:text-red-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(255,0,0,0.8)]" />
+              <Rocket className="text-red-400 relative z-10 group-hover:text-red-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(255,0,0,0.8)]" size={floatingButtonIconSize} />
             </div>
-            <div className="text-[10px] text-red-400 mt-2 font-mono group-hover:text-red-300 transition-colors duration-300 group-active:text-red-500 group-hover:drop-shadow-[0_0_4px_rgba(255,0,0,0.6)]">WARP</div>
+            {showFloatingButtonLabels && (
+              <div className="text-[10px] text-red-400 mt-2 font-mono group-hover:text-red-300 transition-colors duration-300 group-active:text-red-500 group-hover:drop-shadow-[0_0_4px_rgba(255,0,0,0.6)]">WARP</div>
+            )}
           </div>
 
           {/* AUTOPILOT组件 - 唯一的AUTOPILOT显示，在首页时显示，非首页时完全隐藏 */}
@@ -1315,8 +1411,8 @@ export default function CockpitPanel() {
 
           {/* HOME 按钮 - 只在非首页时显示，位于WARP和MENU中间 */}
           {!isHomePage && (
-            <div className="text-center group cursor-pointer relative" onClick={handleHome}>
-              <div className="w-16 h-16 rounded-full border-2 border-purple-500/50 flex items-center justify-center bg-purple-900/10 group-hover:bg-purple-500/20 group-hover:scale-110 group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.3)] group-active:shadow-[0_0_35px_rgba(168,85,247,0.8),inset_0_0_20px_rgba(168,85,247,0.2)] relative overflow-hidden">
+            <div className="text-center group cursor-pointer relative" onClick={handleHome} title="Home">
+              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-purple-500/50 flex items-center justify-center bg-purple-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.3)] group-active:shadow-[0_0_35px_rgba(168,85,247,0.8),inset_0_0_20px_rgba(168,85,247,0.2)] relative overflow-hidden`}>
                 {/* 背景网格 */}
                 <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(168,85,247,.1)_49%,rgba(168,85,247,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(168,85,247,.1)_49%,rgba(168,85,247,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
@@ -1336,15 +1432,17 @@ export default function CockpitPanel() {
                 <div className="absolute inset-0 rounded-full bg-purple-500/20 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500 pointer-events-none"></div>
                 
                 {/* 图标 */}
-                <Home className="text-purple-400 relative z-10 group-hover:text-purple-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" size={24} />
+                <Home className="text-purple-400 relative z-10 group-hover:text-purple-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" size={floatingButtonIconSize} />
               </div>
-              <div className="text-[10px] text-purple-400 mt-2 font-mono group-hover:text-purple-300 transition-colors duration-300 group-active:text-purple-500 group-hover:drop-shadow-[0_0_4px_rgba(168,85,247,0.6)]">HOME</div>
+              {showFloatingButtonLabels && (
+                <div className="text-[10px] text-purple-400 mt-2 font-mono group-hover:text-purple-300 transition-colors duration-300 group-active:text-purple-500 group-hover:drop-shadow-[0_0_4px_rgba(168,85,247,0.6)]">HOME</div>
+              )}
             </div>
           )}
 
           {/* MENU 按钮 - 在AUTOPILOT右侧 */}
-          <div className="text-center group cursor-pointer relative" onClick={handleMenu}>
-            <div className="w-16 h-16 rounded-full border-2 border-cyan-500/50 flex items-center justify-center bg-cyan-900/10 group-hover:bg-cyan-500/20 group-hover:scale-110 group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(0,243,255,0.3)] group-hover:shadow-[0_0_25px_rgba(0,243,255,0.6),0_0_50px_rgba(0,243,255,0.3)] group-active:shadow-[0_0_35px_rgba(0,243,255,0.8),inset_0_0_20px_rgba(0,243,255,0.2)] relative overflow-hidden">
+          <div className="text-center group cursor-pointer relative" onClick={handleMenu} title="Menu">
+            <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-cyan-500/50 flex items-center justify-center bg-cyan-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(0,243,255,0.3)] group-hover:shadow-[0_0_25px_rgba(0,243,255,0.6),0_0_50px_rgba(0,243,255,0.3)] group-active:shadow-[0_0_35px_rgba(0,243,255,0.8),inset_0_0_20px_rgba(0,243,255,0.2)] relative overflow-hidden`}>
               {/* 背景网格 */}
               <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(0,243,255,.1)_49%,rgba(0,243,255,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(0,243,255,.1)_49%,rgba(0,243,255,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -1364,9 +1462,11 @@ export default function CockpitPanel() {
               <div className="absolute inset-0 rounded-full bg-cyan-500/20 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500"></div>
               
               {/* 图标 */}
-              <Menu className="text-cyan-400 relative z-10 group-hover:text-cyan-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(0,243,255,0.8)]" size={24} />
+              <Menu className="text-cyan-400 relative z-10 group-hover:text-cyan-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(0,243,255,0.8)]" size={floatingButtonIconSize} />
             </div>
-            <div className="text-[10px] text-cyan-400 mt-2 font-mono group-hover:text-cyan-300 transition-colors duration-300 group-active:text-cyan-500 group-hover:drop-shadow-[0_0_4px_rgba(0,243,255,0.6)]">MENU</div>
+            {showFloatingButtonLabels && (
+              <div className="text-[10px] text-cyan-400 mt-2 font-mono group-hover:text-cyan-300 transition-colors duration-300 group-active:text-cyan-500 group-hover:drop-shadow-[0_0_4px_rgba(0,243,255,0.6)]">MENU</div>
+            )}
           </div>
         </div>
       ) : null}
