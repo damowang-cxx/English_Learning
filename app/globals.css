@@ -191,6 +191,531 @@ body::-webkit-scrollbar {
   color: #d8ffe0;
 }
 
+@keyframes training-panel-glint {
+  0% {
+    transform: translateX(-140%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.28;
+  }
+  34% {
+    opacity: 0.08;
+  }
+  100% {
+    transform: translateX(160%);
+    opacity: 0;
+  }
+}
+
+.training-future-commanddeck,
+.training-future-panel,
+.training-future-control-shell,
+.training-future-toolbar-button,
+.training-future-sentence-card,
+.training-future-inset,
+.training-future-reading-surface,
+.training-future-dictation-surface,
+.training-future-stat-box,
+.training-future-record {
+  position: relative;
+  overflow: hidden;
+}
+
+.training-future-commanddeck {
+  border-radius: 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background:
+    linear-gradient(135deg, rgba(5, 17, 15, 0.88) 0%, rgba(2, 8, 9, 0.84) 58%, rgba(8, 20, 16, 0.82) 100%);
+  box-shadow:
+    0 0 24px rgba(10, 255, 10, 0.08),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.05),
+    inset 0 0 28px rgba(10, 255, 10, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.training-future-commanddeck::before,
+.training-future-content::before,
+.training-future-panel::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 64px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.45), rgba(34, 197, 94, 0.1), transparent);
+  pointer-events: none;
+}
+
+.training-future-commanddeck::after,
+.training-future-content::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -18%;
+  width: 18%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(56, 189, 248, 0.05),
+    rgba(34, 197, 94, 0.08),
+    transparent
+  );
+  transform: translateX(-140%);
+  animation: training-panel-glint 10s linear infinite;
+  pointer-events: none;
+}
+
+.training-future-commanddeck > .relative,
+.training-future-content > .relative,
+.training-future-panel > .relative {
+  z-index: 1;
+}
+
+.training-future-kicker {
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.34), rgba(8, 24, 20, 0.42));
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.04),
+    0 0 12px rgba(10, 255, 10, 0.04);
+}
+
+.training-future-toolbar {
+  position: relative;
+}
+
+.training-future-control-shell,
+.training-future-toolbar-button {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: linear-gradient(135deg, rgba(3, 8, 9, 0.9), rgba(7, 19, 16, 0.72));
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.035),
+    0 0 14px rgba(10, 255, 10, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.training-future-control-shell::before,
+.training-future-toolbar-button::before {
+  content: '';
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.22), rgba(34, 197, 94, 0.16), transparent);
+  pointer-events: none;
+}
+
+.training-future-control-shell:hover,
+.training-future-toolbar-button:hover {
+  border-color: rgba(74, 222, 128, 0.3);
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.05),
+    0 0 18px rgba(10, 255, 10, 0.06);
+}
+
+.training-future-select {
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.42), rgba(5, 18, 15, 0.5));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.03);
+}
+
+.training-future-select:hover {
+  border-color: rgba(74, 222, 128, 0.28);
+}
+
+.training-future-select:focus {
+  border-color: rgba(125, 211, 252, 0.45);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(7, 22, 18, 0.56));
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.08),
+    0 0 16px rgba(56, 189, 248, 0.08);
+}
+
+.training-future-content {
+  border-radius: 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  background: linear-gradient(180deg, rgba(3, 8, 9, 0.84) 0%, rgba(3, 12, 11, 0.78) 100%);
+  box-shadow:
+    0 0 18px rgba(10, 255, 10, 0.07),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.04),
+    inset 0 0 22px rgba(10, 255, 10, 0.05);
+}
+
+.training-future-panel {
+  border-radius: 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: linear-gradient(160deg, rgba(3, 8, 9, 0.94) 0%, rgba(5, 17, 14, 0.74) 62%, rgba(3, 9, 10, 0.88) 100%);
+  box-shadow:
+    0 0 20px rgba(10, 255, 10, 0.07),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.035),
+    inset 0 0 18px rgba(10, 255, 10, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.training-future-panel::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  border-top: 1px solid rgba(74, 222, 128, 0.26);
+  border-left: 1px solid rgba(56, 189, 248, 0.28);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.training-future-panel-header {
+  position: relative;
+  z-index: 10;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.14);
+}
+
+.training-future-panel-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 88px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.5), rgba(34, 197, 94, 0.18), transparent);
+  pointer-events: none;
+}
+
+.training-vocabulary-book-panel.training-future-panel::before,
+.training-vocabulary-book-panel .training-future-panel-header::after,
+.training-vocabulary-book-panel .training-future-record::before {
+  display: none;
+}
+
+.training-vocabulary-book-panel {
+  isolation: isolate;
+  overflow: visible;
+  border-color: rgba(34, 197, 94, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.05), transparent 36%),
+    linear-gradient(165deg, rgba(4, 11, 11, 0.95) 0%, rgba(4, 13, 11, 0.78) 56%, rgba(2, 7, 8, 0.92) 100%);
+  box-shadow:
+    0 0 24px rgba(10, 255, 10, 0.06),
+    inset 0 0 0 1px rgba(34, 197, 94, 0.05),
+    inset 0 0 20px rgba(10, 255, 10, 0.04);
+}
+
+.training-vocabulary-book-panel::after {
+  display: none;
+}
+
+.training-vocabulary-book-header {
+  position: relative;
+  z-index: 4;
+  overflow: visible;
+  padding-bottom: 0.95rem;
+}
+
+.training-vocabulary-book-header::before {
+  content: '';
+  position: absolute;
+  inset: -0.35rem -0.4rem auto auto;
+  width: 8rem;
+  height: 2.8rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(34, 197, 94, 0.03) 42%, transparent 74%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.training-vocabulary-book-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.training-vocabulary-book-actions {
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+
+.training-vocabulary-book-toggle {
+  position: relative;
+  z-index: 6;
+  overflow: visible;
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.02),
+    0 0 0 1px rgba(34, 197, 94, 0.04);
+}
+
+.training-vocabulary-book-toggle:hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.05),
+    0 0 14px rgba(10, 255, 10, 0.08),
+    0 0 18px rgba(56, 189, 248, 0.06);
+}
+
+.training-vocabulary-book-body {
+  position: relative;
+  z-index: 2;
+}
+
+.training-vocabulary-book-scroll {
+  position: relative;
+  z-index: 2;
+  padding-right: 0.35rem;
+}
+
+.training-vocabulary-book-record {
+  position: relative;
+  overflow: visible;
+  border-color: rgba(34, 197, 94, 0.14);
+  background:
+    linear-gradient(180deg, rgba(56, 189, 248, 0.02), transparent 24%),
+    linear-gradient(160deg, rgba(4, 11, 10, 0.72), rgba(2, 6, 6, 0.52));
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 197, 94, 0.03),
+    0 0 0 1px rgba(10, 255, 10, 0.02);
+}
+
+.training-vocabulary-book-record::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 2px;
+  height: calc(100% - 20px);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.55), rgba(56, 189, 248, 0.2), transparent);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.training-vocabulary-book-record > * {
+  position: relative;
+  z-index: 1;
+}
+
+.training-future-stat-box {
+  border: 1px solid rgba(34, 197, 94, 0.14);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(7, 18, 15, 0.3));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.03);
+}
+
+.training-future-mini-button {
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(6, 17, 14, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.025);
+}
+
+.training-future-stream-header {
+  position: relative;
+  border-bottom: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.training-future-stream-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 132px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.48), rgba(34, 197, 94, 0.22), transparent);
+  pointer-events: none;
+}
+
+.training-future-sentence-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.1);
+  background: linear-gradient(145deg, rgba(2, 8, 8, 0.94), rgba(4, 13, 10, 0.72));
+  box-shadow:
+    0 0 14px rgba(10, 255, 10, 0.04),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.03);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
+}
+
+.training-future-sentence-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.28), rgba(34, 197, 94, 0.22), transparent);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.training-future-sentence-card:hover {
+  border-color: rgba(74, 222, 128, 0.18);
+  background: linear-gradient(145deg, rgba(4, 11, 11, 0.94), rgba(6, 15, 12, 0.76));
+  box-shadow:
+    0 0 18px rgba(10, 255, 10, 0.06),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.05);
+}
+
+.training-future-sentence-card.is-active {
+  border-color: rgba(74, 222, 128, 0.28);
+  background: linear-gradient(145deg, rgba(6, 19, 16, 0.94), rgba(5, 15, 12, 0.78));
+  box-shadow:
+    0 0 24px rgba(10, 255, 10, 0.08),
+    inset 0 0 0 1px rgba(56, 189, 248, 0.07),
+    inset 0 0 22px rgba(10, 255, 10, 0.06);
+}
+
+.training-future-sentence-glow {
+  background: linear-gradient(90deg, rgba(10, 255, 10, 0.03) 0%, transparent 58%, rgba(56, 189, 248, 0.02) 100%);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.training-future-sentence-rail {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.55), rgba(74, 222, 128, 0.82), rgba(10, 255, 10, 0.3));
+  box-shadow:
+    0 0 10px rgba(10, 255, 10, 0.28),
+    0 0 10px rgba(56, 189, 248, 0.14);
+}
+
+.training-future-sentence-divider {
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.18), rgba(34, 197, 94, 0.14), transparent);
+}
+
+.training-future-reading-surface {
+  border: 1px solid transparent;
+  border-radius: 0.95rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(0, 0, 0, 0));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.02);
+}
+
+.training-future-reading-surface:hover {
+  border-color: rgba(56, 189, 248, 0.12);
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.03), rgba(0, 0, 0, 0));
+}
+
+@keyframes training-word-signal-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 189, 248, 0.1),
+      inset 0 -1px 0 rgba(251, 191, 36, 0.42),
+      0 0 0 1px rgba(56, 189, 248, 0.12),
+      0 0 14px rgba(56, 189, 248, 0.12),
+      0 0 18px rgba(251, 191, 36, 0.08);
+  }
+
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 189, 248, 0.16),
+      inset 0 -1px 0 rgba(251, 191, 36, 0.56),
+      0 0 0 1px rgba(56, 189, 248, 0.18),
+      0 0 18px rgba(56, 189, 248, 0.18),
+      0 0 24px rgba(251, 191, 36, 0.14);
+  }
+}
+
+.training-future-word-highlight {
+  display: inline;
+  padding: 0.02em 0.2em 0.04em;
+  margin: 0 -0.03em;
+  border-radius: 0.36rem;
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  color: rgba(240, 253, 244, 0.98);
+  background:
+    linear-gradient(90deg, rgba(56, 189, 248, 0.12), rgba(10, 12, 16, 0.08)),
+    linear-gradient(180deg, rgba(251, 191, 36, 0.26), rgba(251, 191, 36, 0.07));
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.1),
+    inset 0 -1px 0 rgba(251, 191, 36, 0.42),
+    0 0 0 1px rgba(56, 189, 248, 0.12),
+    0 0 14px rgba(56, 189, 248, 0.12),
+    0 0 18px rgba(251, 191, 36, 0.08);
+  text-shadow:
+    0 0 8px rgba(56, 189, 248, 0.14),
+    0 0 10px rgba(251, 191, 36, 0.12);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  animation: training-word-signal-pulse 2.6s ease-in-out infinite;
+}
+
+.training-future-dictation-surface {
+  border: 1px solid rgba(251, 191, 36, 0.14);
+  background: linear-gradient(145deg, rgba(18, 12, 5, 0.42), rgba(5, 9, 8, 0.72));
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.045),
+    inset 0 0 24px rgba(251, 191, 36, 0.03);
+}
+
+.training-future-dictation-surface.is-active {
+  border-color: rgba(251, 191, 36, 0.24);
+  background: linear-gradient(145deg, rgba(28, 18, 8, 0.48), rgba(6, 11, 9, 0.78));
+  box-shadow:
+    0 0 18px rgba(251, 191, 36, 0.05),
+    inset 0 0 0 1px rgba(251, 191, 36, 0.06),
+    inset 0 0 22px rgba(251, 191, 36, 0.04);
+}
+
+.training-future-inset {
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  background: linear-gradient(160deg, rgba(1, 4, 5, 0.76), rgba(5, 14, 12, 0.58));
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.03),
+    inset 0 0 18px rgba(10, 255, 10, 0.035);
+}
+
+.training-future-inset--dense {
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 189, 248, 0.035),
+    inset 0 0 20px rgba(10, 255, 10, 0.04),
+    0 0 14px rgba(10, 255, 10, 0.035);
+}
+
+.training-future-inset--warning {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: linear-gradient(160deg, rgba(20, 12, 4, 0.66), rgba(10, 12, 9, 0.58));
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.05),
+    inset 0 0 18px rgba(251, 191, 36, 0.05),
+    0 0 14px rgba(251, 191, 36, 0.04);
+}
+
+.training-future-inset--review::before,
+.training-future-inset--form::before,
+.training-future-record::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.24), rgba(34, 197, 94, 0.14), transparent);
+  pointer-events: none;
+}
+
+.training-future-record {
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  background: linear-gradient(160deg, rgba(4, 11, 10, 0.58), rgba(2, 6, 6, 0.44));
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.03);
+}
+
+.training-future-record > * {
+  position: relative;
+  z-index: 1;
+}
+
+.training-future-record.is-legacy {
+  border-color: rgba(251, 191, 36, 0.28);
+  background: linear-gradient(160deg, rgba(36, 18, 8, 0.4), rgba(12, 9, 7, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.04);
+}
+
 /* 确保训练页面时 body 和 html 不显示滚动条 */
 [data-training-page] {
   overflow: hidden;

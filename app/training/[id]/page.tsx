@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { type ReactNode, useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
@@ -82,7 +82,119 @@ const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
   saveStatus: 'idle',
 })
 
+const VOCABULARY_POS_OPTIONS = [
+  { value: 'n.', label: 'N.' },
+  { value: 'v.', label: 'V.' },
+  { value: 'adj.', label: 'ADJ.' },
+  { value: 'adv.', label: 'ADV.' },
+  { value: 'prep.', label: 'PREP.' },
+  { value: 'pron.', label: 'PRON.' },
+  { value: 'conj.', label: 'CONJ.' },
+  { value: 'phr.', label: 'PHR.' },
+] as const
+
 const PLAYER_VISUALIZER_BARS = [28, 46, 34, 58, 42, 66, 38, 62, 36, 54, 30, 48]
+
+interface SentenceHighlightRange {
+  start: number
+  end: number
+  label: string
+  key: string
+}
+
+function escapeHighlightRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function buildSentenceHighlightPattern(headword: string) {
+  const trimmed = headword.trim()
+
+  if (!trimmed) {
+    return null
+  }
+
+  const escaped = escapeHighlightRegExp(trimmed)
+    .replace(/\s+/g, '\\s+')
+    .replace(/['’]/g, "['’]?")
+
+  return new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, 'gi')
+}
+
+function getSentenceHighlightRanges(sentenceText: string, entries: VocabularyEntry[]): SentenceHighlightRange[] {
+  const ranges: SentenceHighlightRange[] = []
+  const structuredEntries = entries
+    .filter((entry) => isVocabularyEntryStructured(entry) && entry.headword.trim().length > 0)
+    .sort((left, right) => right.headword.length - left.headword.length)
+
+  for (const entry of structuredEntries) {
+    const pattern = buildSentenceHighlightPattern(entry.headword)
+    const label = formatVocabularyEntry(entry).trim()
+
+    if (!pattern || !label) {
+      continue
+    }
+
+    let match = pattern.exec(sentenceText)
+
+    while (match) {
+      const start = match.index
+      const end = start + match[0].length
+      const isOverlapping = ranges.some((range) => start < range.end && end > range.start)
+
+      if (!isOverlapping) {
+        ranges.push({
+          start,
+          end,
+          label,
+          key: `${entry.headwordKey}-${start}-${end}`,
+        })
+      }
+
+      match = pattern.exec(sentenceText)
+    }
+  }
+
+  return ranges.sort((left, right) => left.start - right.start)
+}
+
+function renderSentenceTextWithHighlights(sentenceText: string, entries: VocabularyEntry[], shouldHighlight: boolean): ReactNode {
+  if (!shouldHighlight) {
+    return sentenceText
+  }
+
+  const ranges = getSentenceHighlightRanges(sentenceText, entries)
+
+  if (ranges.length === 0) {
+    return sentenceText
+  }
+
+  const nodes: ReactNode[] = []
+  let cursor = 0
+
+  for (const range of ranges) {
+    if (cursor < range.start) {
+      nodes.push(sentenceText.slice(cursor, range.start))
+    }
+
+    nodes.push(
+      <span
+        key={range.key}
+        className="training-future-word-highlight"
+        title={range.label}
+      >
+        {sentenceText.slice(range.start, range.end)}
+      </span>
+    )
+
+    cursor = range.end
+  }
+
+  if (cursor < sentenceText.length) {
+    nodes.push(sentenceText.slice(cursor))
+  }
+
+  return nodes
+}
 
 function scrollSentenceWithinContainer(
   container: HTMLDivElement,
@@ -725,6 +837,18 @@ export default function TrainingDetailPage() {
     setExpandedNotes(newExpanded)
   }
 
+  const openVocabularyBook = () => {
+    setIsVocabularyBookExpanded(true)
+  }
+
+  const closeVocabularyBook = () => {
+    setIsVocabularyBookExpanded(false)
+  }
+
+  const toggleVocabularyBook = () => {
+    setIsVocabularyBookExpanded((prev) => !prev)
+  }
+
   const toggleSentenceTranslation = (sentenceId: string) => {
     if (showTranslations) {
       setCollapsedGlobalTranslations((prev) => {
@@ -1108,7 +1232,10 @@ export default function TrainingDetailPage() {
     ? item.sentences.reduce(
         (total, sentence) => (
           total
-          + (sentenceVocabulary[sentence.id]?.items.filter(isVocabularyEntryStructured).length || 0)
+          + (
+            sentenceVocabulary[sentence.id]?.items.filter((entry) => formatVocabularyEntry(entry).trim().length > 0).length
+            || 0
+          )
         ),
         0
       )
@@ -1129,10 +1256,8 @@ export default function TrainingDetailPage() {
   const trainingOuterInsetClassName = isFullscreen
     ? 'mx-4 md:mx-6 xl:mx-8'
     : 'mx-2 md:mx-3 xl:mx-4'
-  const hudPanelClassName =
-    'relative overflow-hidden rounded-xl border border-green-500/25 bg-black/30 backdrop-blur-sm shadow-[0_0_18px_rgba(10,255,10,0.08),inset_0_0_20px_rgba(10,255,10,0.08)]'
-  const hudPanelHeaderClassName =
-    'relative z-10 mb-4 flex items-center justify-between gap-3 border-b border-green-500/15 pb-3'
+  const hudPanelClassName = 'training-future-panel'
+  const hudPanelHeaderClassName = 'training-future-panel-header'
   const getVocabularySaveStatusMeta = (saveStatus: SaveStatus) => {
     switch (saveStatus) {
       case 'saving':
@@ -1159,7 +1284,7 @@ export default function TrainingDetailPage() {
     model: DictationSentenceModel,
     result: DictationSentenceResult
   ) => (
-    <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+    <div className="training-future-inset training-future-inset--review mt-3 px-4 py-3">
       <div className="mb-2 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
         VERIFIED SENTENCE
       </div>
@@ -1369,12 +1494,10 @@ export default function TrainingDetailPage() {
           )}
 
           <div className={trainingShellClassName}>
-            <div className={`relative ${trainingOuterInsetClassName} overflow-hidden rounded-xl border border-green-500/20 bg-gradient-to-r from-green-900/16 via-black/15 to-black/10 px-4 py-3 shadow-[0_0_18px_rgba(10,255,10,0.06),inset_0_0_18px_rgba(10,255,10,0.05)] md:px-5 md:py-4`}>
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.04)_0%,transparent_42%)]"></div>
-              <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent"></div>
+            <div className={`training-future-commanddeck ${trainingOuterInsetClassName} px-4 py-3 md:px-5 md:py-4`}>
               <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="min-w-0">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-green-500/18 bg-black/20 px-2.5 py-1 text-[10px] cyber-label tracking-[0.28em] text-green-400/75">
+                  <div className="training-future-kicker inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] cyber-label tracking-[0.28em] text-green-400/75">
                     <span className="h-1.5 w-1.5 rounded-full bg-green-400/70 shadow-[0_0_4px_rgba(10,255,10,0.45)]"></span>
                     <span>TRAINING MODULE</span>
                   </div>
@@ -1385,8 +1508,8 @@ export default function TrainingDetailPage() {
                     FOCUSED LISTENING SESSION
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 xl:max-w-[52%] xl:justify-end">
-                  <div className="relative flex items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 shadow-[0_0_12px_rgba(10,255,10,0.05)]">
+                <div className="training-future-toolbar flex flex-wrap items-center gap-2 xl:max-w-[52%] xl:justify-end">
+                  <div className="training-future-control-shell relative flex items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 shadow-[0_0_12px_rgba(10,255,10,0.05)]">
                     <span className="text-[10px] cyber-label tracking-[0.22em] text-green-400/70">
                       READ FONT
                     </span>
@@ -1399,7 +1522,7 @@ export default function TrainingDetailPage() {
                             setSelectedSentenceFontId(nextFontId)
                           }
                         }}
-                        className="training-font-select h-7 w-full appearance-none rounded border border-green-500/16 bg-black/35 px-2.5 pr-8 text-[12px] text-green-100 outline-none transition-all hover:border-green-500/26 focus:border-green-300/45 focus:bg-black/45"
+                        className="training-font-select training-future-select h-7 w-full appearance-none rounded px-2.5 pr-8 text-[12px] text-green-100 outline-none transition-all"
                         aria-label="Training sentence font"
                         title="Change English sentence font"
                       >
@@ -1426,7 +1549,7 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={handleEditClick}
-                    className="group/btn relative flex cursor-pointer items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    className="training-future-toolbar-button group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
                     style={{ zIndex: 100 }}
                   >
                     <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
@@ -1438,7 +1561,7 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className="group/btn relative flex cursor-pointer items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    className="training-future-toolbar-button group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
                     style={{ zIndex: 100 }}
                     title={isFullscreen ? '缩小' : '全屏'}
                   >
@@ -1462,7 +1585,7 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={() => router.push('/')}
-                    className="group/btn relative cursor-pointer rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:border-green-500/35 hover:bg-green-500/[0.06] hover:text-green-300"
+                    className="training-future-toolbar-button group/btn relative cursor-pointer px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
                     style={{ zIndex: 100 }}
                   >
                     <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
@@ -1475,7 +1598,7 @@ export default function TrainingDetailPage() {
             {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
             <div
               ref={contentRef}
-              className={`relative ${trainingOuterInsetClassName} training-hud-content min-h-0 rounded-xl border border-green-500/15 bg-black/15 shadow-[0_0_18px_rgba(10,255,10,0.06),inset_0_0_18px_rgba(10,255,10,0.05)] ${
+              className={`training-future-content relative ${trainingOuterInsetClassName} training-hud-content min-h-0 ${
                 isFullscreen ? 'flex-1' : ''
               }`}
               style={{
@@ -1486,7 +1609,7 @@ export default function TrainingDetailPage() {
                 <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
               <aside className="order-1 xl:order-2 xl:sticky xl:top-0">
                 <div className="space-y-6">
-                  <div className={`${hudPanelClassName} p-4 md:p-5`}>
+                  <div className={`${hudPanelClassName} training-vocabulary-book-panel p-4 md:p-5`}>
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.05)_0%,transparent_55%)] opacity-60"></div>
                     <div className={hudPanelHeaderClassName}>
                       <div className="flex items-center gap-3">
@@ -1555,15 +1678,15 @@ export default function TrainingDetailPage() {
                           </button>
 
                           <div className="grid grid-cols-3 gap-2">
-                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
                               <div className="mb-1 text-[10px] cyber-label text-green-500/55">CURRENT</div>
                               <div className="text-sm cyber-number cyber-tabular text-green-300">{formatTime(currentTime)}</div>
                             </div>
-                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
                               <div className="mb-1 text-[10px] cyber-label text-green-500/55">TOTAL</div>
                               <div className="text-sm cyber-number cyber-tabular text-green-300/80">{formatTime(duration)}</div>
                             </div>
-                            <div className="rounded-lg border border-green-500/15 bg-black/25 px-2 py-2 text-center">
+                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
                               <div className="mb-1 text-[10px] cyber-label text-green-500/55">PROGRESS</div>
                               <div className="text-sm cyber-number cyber-tabular text-green-300">
                                 {duration > 0 ? Math.round((currentTime / duration) * 100) : 0}%
@@ -1582,7 +1705,7 @@ export default function TrainingDetailPage() {
                                 key={rate}
                                 type="button"
                                 onClick={() => handleSpeedChange(rate)}
-                                className={`rounded border px-3 py-1 text-xs cyber-button-text transition-all ${
+                                className={`training-future-mini-button rounded px-3 py-1 text-xs cyber-button-text transition-all ${
                                   playbackRate === rate
                                     ? 'border-green-500/70 bg-green-500/25 text-green-200'
                                     : 'border-green-500/25 bg-black/35 text-green-400/70 hover:border-green-500/45 hover:bg-green-500/10'
@@ -1594,7 +1717,7 @@ export default function TrainingDetailPage() {
                           </div>
                         </div>
 
-                        <div className="rounded-lg border border-green-500/15 bg-black/20 px-3 py-2">
+                        <div className="training-future-inset rounded-lg px-3 py-2">
                           <div className="flex h-4 items-end gap-1">
                             {PLAYER_VISUALIZER_BARS.map((height, index) => (
                               <div
@@ -1627,7 +1750,7 @@ export default function TrainingDetailPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-4 rounded-lg border border-dashed border-amber-400/20 bg-amber-500/[0.05] px-4 py-5 text-center">
+                        <div className="training-future-inset training-future-inset--warning mt-4 rounded-lg px-4 py-5 text-center">
                           <div className="text-sm cyber-text text-amber-100/80">Listen first. Reveal notes after you finish the line.</div>
                           <div className="mt-2 text-[10px] cyber-label text-amber-300/55">
                             Turn off dictation mode to reopen the vocabulary book.
@@ -1637,52 +1760,73 @@ export default function TrainingDetailPage() {
                     )}
                     {!isDictationMode && (
                       <>
-                    <button
-                      type="button"
-                      onClick={() => setIsVocabularyBookExpanded((prev) => !prev)}
-                      className="block w-full text-left"
-                      aria-expanded={isVocabularyBookExpanded}
-                      aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
-                    >
-                      <div className={`${hudPanelHeaderClassName} mb-0`}>
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="h-4 w-1 bg-green-500/80"></div>
-                          <div className="min-w-0">
-                            <div className="text-sm cyber-label tracking-[0.28em] text-green-300">VOCABULARY BOOK</div>
-                            <div className="mt-1 text-[10px] cyber-label text-green-500/50">
-                              {vocabularyBook.length} UNIQUE / {totalVocabularyEntries} TOTAL
-                            </div>
+                    <div className={`${hudPanelHeaderClassName} training-vocabulary-book-header mb-0`}>
+                      <button
+                        type="button"
+                        onClick={toggleVocabularyBook}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        aria-expanded={isVocabularyBookExpanded}
+                        aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
+                      >
+                        <div className="h-4 w-1 bg-green-500/80"></div>
+                        <div className="min-w-0">
+                          <div className="text-sm cyber-label tracking-[0.28em] text-green-300">VOCABULARY BOOK</div>
+                          <div className="mt-1 text-[10px] cyber-label text-green-500/50">
+                            {vocabularyBook.length} UNIQUE / {totalVocabularyEntries} TOTAL
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded border border-green-500/18 bg-black/20 px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200">
-                            {isVocabularyBookExpanded ? 'HIDE' : 'SHOW'}
-                          </span>
-                          <span
-                            className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
-                            style={{ transform: isVocabularyBookExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                      </button>
+                      <div className="training-vocabulary-book-actions flex shrink-0 items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={isVocabularyBookExpanded ? closeVocabularyBook : openVocabularyBook}
+                          className="training-vocabulary-book-toggle training-future-mini-button flex items-center rounded px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200"
+                          aria-expanded={isVocabularyBookExpanded}
+                          aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
+                          title={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
+                        >
+                          {isVocabularyBookExpanded ? 'HIDE' : 'SHOW'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={isVocabularyBookExpanded ? closeVocabularyBook : openVocabularyBook}
+                          className="training-vocabulary-book-toggle training-future-mini-button flex h-7 w-7 items-center justify-center rounded text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200"
+                          aria-expanded={isVocabularyBookExpanded}
+                          aria-label={isVocabularyBookExpanded ? 'Collapse vocabulary book' : 'Expand vocabulary book'}
+                          title={isVocabularyBookExpanded ? 'Collapse vocabulary book' : 'Expand vocabulary book'}
+                        >
+                          <svg
+                            className="h-3.5 w-3.5 transition-transform duration-200"
+                            style={{ transform: isVocabularyBookExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
                           >
-                            {isVocabularyBookExpanded ? '▼' : '▶'}
-                          </span>
-                        </div>
+                            <path
+                              fillRule="evenodd"
+                              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    </button>
+                    </div>
 
                     {isVocabularyBookExpanded && (
-                      <div className="mt-4 animate-fade-in">
+                      <div className="training-vocabulary-book-body mt-4 animate-fade-in">
                         {vocabularyBook.length === 0 ? (
-                          <div className="rounded-lg border border-dashed border-green-500/20 bg-black/20 px-4 py-5 text-center">
+                          <div className="training-future-inset mt-0 rounded-lg border-dashed px-4 py-5 text-center">
                             <div className="text-sm cyber-text text-green-300/75">No vocabulary recorded on this page yet.</div>
                             <div className="mt-2 text-[10px] cyber-label text-green-500/50">
                               Add structured entries under any sentence to build the notebook.
                             </div>
                           </div>
                         ) : (
-                          <div className="training-subpanel-scroll max-h-[320px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
+                          <div className="training-vocabulary-book-scroll training-subpanel-scroll max-h-[320px] space-y-3 overflow-y-auto pr-1 xl:max-h-[360px]">
                             {vocabularyBook.map((entry) => (
                               <div
                                 key={entry.normalizedKey}
-                                className="rounded-lg border border-green-500/15 bg-black/20 px-4 py-3"
+                                className="training-vocabulary-book-record training-future-record rounded-lg px-4 py-3"
                               >
                                 <div className="flex flex-col gap-3">
                                   <button
@@ -1723,7 +1867,7 @@ export default function TrainingDetailPage() {
 
               <section className="order-2 min-w-0 xl:order-1">
                 <div className="pt-2 pb-6 md:pt-3 md:pb-8">
-                  <div className="mb-6 flex flex-col gap-3 border-b border-green-500/[0.12] pb-5 md:mb-7 md:flex-row md:items-end md:justify-between">
+                  <div className="training-future-stream-header mb-6 flex flex-col gap-3 pb-5 md:mb-7 md:flex-row md:items-end md:justify-between">
                     <div>
                       <div className="text-[10px] cyber-label tracking-[0.3em] text-green-400/72">SENTENCE STREAM</div>
                       <div className="mt-1 text-[11px] cyber-label text-green-500/45">
@@ -1754,6 +1898,11 @@ export default function TrainingDetailPage() {
                       const vocabularyCount = vocabularyState.items.length
                       const isVocabularyFormReady = isVocabularyFormSubmittable(vocabularyState.form)
                       const saveStatusMeta = getVocabularySaveStatusMeta(vocabularyState.saveStatus)
+                      const highlightedSentenceText = renderSentenceTextWithHighlights(
+                        sentence.text,
+                        vocabularyState.items,
+                        isNotesExpanded && vocabularyCount > 0
+                      )
                       const dictationModel = dictationModels[sentence.id] || buildDictationSentenceModel(sentence.text)
                       const dictationState = getSentenceDictationState(sentence.id, dictationModel)
                       const isDictationSentenceCompleteState = isDictationSentenceComplete(dictationModel, dictationState.inputs)
@@ -1774,19 +1923,15 @@ export default function TrainingDetailPage() {
                           ref={(el) => {
                             sentenceRefs.current[index] = el
                           }}
-                          className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
-                            isActive
-                              ? 'border-green-400/[0.22] bg-green-500/[0.045] shadow-[0_0_10px_rgba(10,255,10,0.09),inset_0_0_10px_rgba(10,255,10,0.05)]'
-                              : 'border-green-500/[0.08] bg-black/[0.14] hover:border-green-500/[0.14] hover:bg-black/[0.18]'
-                          }`}
+                          className={`training-future-sentence-card${isActive ? ' is-active' : ''}`}
                         >
-                          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.025)_0%,transparent_60%)] opacity-55"></div>
+                          <div className="training-future-sentence-glow absolute inset-0"></div>
                           {isActive && (
-                            <div className="absolute inset-y-6 left-0 w-[2px] rounded-r-full bg-green-400/75 shadow-[0_0_6px_rgba(10,255,10,0.32)]"></div>
+                            <div className="training-future-sentence-rail absolute inset-y-6 left-0 w-[2px] rounded-r-full"></div>
                           )}
                           <div
-                            className={`pointer-events-none absolute bottom-0 left-8 right-6 h-px bg-gradient-to-r from-transparent via-green-500/[0.16] to-transparent ${
-                              isActive ? 'opacity-75' : 'opacity-40'
+                            className={`training-future-sentence-divider pointer-events-none absolute bottom-0 left-8 right-6 h-px ${
+                              isActive ? 'is-active opacity-75' : 'opacity-40'
                             }`}
                           ></div>
 
@@ -1863,10 +2008,10 @@ export default function TrainingDetailPage() {
                               <div className="mt-3.5 border-t border-amber-400/[0.08] pt-3">
                                 <div
                                   onClick={() => handleSentenceClick(sentence)}
-                                  className={`rounded-xl border px-4 py-4 transition-all ${
+                                  className={`training-future-dictation-surface rounded-xl px-4 py-4 transition-all ${
                                     isActive
-                                      ? 'border-amber-300/20 bg-amber-500/[0.05]'
-                                      : 'border-green-500/[0.08] bg-black/[0.12] hover:border-green-500/[0.14]'
+                                      ? 'is-active'
+                                      : ''
                                   }`}
                                 >
                                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1944,7 +2089,7 @@ export default function TrainingDetailPage() {
                                     ))}
                                   </div>
 
-                                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-amber-400/[0.08] pt-3">
+                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-amber-400/[0.08] pt-3">
                                     <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
                                       <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75">
                                         NO PUNCTUATION INPUT
@@ -1980,7 +2125,7 @@ export default function TrainingDetailPage() {
                                   {dictationResult && renderDictationReview(dictationModel, dictationResult)}
 
                                   {isTranslationVisible && sentence.translation && (
-                                    <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+                                    <div className="training-future-inset mt-3 rounded-lg px-4 py-3">
                                       <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
                                         TRANSLATION
                                       </div>
@@ -1995,14 +2140,14 @@ export default function TrainingDetailPage() {
                               <>
                             <div
                               onClick={() => handleSentenceClick(sentence)}
-                              className={`mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
+                              className={`training-future-reading-surface mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
                                   isActive
                                     ? 'text-green-100'
                                     : 'text-gray-100 hover:text-green-100'
                                 }`}
                             >
                               <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className}`}>
-                                {sentence.text}
+                                {highlightedSentenceText}
                               </p>
                             </div>
 
@@ -2024,15 +2169,21 @@ export default function TrainingDetailPage() {
                                   )}
                                 </span>
                                 <span
-                                  className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
-                                  style={{ transform: isNotesExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                                  className="flex h-5 w-5 items-center justify-center text-green-400/70 transition-transform duration-200"
+                                  style={{ transform: isNotesExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                 >
-                                  {isNotesExpanded ? '▼' : '▶'}
+                                  <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
                                 </span>
                               </button>
 
                               {isTranslationVisible && sentence.translation && (
-                                <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+                                <div className="training-future-inset mt-3 rounded-lg px-4 py-3">
                                   <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
                                     TRANSLATION
                                   </div>
@@ -2043,7 +2194,7 @@ export default function TrainingDetailPage() {
                               )}
 
                               {isNotesExpanded && (
-                                <div className="mt-2.5 animate-fade-in rounded-xl border border-green-500/15 bg-black/20 p-3">
+                                <div className="training-future-inset training-future-inset--dense mt-2.5 animate-fade-in rounded-xl p-3">
                                   {vocabularyCount > 0 ? (
                                     <div className="mb-3 space-y-2.5">
                                       {vocabularyState.items.map((entry) => {
@@ -2053,10 +2204,10 @@ export default function TrainingDetailPage() {
                                         return (
                                           <div
                                             key={`${sentence.id}-${getVocabularyEntryKey(entry)}`}
-                                            className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 ${
+                                            className={`training-future-record flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 ${
                                               isLegacyEntry
-                                                ? 'border-dashed border-amber-400/30 bg-amber-500/[0.06]'
-                                                : 'border-green-500/20 bg-green-500/[0.05]'
+                                                ? 'is-legacy border-dashed'
+                                                : ''
                                             }`}
                                           >
                                             <div className="min-w-0">
@@ -2092,7 +2243,7 @@ export default function TrainingDetailPage() {
                                       })}
                                     </div>
                                   ) : (
-                                    <div className="mb-3 rounded-md border border-dashed border-green-500/20 bg-black/20 px-3 py-3 text-[10px] cyber-label text-green-500/50">
+                                    <div className="training-future-inset mb-3 rounded-md border-dashed px-3 py-3 text-[10px] cyber-label text-green-500/50">
                                       No vocabulary yet. Add a structured entry below.
                                     </div>
                                   )}
@@ -2102,12 +2253,9 @@ export default function TrainingDetailPage() {
                                       event.preventDefault()
                                       handleVocabularySubmit(sentence.id)
                                     }}
-                                    className="space-y-3 rounded-lg border border-green-500/20 bg-black/25 p-3"
+                                    className="training-future-inset training-future-inset--form space-y-3 rounded-lg p-3"
                                   >
                                     <div>
-                                      <label className="mb-2 block text-[10px] cyber-label tracking-[0.24em] text-green-500/55">
-                                        HEADWORD
-                                      </label>
                                       <input
                                         value={vocabularyState.form.headword}
                                         onChange={(event) => handleVocabularyHeadwordChange(sentence.id, event.target.value)}
@@ -2118,10 +2266,7 @@ export default function TrainingDetailPage() {
                                     </div>
 
                                     <div className="space-y-2.5">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <label className="text-[10px] cyber-label tracking-[0.24em] text-green-500/55">
-                                          SENSES
-                                        </label>
+                                      <div className="flex justify-end">
                                         <button
                                           type="button"
                                           onClick={() => handleVocabularyAddSense(sentence.id)}
@@ -2134,49 +2279,65 @@ export default function TrainingDetailPage() {
                                       {vocabularyState.form.senses.map((sense, senseIndex) => (
                                         <div
                                           key={`${sentence.id}-sense-${senseIndex}`}
-                                          className="grid gap-2 md:grid-cols-[96px_minmax(0,1fr)_auto]"
+                                          className="training-future-record rounded-lg p-3"
                                         >
-                                          <input
-                                            value={sense.pos}
-                                            onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'pos', event.target.value)}
-                                            placeholder="v."
-                                            spellCheck={false}
-                                            className="rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
-                                          />
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="text-[10px] cyber-label tracking-[0.22em] text-green-500/55">
+                                              POS SELECT
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleVocabularyRemoveSense(sentence.id, senseIndex)}
+                                              className="rounded-md border border-green-500/16 bg-black/20 px-3 py-2 text-[10px] cyber-button-text text-green-300/70 transition-colors hover:border-red-400/35 hover:text-red-300 disabled:cursor-not-allowed disabled:text-green-500/35"
+                                              disabled={vocabularyState.form.senses.length === 1}
+                                              aria-label={`Remove sense ${senseIndex + 1}`}
+                                              title={`Remove sense ${senseIndex + 1}`}
+                                            >
+                                              REMOVE
+                                            </button>
+                                          </div>
+                                          <div
+                                            className="mt-2 flex flex-wrap gap-2"
+                                            role="radiogroup"
+                                            aria-label={`Part of speech for sense ${senseIndex + 1}`}
+                                          >
+                                            {VOCABULARY_POS_OPTIONS.map((option) => {
+                                              const isSelected = sense.pos === option.value
+
+                                              return (
+                                                <label
+                                                  key={`${sentence.id}-sense-${senseIndex}-${option.value}`}
+                                                  className={`relative inline-flex cursor-pointer items-center rounded-md border px-2.5 py-1.5 text-[10px] cyber-button-text transition-all ${
+                                                    isSelected
+                                                      ? 'border-green-400/38 bg-green-500/[0.14] text-green-100 shadow-[0_0_14px_rgba(10,255,10,0.08)]'
+                                                      : 'border-green-500/18 bg-black/25 text-green-300/75 hover:border-green-500/34 hover:bg-green-500/[0.06] hover:text-green-200'
+                                                  }`}
+                                                >
+                                                  <input
+                                                    type="radio"
+                                                    name={`sentence-${sentence.id}-sense-${senseIndex}-pos`}
+                                                    value={option.value}
+                                                    checked={isSelected}
+                                                    onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'pos', event.target.value)}
+                                                    className="sr-only"
+                                                  />
+                                                  <span>{option.label}</span>
+                                                </label>
+                                              )
+                                            })}
+                                          </div>
                                           <input
                                             value={sense.meaning}
                                             onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'meaning', event.target.value)}
                                             placeholder="使分离"
                                             spellCheck={false}
-                                            className="rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                            className="mt-3 w-full rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
                                           />
-                                          <button
-                                            type="button"
-                                            onClick={() => handleVocabularyRemoveSense(sentence.id, senseIndex)}
-                                            className="rounded-md border border-green-500/16 bg-black/20 px-3 py-2 text-[10px] cyber-button-text text-green-300/70 transition-colors hover:border-red-400/35 hover:text-red-300 disabled:cursor-not-allowed disabled:text-green-500/35"
-                                            disabled={vocabularyState.form.senses.length === 1}
-                                            aria-label={`Remove sense ${senseIndex + 1}`}
-                                            title={`Remove sense ${senseIndex + 1}`}
-                                          >
-                                            REMOVE
-                                          </button>
                                         </div>
                                       ))}
                                     </div>
 
-                                    <div className="rounded-md border border-green-500/10 bg-black/20 px-3 py-2">
-                                      <div className="text-[10px] cyber-label text-green-500/50">
-                                        Stored as <span className="cyber-font-readable text-green-200/80">headword:pos.meaning；pos.meaning</span>
-                                      </div>
-                                      <div className="mt-1 text-[10px] cyber-label text-green-500/45">
-                                        Example: <span className="cyber-font-readable text-green-200/75">separate:v.使分离；n.可以搭配的单件衣服；adj.单独的分开的</span>
-                                      </div>
-                                    </div>
-
                                     <div className="flex flex-wrap items-center justify-between gap-3">
-                                      <div className="text-[10px] cyber-label text-green-500/50">
-                                        One headword can include multiple parts of speech.
-                                      </div>
                                       <button
                                         type="submit"
                                         disabled={!isVocabularyFormReady}

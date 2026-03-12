@@ -450,24 +450,30 @@ export function buildVocabularyBook(
     const items = vocabularyBySentence[sentence.id]?.items || []
 
     for (const item of items) {
-      if (!isVocabularyEntryStructured(item)) {
+      const label = formatVocabularyEntry(item).trim()
+
+      if (!label) {
         continue
       }
 
-      let vocabularyBookItem = itemMap.get(item.headwordKey)
+      const itemKey = isVocabularyEntryStructured(item)
+        ? item.headwordKey
+        : getVocabularyEntryKey(item)
+
+      let vocabularyBookItem = itemMap.get(itemKey)
 
       if (!vocabularyBookItem) {
         vocabularyBookItem = {
           headword: item.headword,
-          label: formatVocabularyEntry(item),
-          normalizedKey: item.headwordKey,
+          label,
+          normalizedKey: itemKey,
           senses: [...item.senses],
           count: 0,
           sentences: [],
         }
-        itemMap.set(item.headwordKey, vocabularyBookItem)
+        itemMap.set(itemKey, vocabularyBookItem)
         bookItems.push(vocabularyBookItem)
-      } else {
+      } else if (isVocabularyEntryStructured(item)) {
         vocabularyBookItem.senses = dedupeVocabularySenses([...vocabularyBookItem.senses, ...item.senses])
         vocabularyBookItem.label = formatVocabularyEntry({
           headword: vocabularyBookItem.headword,
