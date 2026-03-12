@@ -1,16 +1,18 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages } from 'lucide-react'
+import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages, Keyboard } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { useDictationMode } from '@/contexts/DictationModeContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
 const DEFAULT_DOCK_SCALE = 0.5
 const TRAINING_DOCK_SCALE = 0.62
 const TRAINING_DOCK_BUTTON_SIZE = 48
 const TRAINING_DOCK_BUTTON_GAP = 12
+const TRAINING_DOCK_BUTTON_COUNT = 5
 const TRAINING_DOCK_VIEWPORT_PADDING = 12
 const TRAINING_DOCK_FRAME_CLEARANCE = 10
 const TRAINING_DOCK_BOTTOM_OFFSET = 28
@@ -123,6 +125,7 @@ export default function CockpitPanel() {
   const pathname = usePathname()
   const appPathname = stripBasePath(pathname || '/')
   const translationContext = useTranslation()
+  const { isDictationMode, toggleDictationMode, setIsDictationMode } = useDictationMode()
   const [currentTime, setCurrentTime] = useState('')
   const [engineLevel, setEngineLevel] = useState(85)
   const [shieldLevel, setShieldLevel] = useState(100)
@@ -176,6 +179,13 @@ export default function CockpitPanel() {
   const floatingButtonHoverScaleClassName = isTrainingPage ? 'group-hover:scale-[1.06]' : 'group-hover:scale-110'
   const floatingButtonIconSize = isTrainingPage ? 20 : 24
   const showFloatingButtonLabels = !isTrainingPage
+  const isTranslationToggleDisabled = isTrainingPage && isDictationMode
+
+  useEffect(() => {
+    if (!isTrainingPage && isDictationMode) {
+      setIsDictationMode(false)
+    }
+  }, [isTrainingPage, isDictationMode, setIsDictationMode])
   
   // 监听路由变化，控制动画阶段
   useEffect(() => {
@@ -246,7 +256,10 @@ export default function CockpitPanel() {
       const rect = frame.getBoundingClientRect()
       const visualButtonSize = TRAINING_DOCK_BUTTON_SIZE * TRAINING_DOCK_SCALE
       const visualStackHeight =
-        (TRAINING_DOCK_BUTTON_SIZE * 4 + TRAINING_DOCK_BUTTON_GAP * 3) * TRAINING_DOCK_SCALE
+        (
+          TRAINING_DOCK_BUTTON_SIZE * TRAINING_DOCK_BUTTON_COUNT
+          + TRAINING_DOCK_BUTTON_GAP * (TRAINING_DOCK_BUTTON_COUNT - 1)
+        ) * TRAINING_DOCK_SCALE
       const availableGap = Math.max(window.innerWidth - rect.right, 0)
       const centeredX = rect.right + (availableGap - visualButtonSize) / 2
       const minX = rect.right + TRAINING_DOCK_FRAME_CLEARANCE
@@ -420,7 +433,14 @@ export default function CockpitPanel() {
 
   // 处理TRANSLATIONS按钮点击 - 切换翻译显示
   const handleTranslations = () => {
+    if (isTranslationToggleDisabled) {
+      return
+    }
     translationContext.toggleTranslations()
+  }
+
+  const handleDictation = () => {
+    toggleDictationMode()
   }
 
   // 获取训练条目列表
@@ -457,7 +477,7 @@ export default function CockpitPanel() {
       <div className="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] opacity-20"></div>
 
       {/* 顶部装饰栏 */}
-      <div className="absolute top-0 left-0 w-full h-24 z-40 flex justify-between items-start pointer-events-none">
+      <div className="absolute top-0 left-0 w-full h-24 z-40 flex justify-between items-start pointer-events-none cockpit-panel-chrome">
         {/* 左上角 */}
         <div className="bg-black/80 backdrop-blur-md p-4 clip-path-polygon-br border-b-2 border-l-2 border-cyan-600 w-1/4">
            <div className="flex items-center gap-2 text-cyan-400 mb-1">
@@ -494,7 +514,7 @@ export default function CockpitPanel() {
 
       {/* 底部仪表盘控制台 - 核心交互区（不包括中间按钮） */}
       {/* 按钮组也会随这个容器一起向下隐藏 */}
-      <div className={`absolute bottom-0 left-0 w-full h-[40vh] z-40 flex items-end justify-between px-4 pb-4 pointer-events-auto transition-all duration-500 ease-in-out ${
+      <div className={`absolute bottom-0 left-0 w-full h-[40vh] z-40 flex items-end justify-between px-4 pb-4 pointer-events-auto transition-all duration-500 ease-in-out cockpit-panel-chrome ${
         isHomePage ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
       }`}>
         
@@ -1321,10 +1341,41 @@ export default function CockpitPanel() {
         >
           {/* TRANSLATIONS 按钮 - 只在训练页面显示，在WARP左侧 */}
           {isTrainingPage && (
+            <div className="text-center group cursor-pointer relative" onClick={handleDictation} title="Dictation mode">
+              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
+                isDictationMode
+                  ? 'border-amber-400/80 bg-amber-500/15 shadow-[0_0_25px_rgba(251,191,36,0.55),0_0_50px_rgba(251,191,36,0.24)]'
+                  : 'border-amber-400/45 bg-amber-500/[0.08] shadow-[0_0_15px_rgba(251,191,36,0.25)] group-hover:bg-amber-500/[0.16] group-hover:shadow-[0_0_25px_rgba(251,191,36,0.45),0_0_50px_rgba(251,191,36,0.2)] group-active:shadow-[0_0_35px_rgba(251,191,36,0.65),inset_0_0_20px_rgba(251,191,36,0.18)]'
+              }`}>
+                <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(251,191,36,.1)_49%,rgba(251,191,36,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(251,191,36,.1)_49%,rgba(251,191,36,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(251,191,36,0.26)_50%,transparent_100%)] bg-[length:100%_4px] opacity-0 group-hover:opacity-100 animate-scan-vertical transition-opacity duration-300"></div>
+                <div className="absolute inset-0 rounded-full border border-amber-300/25 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow transition-opacity duration-300"></div>
+                <div className="absolute inset-[-2px] rounded-full border border-amber-300/18 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow-reverse transition-opacity duration-300"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={`w-2 h-2 bg-amber-300 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)] transition-opacity duration-300 ${
+                    isDictationMode ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
+                  }`}></div>
+                </div>
+                <div className="absolute inset-0 rounded-full bg-amber-400/20 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500 pointer-events-none"></div>
+                <Keyboard className={`relative z-10 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(251,191,36,0.75)] ${
+                  isDictationMode ? 'text-amber-100' : 'text-amber-300 group-hover:text-amber-100'
+                }`} size={floatingButtonIconSize} />
+              </div>
+              {showFloatingButtonLabels && (
+                <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 ${
+                  isDictationMode ? 'text-amber-100' : 'text-amber-300'
+                }`}>DICT</div>
+              )}
+            </div>
+          )}
+
+          {isTrainingPage && (
             <div className="text-center group cursor-pointer relative" onClick={handleTranslations} title="Translations">
               {/* 按钮容器 */}
               <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
-                translationContext?.showTranslations
+                isTranslationToggleDisabled
+                  ? 'border-green-500/20 bg-black/10 shadow-[0_0_10px_rgba(34,197,94,0.08)]'
+                  : translationContext?.showTranslations
                   ? 'border-green-500/80 bg-green-900/20 shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)]'
                   : 'border-green-500/50 bg-green-900/10 shadow-[0_0_15px_rgba(34,197,94,0.3)] group-hover:bg-green-500/20 group-hover:shadow-[0_0_25px_rgba(34,197,94,0.6),0_0_50px_rgba(34,197,94,0.3)] group-active:shadow-[0_0_35px_rgba(34,197,94,0.8),inset_0_0_20px_rgba(34,197,94,0.2)]'
               }`}>
@@ -1342,7 +1393,11 @@ export default function CockpitPanel() {
                 {/* 中心光点 */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className={`w-2 h-2 bg-green-400 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)] transition-opacity duration-300 ${
-                    translationContext?.showTranslations ? 'opacity-100 animate-pulse' : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
+                    isTranslationToggleDisabled
+                      ? 'opacity-0'
+                      : translationContext?.showTranslations
+                      ? 'opacity-100 animate-pulse'
+                      : 'opacity-0 group-hover:opacity-100 group-hover:animate-pulse'
                   }`}></div>
                 </div>
                 
@@ -1351,14 +1406,18 @@ export default function CockpitPanel() {
                 
                 {/* 图标 */}
                 <Languages className={`relative z-10 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(34,197,94,0.8)] ${
-                  translationContext?.showTranslations
+                  isTranslationToggleDisabled
+                    ? 'text-green-500/30'
+                    : translationContext?.showTranslations
                     ? 'text-green-300'
                     : 'text-green-400 group-hover:text-green-300'
                 }`} size={floatingButtonIconSize} />
               </div>
               {showFloatingButtonLabels && (
                 <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
-                  translationContext?.showTranslations
+                  isTranslationToggleDisabled
+                    ? 'text-green-500/30'
+                    : translationContext?.showTranslations
                     ? 'text-green-300'
                     : 'text-green-400 group-hover:text-green-300'
                 }`}>TRANSL</div>

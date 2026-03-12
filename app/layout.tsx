@@ -4,6 +4,7 @@ import ParticleBackground from "@/components/ParticleBackground";
 import StarBackground from "@/components/StarBackground";
 import CockpitPanel from "@/components/CockpitPanel";
 import { TranslationProvider } from "@/contexts/TranslationContext";
+import { DictationModeProvider } from "@/contexts/DictationModeContext";
 
 export const metadata: Metadata = {
   title: "英语学习训练",
@@ -19,13 +20,15 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="antialiased relative">
         <TranslationProvider>
-          <StarBackground />
-          <ParticleBackground />
-          <CockpitPanel />
-          <div className="scan-line" />
-          <div className="relative z-10">
-            {children}
-          </div>
+          <DictationModeProvider>
+            <StarBackground />
+            <ParticleBackground />
+            <CockpitPanel />
+            <div className="scan-line" />
+            <div className="relative z-10">
+              {children}
+            </div>
+          </DictationModeProvider>
         </TranslationProvider>
       </body>
     </html>

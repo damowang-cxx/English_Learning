@@ -3,7 +3,17 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
+import { useDictationMode } from '@/contexts/DictationModeContext'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
+import {
+  buildDictationSentenceModel,
+  createEmptyDictationInputs,
+  evaluateDictationSentence,
+  isDictationSentenceComplete,
+  sanitizeDictationInput,
+  type DictationSentenceModel,
+  type DictationSentenceResult,
+} from '@/lib/dictation'
 import {
   areVocabularyListsEqual,
   buildVocabularyBook,
@@ -21,6 +31,14 @@ import {
   type VocabularyFormSenseDraft,
   type VocabularyFormState,
 } from '@/lib/vocabulary'
+import {
+  DEFAULT_TRAINING_SENTENCE_FONT_ID,
+  getTrainingSentenceFontOption,
+  isTrainingSentenceFontId,
+  TRAINING_SENTENCE_FONT_OPTIONS,
+  TRAINING_SENTENCE_FONT_STORAGE_KEY,
+  type TrainingSentenceFontId,
+} from '@/lib/training-fonts'
 
 interface Sentence {
   id: string
@@ -53,6 +71,11 @@ interface SentenceVocabularyState {
   saveStatus: SaveStatus
 }
 
+interface SentenceDictationState {
+  inputs: string[]
+  submittedResult: DictationSentenceResult | null
+}
+
 const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
   items: [],
   form: createEmptyVocabularyFormState(),
@@ -61,6 +84,33 @@ const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
 
 const PLAYER_VISUALIZER_BARS = [28, 46, 34, 58, 42, 66, 38, 62, 36, 54, 30, 48]
 
+function scrollSentenceWithinContainer(
+  container: HTMLDivElement,
+  target: HTMLDivElement,
+  behavior: ScrollBehavior = 'smooth'
+) {
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = target.getBoundingClientRect()
+  const visiblePadding = 24
+  const isOutsideVisibleBand =
+    targetRect.top < containerRect.top + visiblePadding
+    || targetRect.bottom > containerRect.bottom - visiblePadding
+
+  if (!isOutsideVisibleBand) {
+    return
+  }
+
+  const targetTop = targetRect.top - containerRect.top + container.scrollTop
+  const centeredTop = targetTop - (container.clientHeight - target.offsetHeight) / 2
+  const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+  const nextScrollTop = Math.min(maxScrollTop, Math.max(0, centeredTop))
+
+  container.scrollTo({
+    top: nextScrollTop,
+    behavior,
+  })
+}
+
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -68,13 +118,18 @@ export default function TrainingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
-  const { showTranslations } = useTranslation()
+  const { showTranslations, setShowTranslations } = useTranslation()
+  const { isDictationMode, setIsDictationMode } = useDictationMode()
   const [expandedTranslations, setExpandedTranslations] = useState<Set<string>>(new Set())
   const [collapsedGlobalTranslations, setCollapsedGlobalTranslations] = useState<Set<string>>(new Set())
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [sentenceVocabulary, setSentenceVocabulary] = useState<Record<string, SentenceVocabularyState>>({})
-  const [isVocabularyBookExpanded, setIsVocabularyBookExpanded] = useState(true)
+  const [sentenceDictation, setSentenceDictation] = useState<Record<string, SentenceDictationState>>({})
+  const [isVocabularyBookExpanded, setIsVocabularyBookExpanded] = useState(false)
+  const [selectedSentenceFontId, setSelectedSentenceFontId] = useState<TrainingSentenceFontId>(
+    DEFAULT_TRAINING_SENTENCE_FONT_ID
+  )
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const [audioLoaded, setAudioLoaded] = useState(false)
@@ -97,6 +152,7 @@ export default function TrainingDetailPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   const sentenceRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const contentRef = useRef<HTMLDivElement>(null)
+  const dictationInputRefs = useRef<Record<string, Array<HTMLInputElement | null>>>({})
   const vocabularySaveTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const vocabularySaveResetTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const pendingVocabularySaveRef = useRef<Record<string, VocabularyEntry[]>>({})
@@ -123,22 +179,80 @@ export default function TrainingDetailPage() {
     }
   }, [showTranslations])
 
+  useEffect(() => {
+    if (!item) {
+      setSentenceDictation({})
+      dictationInputRefs.current = {}
+      return
+    }
+
+    const nextSentenceIds = new Set(item.sentences.map((sentence) => sentence.id))
+
+    dictationInputRefs.current = Object.fromEntries(
+      Object.entries(dictationInputRefs.current).filter(([sentenceId]) => nextSentenceIds.has(sentenceId))
+    )
+
+    setSentenceDictation((prev) => {
+      const nextState: Record<string, SentenceDictationState> = {}
+
+      for (const sentence of item.sentences) {
+        const model = buildDictationSentenceModel(sentence.text)
+        const existing = prev[sentence.id]
+        const nextInputs =
+          existing && existing.inputs.length === model.words.length
+            ? existing.inputs
+            : createEmptyDictationInputs(model)
+        const nextSubmittedResult =
+          existing?.submittedResult && existing.submittedResult.entries.length === model.words.length
+            ? existing.submittedResult
+            : null
+
+        nextState[sentence.id] = {
+          inputs: nextInputs,
+          submittedResult: nextSubmittedResult,
+        }
+      }
+
+      return nextState
+    })
+  }, [item])
+
+  useEffect(() => {
+    const storedFontId = window.localStorage.getItem(TRAINING_SENTENCE_FONT_STORAGE_KEY)
+
+    if (storedFontId && isTrainingSentenceFontId(storedFontId)) {
+      setSelectedSentenceFontId(storedFontId)
+    }
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem(TRAINING_SENTENCE_FONT_STORAGE_KEY, selectedSentenceFontId)
+  }, [selectedSentenceFontId])
+
   // 全屏模式下隐藏仪表盘
   useEffect(() => {
     const cockpitPanel = document.querySelector('.cockpit-panel') as HTMLElement
     if (cockpitPanel) {
-      if (isFullscreen) {
-        cockpitPanel.style.display = 'none'
-      } else {
-        cockpitPanel.style.display = ''
-      }
+      cockpitPanel.dataset.trainingFullscreen = isFullscreen ? 'true' : 'false'
     }
     return () => {
       if (cockpitPanel) {
-        cockpitPanel.style.display = ''
+        delete cockpitPanel.dataset.trainingFullscreen
       }
     }
   }, [isFullscreen])
+
+  useEffect(() => {
+    if (isDictationMode) {
+      setShowTranslations(false)
+    }
+  }, [isDictationMode, setShowTranslations])
+
+  useEffect(() => {
+    return () => {
+      setIsDictationMode(false)
+    }
+  }, [setIsDictationMode])
 
   // 禁用 body 滚动条，确保只有 HUD 内部有滚动
   useEffect(() => {
@@ -190,6 +304,10 @@ export default function TrainingDetailPage() {
 
   // 自动滚动到当前播放的句子
   useEffect(() => {
+    if (isDictationMode) {
+      return
+    }
+
     if (currentSentenceIndex >= 0 && sentenceRefs.current[currentSentenceIndex] && contentRef.current) {
       const sentenceElement = sentenceRefs.current[currentSentenceIndex]
       const container = contentRef.current
@@ -199,10 +317,10 @@ export default function TrainingDetailPage() {
       
       // 如果句子不在可视区域内，滚动到句子位置
       if (sentenceRect.top < containerRect.top || sentenceRect.bottom > containerRect.bottom) {
-        sentenceElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        scrollSentenceWithinContainer(container, sentenceElement, 'smooth')
       }
     }
-  }, [currentSentenceIndex])
+  }, [currentSentenceIndex, isDictationMode])
 
   // 通知自动消失
   useEffect(() => {
@@ -737,6 +855,150 @@ export default function TrainingDetailPage() {
     }
   }
 
+  const getSentenceDictationState = (
+    sentenceId: string,
+    model: DictationSentenceModel
+  ): SentenceDictationState => (
+    sentenceDictation[sentenceId] || {
+      inputs: createEmptyDictationInputs(model),
+      submittedResult: null,
+    }
+  )
+
+  const updateSentenceDictationState = (
+    sentenceId: string,
+    model: DictationSentenceModel,
+    updater: (current: SentenceDictationState) => SentenceDictationState
+  ) => {
+    setSentenceDictation((prev) => {
+      const current = prev[sentenceId] || {
+        inputs: createEmptyDictationInputs(model),
+        submittedResult: null,
+      }
+
+      return {
+        ...prev,
+        [sentenceId]: updater(current),
+      }
+    })
+  }
+
+  const setDictationInputRef = (
+    sentenceId: string,
+    wordIndex: number,
+    element: HTMLInputElement | null
+  ) => {
+    if (!dictationInputRefs.current[sentenceId]) {
+      dictationInputRefs.current[sentenceId] = []
+    }
+
+    dictationInputRefs.current[sentenceId][wordIndex] = element
+  }
+
+  const focusDictationInput = (
+    sentenceId: string,
+    wordIndex: number,
+    placement: 'start' | 'end' = 'end'
+  ) => {
+    const input = dictationInputRefs.current[sentenceId]?.[wordIndex]
+
+    if (!input) {
+      return
+    }
+
+    input.focus()
+
+    const cursorPosition = placement === 'start' ? 0 : input.value.length
+    window.requestAnimationFrame(() => {
+      input.setSelectionRange(cursorPosition, cursorPosition)
+    })
+  }
+
+  const handleDictationInputChange = (
+    sentenceId: string,
+    model: DictationSentenceModel,
+    wordIndex: number,
+    value: string
+  ) => {
+    const word = model.words[wordIndex]
+
+    if (!word) {
+      return
+    }
+
+    const sanitizedValue = sanitizeDictationInput(value).slice(0, word.maxLength)
+
+    updateSentenceDictationState(sentenceId, model, (current) => {
+      const nextInputs = [...current.inputs]
+      nextInputs[wordIndex] = sanitizedValue
+
+      return {
+        inputs: nextInputs,
+        submittedResult: null,
+      }
+    })
+  }
+
+  const handleDictationKeyDown = (
+    sentenceId: string,
+    model: DictationSentenceModel,
+    wordIndex: number,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    const word = model.words[wordIndex]
+
+    if (!word) {
+      return
+    }
+
+    const currentValue = sanitizeDictationInput(event.currentTarget.value)
+    const isCharacterKey =
+      event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey
+
+    if (event.key === 'Backspace' && currentValue.length === 0 && wordIndex > 0) {
+      event.preventDefault()
+      focusDictationInput(sentenceId, wordIndex - 1)
+      return
+    }
+
+    if (event.key === ' ') {
+      event.preventDefault()
+      if (currentValue.length >= word.maxLength && wordIndex < model.words.length - 1) {
+        focusDictationInput(sentenceId, wordIndex + 1, 'start')
+      }
+      return
+    }
+
+    if (isCharacterKey && !/^[a-zA-Z0-9]$/.test(event.key)) {
+      event.preventDefault()
+      return
+    }
+
+    if (
+      isCharacterKey
+      && /^[a-zA-Z0-9]$/.test(event.key)
+      && currentValue.length >= word.maxLength
+      && event.currentTarget.selectionStart === event.currentTarget.selectionEnd
+    ) {
+      event.preventDefault()
+    }
+  }
+
+  const handleDictationSubmit = (
+    sentenceId: string,
+    model: DictationSentenceModel
+  ) => {
+    updateSentenceDictationState(sentenceId, model, (state) => ({
+      ...state,
+      submittedResult: evaluateDictationSentence(model, state.inputs),
+    }))
+  }
+
+  const getDictationWordWidth = (displayText: string, maxLength: number) => {
+    const visibleLength = Math.max(displayText.length, maxLength)
+    return `${Math.min(220, Math.max(52, visibleLength * 13 + 22))}px`
+  }
+
   const scrollToSentence = (sentenceId: string) => {
     if (!item) return
 
@@ -751,7 +1013,12 @@ export default function TrainingDetailPage() {
       return
     }
 
-    sentenceRefs.current[sentenceIndex]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const sentenceElement = sentenceRefs.current[sentenceIndex]
+    const container = contentRef.current
+
+    if (sentenceElement && container) {
+      scrollSentenceWithinContainer(container, sentenceElement, 'smooth')
+    }
   }
 
   const handleTimeUpdate = () => {
@@ -850,6 +1117,12 @@ export default function TrainingDetailPage() {
     item && currentSentenceIndex >= 0
       ? `S${item.sentences[currentSentenceIndex].order + 1}`
       : null
+  const dictationModels: Record<string, DictationSentenceModel> = item
+    ? Object.fromEntries(
+        item.sentences.map((sentence) => [sentence.id, buildDictationSentenceModel(sentence.text)])
+      )
+    : {}
+  const selectedSentenceFont = getTrainingSentenceFontOption(selectedSentenceFontId)
   const trainingShellClassName = isFullscreen
     ? 'relative z-10 flex h-full flex-col gap-6 px-10 py-8 md:gap-7 md:px-12 md:py-9 xl:gap-8 xl:px-16 xl:py-12'
     : 'relative z-10 flex flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
@@ -881,6 +1154,53 @@ export default function TrainingDetailPage() {
         return null
     }
   }
+
+  const renderDictationReview = (
+    model: DictationSentenceModel,
+    result: DictationSentenceResult
+  ) => (
+    <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+      <div className="mb-2 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
+        VERIFIED SENTENCE
+      </div>
+      <div className="max-w-[46rem] text-[15px] leading-[1.9] text-green-100/92">
+        {model.segments.map((segment, segmentIndex) => (
+          <span key={`review-segment-${segmentIndex}`}>
+            {segmentIndex > 0 ? ' ' : null}
+            {segment.tokens.map((token, tokenIndex) => {
+              if (token.type !== 'word') {
+                return (
+                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className="text-green-300/80">
+                    {token.value}
+                  </span>
+                )
+              }
+
+              const reviewEntry = result.entries[token.wordIndex]
+
+              if (!reviewEntry) {
+                return (
+                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className="text-green-100/92">
+                    {token.displayText}
+                  </span>
+                )
+              }
+
+              return (
+                <span
+                  key={`review-token-${segmentIndex}-${tokenIndex}`}
+                  className={reviewEntry.isCorrect ? 'text-green-100/92' : 'text-red-300 underline decoration-red-400/70 decoration-dotted underline-offset-4'}
+                  title={reviewEntry.isCorrect ? undefined : `你写的是 ${reviewEntry.actual || '空白'}`}
+                >
+                  {token.displayText}
+                </span>
+              )
+            })}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
 
 
   if (loading) {
@@ -1065,7 +1385,44 @@ export default function TrainingDetailPage() {
                     FOCUSED LISTENING SESSION
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 xl:max-w-[42%] xl:justify-end">
+                <div className="flex flex-wrap items-center gap-2 xl:max-w-[52%] xl:justify-end">
+                  <div className="relative flex items-center gap-2 rounded border border-green-500/18 bg-black/15 px-3 py-1.5 text-xs text-green-400/70 shadow-[0_0_12px_rgba(10,255,10,0.05)]">
+                    <span className="text-[10px] cyber-label tracking-[0.22em] text-green-400/70">
+                      READ FONT
+                    </span>
+                    <div className="relative min-w-[168px]">
+                      <select
+                        value={selectedSentenceFontId}
+                        onChange={(event) => {
+                          const nextFontId = event.target.value
+                          if (isTrainingSentenceFontId(nextFontId)) {
+                            setSelectedSentenceFontId(nextFontId)
+                          }
+                        }}
+                        className="training-font-select h-7 w-full appearance-none rounded border border-green-500/16 bg-black/35 px-2.5 pr-8 text-[12px] text-green-100 outline-none transition-all hover:border-green-500/26 focus:border-green-300/45 focus:bg-black/45"
+                        aria-label="Training sentence font"
+                        title="Change English sentence font"
+                      >
+                        {TRAINING_SENTENCE_FONT_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <svg
+                        className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-green-400/75"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 011.08 1.04l-4.25 4.512a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={handleEditClick}
@@ -1257,10 +1614,35 @@ export default function TrainingDetailPage() {
                   </div>
 
                   <div className={`${hudPanelClassName} p-4 md:p-5`}>
+                    {isDictationMode && (
+                      <>
+                        <div className={`${hudPanelHeaderClassName} mb-0`}>
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="h-4 w-1 bg-amber-400/80"></div>
+                            <div className="min-w-0">
+                              <div className="text-sm cyber-label tracking-[0.28em] text-amber-200">DICTATION LOCK</div>
+                              <div className="mt-1 text-[10px] cyber-label text-amber-300/55">
+                                Vocabulary and translations stay hidden while dictation mode is active.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-4 rounded-lg border border-dashed border-amber-400/20 bg-amber-500/[0.05] px-4 py-5 text-center">
+                          <div className="text-sm cyber-text text-amber-100/80">Listen first. Reveal notes after you finish the line.</div>
+                          <div className="mt-2 text-[10px] cyber-label text-amber-300/55">
+                            Turn off dictation mode to reopen the vocabulary book.
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {!isDictationMode && (
+                      <>
                     <button
                       type="button"
                       onClick={() => setIsVocabularyBookExpanded((prev) => !prev)}
                       className="block w-full text-left"
+                      aria-expanded={isVocabularyBookExpanded}
+                      aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
                     >
                       <div className={`${hudPanelHeaderClassName} mb-0`}>
                         <div className="flex min-w-0 items-center gap-3">
@@ -1272,12 +1654,17 @@ export default function TrainingDetailPage() {
                             </div>
                           </div>
                         </div>
-                        <span
-                          className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
-                          style={{ transform: isVocabularyBookExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                        >
-                          {isVocabularyBookExpanded ? '▼' : '▶'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded border border-green-500/18 bg-black/20 px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200">
+                            {isVocabularyBookExpanded ? 'HIDE' : 'SHOW'}
+                          </span>
+                          <span
+                            className="text-xs cyber-label text-green-400/70 transition-transform duration-200"
+                            style={{ transform: isVocabularyBookExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                          >
+                            {isVocabularyBookExpanded ? '▼' : '▶'}
+                          </span>
+                        </div>
                       </div>
                     </button>
 
@@ -1328,6 +1715,8 @@ export default function TrainingDetailPage() {
                         )}
                       </div>
                     )}
+                      </>
+                    )}
                   </div>
                 </div>
               </aside>
@@ -1338,7 +1727,9 @@ export default function TrainingDetailPage() {
                     <div>
                       <div className="text-[10px] cyber-label tracking-[0.3em] text-green-400/72">SENTENCE STREAM</div>
                       <div className="mt-1 text-[11px] cyber-label text-green-500/45">
-                        Read line by line. Let the English stay in front.
+                        {isDictationMode
+                          ? 'Listen first. Type the words you hear before revealing the line.'
+                          : 'Read line by line. Let the English stay in front.'}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2 text-[10px] cyber-label text-green-500/60">
@@ -1363,9 +1754,16 @@ export default function TrainingDetailPage() {
                       const vocabularyCount = vocabularyState.items.length
                       const isVocabularyFormReady = isVocabularyFormSubmittable(vocabularyState.form)
                       const saveStatusMeta = getVocabularySaveStatusMeta(vocabularyState.saveStatus)
+                      const dictationModel = dictationModels[sentence.id] || buildDictationSentenceModel(sentence.text)
+                      const dictationState = getSentenceDictationState(sentence.id, dictationModel)
+                      const isDictationSentenceCompleteState = isDictationSentenceComplete(dictationModel, dictationState.inputs)
+                      const dictationResult = dictationState.submittedResult
+                      const hasAnyDictationInput = dictationState.inputs.some((value) => sanitizeDictationInput(value).length > 0)
                       const hasTranslation = Boolean(sentence.translation)
+                      const canToggleSentenceTranslation =
+                        hasTranslation && (!isDictationMode || Boolean(dictationResult))
                       const isTranslationVisible =
-                        hasTranslation &&
+                        canToggleSentenceTranslation &&
                         (showTranslations
                           ? !collapsedGlobalTranslations.has(sentence.id)
                           : expandedTranslations.has(sentence.id))
@@ -1411,17 +1809,31 @@ export default function TrainingDetailPage() {
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
-                                  onClick={() => hasTranslation && toggleSentenceTranslation(sentence.id)}
-                                  disabled={!hasTranslation}
+                                  onClick={() => canToggleSentenceTranslation && toggleSentenceTranslation(sentence.id)}
+                                  disabled={!canToggleSentenceTranslation}
                                   className={`flex items-center justify-center rounded-md border px-2 py-1.5 text-xs transition-all ${
-                                    hasTranslation
+                                    canToggleSentenceTranslation
                                       ? isTranslationVisible
                                         ? 'border-green-400/[0.24] bg-green-500/[0.09] text-green-200'
                                         : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                      : isDictationMode && hasTranslation
+                                      ? 'cursor-not-allowed border-amber-400/[0.14] bg-black/[0.12] text-amber-200/35'
                                       : 'cursor-not-allowed border-green-500/[0.08] bg-black/[0.1] text-green-500/[0.3]'
                                   }`}
-                                  title={hasTranslation ? 'Toggle translation' : 'No translation'}
-                                  aria-label={hasTranslation ? 'Toggle translation for this sentence' : 'No translation for this sentence'}
+                                  title={
+                                    !hasTranslation
+                                      ? 'No translation'
+                                      : isDictationMode && !dictationResult
+                                      ? 'Submit this line to unlock translation'
+                                      : 'Toggle translation'
+                                  }
+                                  aria-label={
+                                    !hasTranslation
+                                      ? 'No translation for this sentence'
+                                      : isDictationMode && !dictationResult
+                                      ? 'Submit this sentence to unlock translation'
+                                      : 'Toggle translation for this sentence'
+                                  }
                                 >
                                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                     <path d="M4 5h10" />
@@ -1447,6 +1859,140 @@ export default function TrainingDetailPage() {
                               </div>
                             </div>
 
+                            {isDictationMode ? (
+                              <div className="mt-3.5 border-t border-amber-400/[0.08] pt-3">
+                                <div
+                                  onClick={() => handleSentenceClick(sentence)}
+                                  className={`rounded-xl border px-4 py-4 transition-all ${
+                                    isActive
+                                      ? 'border-amber-300/20 bg-amber-500/[0.05]'
+                                      : 'border-green-500/[0.08] bg-black/[0.12] hover:border-green-500/[0.14]'
+                                  }`}
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="text-[10px] cyber-label tracking-[0.24em] text-amber-200/75">
+                                      DICTATION GRID
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
+                                      <span className="rounded-full border border-amber-400/18 bg-black/20 px-2 py-0.5 text-amber-200/75">
+                                        {dictationModel.words.length} WORDS
+                                      </span>
+                                      {dictationResult && (
+                                        <span className="rounded-full border border-amber-400/22 bg-amber-500/[0.08] px-2 py-0.5 text-amber-100">
+                                          {dictationResult.correctCount}/{dictationResult.totalCount}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-3">
+                                    {dictationModel.segments.map((segment, segmentIndex) => (
+                                      <div key={`${sentence.id}-dictation-segment-${segmentIndex}`} className="flex items-end gap-1.5">
+                                        {segment.tokens.map((token, tokenIndex) => {
+                                          if (token.type !== 'word') {
+                                            return (
+                                              <span
+                                                key={`${sentence.id}-symbol-${segmentIndex}-${tokenIndex}`}
+                                                className={`pb-2 text-sm font-bold ${
+                                                  token.type === 'hyphen' ? 'text-green-300/80' : 'text-green-400/60'
+                                                }`}
+                                              >
+                                                {token.value}
+                                              </span>
+                                            )
+                                          }
+
+                                          const wordInputValue = dictationState.inputs[token.wordIndex] || ''
+                                          const normalizedInputLength = sanitizeDictationInput(wordInputValue).length
+                                          const isWordFilled = normalizedInputLength >= token.maxLength
+
+                                          return (
+                                            <div
+                                              key={`${sentence.id}-word-${token.wordIndex}`}
+                                              className="group/word relative"
+                                              style={{ width: getDictationWordWidth(token.displayText, token.maxLength) }}
+                                              onClick={(event) => {
+                                                event.stopPropagation()
+                                                focusDictationInput(sentence.id, token.wordIndex)
+                                              }}
+                                            >
+                                              <div
+                                                className={`absolute inset-0 rounded-lg border transition-all duration-200 ${
+                                                  isWordFilled
+                                                    ? 'border-amber-300/30 bg-amber-500/[0.06] shadow-[0_0_12px_rgba(251,191,36,0.08)]'
+                                                    : 'border-green-500/18 bg-black/25 group-hover/word:border-green-400/30 group-hover/word:bg-green-500/[0.04]'
+                                                }`}
+                                              ></div>
+                                              <div className="pointer-events-none absolute inset-x-2 bottom-1 h-px bg-gradient-to-r from-transparent via-green-500/18 to-transparent"></div>
+                                              <input
+                                                ref={(element) => setDictationInputRef(sentence.id, token.wordIndex, element)}
+                                                value={wordInputValue}
+                                                onClick={(event) => event.stopPropagation()}
+                                                onChange={(event) => handleDictationInputChange(sentence.id, dictationModel, token.wordIndex, event.target.value)}
+                                                onKeyDown={(event) => handleDictationKeyDown(sentence.id, dictationModel, token.wordIndex, event)}
+                                                maxLength={token.maxLength}
+                                                spellCheck={false}
+                                                autoCapitalize="off"
+                                                autoCorrect="off"
+                                                className="relative z-10 h-11 w-full rounded-lg border border-transparent bg-transparent px-2.5 pb-1 pt-2 text-center text-[15px] font-semibold tracking-[0.08em] text-green-100 caret-amber-300 outline-none transition-all focus:border-amber-300/28 focus:bg-amber-500/[0.03] focus:shadow-[0_0_12px_rgba(251,191,36,0.12)]"
+                                                aria-label={`Dictation input for ${token.displayText}`}
+                                              />
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-amber-400/[0.08] pt-3">
+                                    <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
+                                      <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75">
+                                        NO PUNCTUATION INPUT
+                                      </span>
+                                      <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75">
+                                        SPACE JUMPS WHEN FULL
+                                      </span>
+                                      <span className="rounded-full border border-amber-400/[0.16] bg-amber-500/[0.05] px-2 py-0.5 text-amber-200/70">
+                                        EMPTY SUBMIT OK
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        event.stopPropagation()
+                                        handleDictationSubmit(sentence.id, dictationModel)
+                                      }}
+                                      className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
+                                        dictationResult
+                                          ? 'border-amber-300/45 bg-amber-500/[0.12] text-amber-100 hover:border-amber-200/60 hover:bg-amber-500/[0.16]'
+                                          : isDictationSentenceCompleteState
+                                          ? 'border-amber-400/35 bg-amber-500/[0.08] text-amber-100 hover:border-amber-300/55 hover:bg-amber-500/[0.14]'
+                                          : hasAnyDictationInput
+                                          ? 'border-amber-400/30 bg-amber-500/[0.05] text-amber-100/90 hover:border-amber-300/45 hover:bg-amber-500/[0.1]'
+                                          : 'border-amber-400/24 bg-black/20 text-amber-200/80 hover:border-amber-300/40 hover:bg-amber-500/[0.08]'
+                                      }`}
+                                      title="Submit this line at any time, even if some words are blank"
+                                    >
+                                      SUBMIT LINE
+                                    </button>
+                                  </div>
+
+                                  {dictationResult && renderDictationReview(dictationModel, dictationResult)}
+
+                                  {isTranslationVisible && sentence.translation && (
+                                    <div className="mt-3 rounded-lg border border-green-500/[0.12] bg-black/[0.18] px-4 py-3">
+                                      <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
+                                        TRANSLATION
+                                      </div>
+                                      <p className="max-w-[44rem] text-[13px] leading-[1.75] text-green-200/60 md:text-sm">
+                                        {sentence.translation}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <>
                             <div
                               onClick={() => handleSentenceClick(sentence)}
                               className={`mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
@@ -1455,7 +2001,7 @@ export default function TrainingDetailPage() {
                                     : 'text-gray-100 hover:text-green-100'
                                 }`}
                             >
-                              <p className="max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px]">
+                              <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className}`}>
                                 {sentence.text}
                               </p>
                             </div>
@@ -1647,6 +2193,8 @@ export default function TrainingDetailPage() {
                                 </div>
                               )}
                             </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       )

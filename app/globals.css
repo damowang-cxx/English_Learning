@@ -186,14 +186,18 @@ body::-webkit-scrollbar {
   );
 }
 
+.training-font-select option {
+  background: #05080b;
+  color: #d8ffe0;
+}
+
 /* 确保训练页面时 body 和 html 不显示滚动条 */
 [data-training-page] {
   overflow: hidden;
 }
 
 /* 训练页面全屏模式下隐藏仪表盘 */
-.training-fullscreen ~ * .cockpit-panel,
-body:has(.training-fullscreen) .cockpit-panel {
+.cockpit-panel[data-training-fullscreen='true'] .cockpit-panel-chrome {
   display: none !important;
 }
 
