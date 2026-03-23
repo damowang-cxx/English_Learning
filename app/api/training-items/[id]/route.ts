@@ -145,3 +145,68 @@ export async function PUT(
     )
   }
 }
+
+// 删除整篇训练条目
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const existingItem = await prisma.trainingItem.findUnique({
+      where: { id },
+      include: {
+        sentences: {
+          select: { id: true },
+        },
+      },
+    })
+
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: 'Training item not found' },
+        { status: 404 }
+      )
+    }
+
+    const sentenceIds = existingItem.sentences.map((sentence) => sentence.id)
+
+    await prisma.$transaction(async (tx) => {
+      if (sentenceIds.length > 0) {
+        await tx.userNote.deleteMany({
+          where: {
+            sentenceId: {
+              in: sentenceIds,
+            },
+          },
+        })
+      }
+
+      await tx.sentence.deleteMany({
+        where: { trainingItemId: id },
+      })
+
+      await tx.trainingItem.delete({
+        where: { id },
+      })
+    })
+
+    const audioFilePath = path.join(process.cwd(), 'public', existingItem.audioUrl.replace(/^\/+/, ''))
+    if (fs.existsSync(audioFilePath)) {
+      try {
+        fs.unlinkSync(audioFilePath)
+      } catch (error) {
+        console.error('Error deleting audio file:', error)
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting training item:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete training item' },
+      { status: 500 }
+    )
+  }
+}

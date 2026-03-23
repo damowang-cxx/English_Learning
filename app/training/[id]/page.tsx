@@ -249,6 +249,7 @@ export default function TrainingDetailPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editAudioFile, setEditAudioFile] = useState<File | null>(null)
   const [editSentences, setEditSentences] = useState<EditSentence[]>([])
@@ -665,6 +666,43 @@ export default function TrainingDetailPage() {
       setNotification({ type: 'error', message: `更新失败，请重试: ${error instanceof Error ? error.message : '未知错误'}` })
     } finally {
       setIsUpdating(false)
+    }
+  }
+
+  const handleDeleteTrainingItem = async () => {
+    if (!item || isDeleting) {
+      return
+    }
+
+    const confirmDelete = window.confirm(
+      `确定要删除整篇训练 "${item.title}" 吗？\n\n这会同时删除音频、全部句子和该训练下的生词笔记，且无法恢复。`
+    )
+
+    if (!confirmDelete) {
+      return
+    }
+
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(withBasePath(`/api/training-items/${params.id}`), {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Delete failed:', errorText)
+        throw new Error(`删除失败: ${response.status}`)
+      }
+
+      window.location.href = withBasePath('/')
+    } catch (error) {
+      console.error('Delete error:', error)
+      setNotification({
+        type: 'error',
+        message: `删除失败，请重试: ${error instanceof Error ? error.message : '未知错误'}`,
+      })
+      setIsDeleting(false)
     }
   }
 
@@ -1557,6 +1595,24 @@ export default function TrainingDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     <span className="relative z-10 cyber-button-text">EDIT</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteTrainingItem}
+                    disabled={isDeleting}
+                    className={`training-future-toolbar-button group/btn relative flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
+                      isDeleting
+                        ? 'cursor-not-allowed text-red-300/45'
+                        : 'cursor-pointer text-red-300/70 hover:text-red-200'
+                    }`}
+                    style={{ zIndex: 100 }}
+                    title={isDeleting ? 'Deleting training...' : 'Delete this training article'}
+                  >
+                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-red-500/8 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                    </svg>
+                    <span className="relative z-10 cyber-button-text">{isDeleting ? 'DELETING' : 'DELETE'}</span>
                   </button>
                   <button
                     type="button"

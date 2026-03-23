@@ -1,7 +1,12 @@
 import Link from 'next/link'
+import { unstable_noStore as noStore } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getTrainingItems() {
+  noStore()
   const items = await prisma.trainingItem.findMany({
     orderBy: { createdAt: 'desc' },
     include: {
