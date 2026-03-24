@@ -1,9 +1,10 @@
 'use client'
 
-import { type ReactNode, useEffect, useState, useRef } from 'react'
+import { type ReactNode, useEffect, useEffectEvent, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
+import { useFocusMode } from '@/contexts/FocusModeContext'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
 import {
   buildDictationSentenceModel,
@@ -74,7 +75,10 @@ interface SentenceVocabularyState {
 interface SentenceDictationState {
   inputs: string[]
   submittedResult: DictationSentenceResult | null
+  revealModes: DictationRevealMode[]
 }
+
+type DictationRevealMode = 'hidden' | 'initial' | 'full'
 
 const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
   items: [],
@@ -94,6 +98,10 @@ const VOCABULARY_POS_OPTIONS = [
 ] as const
 
 const PLAYER_VISUALIZER_BARS = [28, 46, 34, 58, 42, 66, 38, 62, 36, 54, 30, 48]
+
+function createEmptyDictationRevealModes(model: DictationSentenceModel): DictationRevealMode[] {
+  return model.words.map(() => 'hidden')
+}
 
 interface SentenceHighlightRange {
   start: number
@@ -232,6 +240,7 @@ export default function TrainingDetailPage() {
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
   const { showTranslations, setShowTranslations } = useTranslation()
   const { isDictationMode, setIsDictationMode } = useDictationMode()
+  const { isFocusMode, setIsFocusMode } = useFocusMode()
   const [expandedTranslations, setExpandedTranslations] = useState<Set<string>>(new Set())
   const [collapsedGlobalTranslations, setCollapsedGlobalTranslations] = useState<Set<string>>(new Set())
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
@@ -276,6 +285,10 @@ export default function TrainingDetailPage() {
   }, [params.id])
 
   useEffect(() => {
+    setIsFocusMode(false)
+  }, [params.id, setIsFocusMode])
+
+  useEffect(() => {
     if (item) {
       fetchUserNotes()
     }
@@ -315,6 +328,10 @@ export default function TrainingDetailPage() {
           existing && existing.inputs.length === model.words.length
             ? existing.inputs
             : createEmptyDictationInputs(model)
+        const nextRevealModes =
+          existing && existing.revealModes.length === model.words.length
+            ? existing.revealModes
+            : createEmptyDictationRevealModes(model)
         const nextSubmittedResult =
           existing?.submittedResult && existing.submittedResult.entries.length === model.words.length
             ? existing.submittedResult
@@ -323,6 +340,7 @@ export default function TrainingDetailPage() {
         nextState[sentence.id] = {
           inputs: nextInputs,
           submittedResult: nextSubmittedResult,
+          revealModes: nextRevealModes,
         }
       }
 
@@ -360,6 +378,16 @@ export default function TrainingDetailPage() {
       setShowTranslations(false)
     }
   }, [isDictationMode, setShowTranslations])
+
+  useEffect(() => {
+    document.body.dataset.trainingPage = 'true'
+    document.body.dataset.trainingFocusMode = isFocusMode ? 'true' : 'false'
+
+    return () => {
+      delete document.body.dataset.trainingPage
+      delete document.body.dataset.trainingFocusMode
+    }
+  }, [isFocusMode])
 
   useEffect(() => {
     return () => {
@@ -407,6 +435,75 @@ export default function TrainingDetailPage() {
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [isPlaying, duration, isEditing])
+
+  const handleTrainingShortcut = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      event.target instanceof HTMLInputElement
+      || event.target instanceof HTMLTextAreaElement
+      || event.target instanceof HTMLSelectElement
+      || (event.target instanceof HTMLElement && event.target.isContentEditable)
+    ) {
+      return
+    }
+
+    const hasSentences = Boolean(item?.sentences.length)
+    const currentSentence =
+      item && currentSentenceIndex >= 0 && currentSentenceIndex < item.sentences.length
+        ? item.sentences[currentSentenceIndex]
+        : null
+
+    switch (event.key) {
+      case 'ArrowUp':
+        if (!hasSentences) {
+          return
+        }
+        event.preventDefault()
+        jumpToSentenceByIndex(
+          currentSentenceIndex >= 0 ? Math.max(0, currentSentenceIndex - 1) : 0
+        )
+        return
+      case 'ArrowDown':
+        if (!hasSentences || !item) {
+          return
+        }
+        event.preventDefault()
+        jumpToSentenceByIndex(
+          currentSentenceIndex >= 0
+            ? Math.min(item.sentences.length - 1, currentSentenceIndex + 1)
+            : 0
+        )
+        return
+      case 'r':
+      case 'R':
+        if (isDictationMode || currentSentenceIndex < 0) {
+          return
+        }
+        event.preventDefault()
+        handleRepeatClick(currentSentenceIndex)
+        return
+      case 't':
+      case 'T':
+        if (isDictationMode) {
+          return
+        }
+        event.preventDefault()
+        setShowTranslations((prev) => !prev)
+        return
+      case 'd':
+      case 'D':
+        if (isDictationMode || !currentSentence) {
+          return
+        }
+        event.preventDefault()
+        toggleSentenceTranslation(currentSentence.id)
+        return
+    }
+  })
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleTrainingShortcut)
+    return () => window.removeEventListener('keydown', handleTrainingShortcut)
+  }, [])
 
   // 播放速度控制
   useEffect(() => {
@@ -1024,6 +1121,7 @@ export default function TrainingDetailPage() {
     sentenceDictation[sentenceId] || {
       inputs: createEmptyDictationInputs(model),
       submittedResult: null,
+      revealModes: createEmptyDictationRevealModes(model),
     }
   )
 
@@ -1036,6 +1134,7 @@ export default function TrainingDetailPage() {
       const current = prev[sentenceId] || {
         inputs: createEmptyDictationInputs(model),
         submittedResult: null,
+        revealModes: createEmptyDictationRevealModes(model),
       }
 
       return {
@@ -1076,6 +1175,25 @@ export default function TrainingDetailPage() {
     })
   }
 
+  const toggleDictationRevealMode = (
+    sentenceId: string,
+    model: DictationSentenceModel,
+    wordIndex: number,
+    nextMode: Exclude<DictationRevealMode, 'hidden'>
+  ) => {
+    updateSentenceDictationState(sentenceId, model, (current) => {
+      const nextRevealModes = [...current.revealModes]
+      nextRevealModes[wordIndex] = current.revealModes[wordIndex] === nextMode ? 'hidden' : nextMode
+
+      return {
+        ...current,
+        revealModes: nextRevealModes,
+      }
+    })
+
+    focusDictationInput(sentenceId, wordIndex)
+  }
+
   const handleDictationInputChange = (
     sentenceId: string,
     model: DictationSentenceModel,
@@ -1095,6 +1213,7 @@ export default function TrainingDetailPage() {
       nextInputs[wordIndex] = sanitizedValue
 
       return {
+        ...current,
         inputs: nextInputs,
         submittedResult: null,
       }
@@ -1111,6 +1230,22 @@ export default function TrainingDetailPage() {
 
     if (!word) {
       return
+    }
+
+    const loweredKey = event.key.toLowerCase()
+
+    if (event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (loweredKey === 'i') {
+        event.preventDefault()
+        toggleDictationRevealMode(sentenceId, model, wordIndex, 'initial')
+        return
+      }
+
+      if (loweredKey === 'l') {
+        event.preventDefault()
+        toggleDictationRevealMode(sentenceId, model, wordIndex, 'full')
+        return
+      }
     }
 
     const currentValue = sanitizeDictationInput(event.currentTarget.value)
@@ -1234,15 +1369,49 @@ export default function TrainingDetailPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  const jumpToSentenceByIndex = (
+    index: number,
+    options?: { preserveRepeat?: boolean; scrollBehavior?: ScrollBehavior }
+  ) => {
+    if (!item || index < 0 || index >= item.sentences.length) {
+      return
+    }
+
+    const sentence = item.sentences[index]
+
+    if (!options?.preserveRepeat && repeatMode !== null && repeatMode !== index) {
+      setRepeatMode(null)
+    }
+
+    if (audioRef.current) {
+      audioRef.current.currentTime = sentence.startTime
+      audioRef.current.play()
+      setIsPlaying(true)
+    }
+
+    setCurrentSentenceIndex(index)
+
+    const sentenceElement = sentenceRefs.current[index]
+    const container = contentRef.current
+
+    if (sentenceElement && container) {
+      scrollSentenceWithinContainer(container, sentenceElement, options?.scrollBehavior || 'smooth')
+    }
+  }
+
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
   }
 
   const handleSentenceClick = (sentence: Sentence) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = sentence.startTime
-      audioRef.current.play()
-      setIsPlaying(true)
+    if (!item) {
+      return
+    }
+
+    const sentenceIndex = item.sentences.findIndex((candidate) => candidate.id === sentence.id)
+
+    if (sentenceIndex !== -1) {
+      jumpToSentenceByIndex(sentenceIndex)
     }
   }
 
@@ -1255,11 +1424,7 @@ export default function TrainingDetailPage() {
       setRepeatMode(null)
     } else {
       setRepeatMode(index)
-      if (audioRef.current && item) {
-        const sentence = item.sentences[index]
-        audioRef.current.currentTime = sentence.startTime
-        audioRef.current.play()
-      }
+      jumpToSentenceByIndex(index, { preserveRepeat: true })
     }
   }
 
@@ -1288,14 +1453,93 @@ export default function TrainingDetailPage() {
       )
     : {}
   const selectedSentenceFont = getTrainingSentenceFontOption(selectedSentenceFontId)
+  const isModernFocusLayout = isFocusMode
   const trainingShellClassName = isFullscreen
-    ? 'relative z-10 flex h-full flex-col gap-6 px-10 py-8 md:gap-7 md:px-12 md:py-9 xl:gap-8 xl:px-16 xl:py-12'
-    : 'relative z-10 flex flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
-  const trainingOuterInsetClassName = isFullscreen
-    ? 'mx-4 md:mx-6 xl:mx-8'
-    : 'mx-2 md:mx-3 xl:mx-4'
-  const hudPanelClassName = 'training-future-panel'
-  const hudPanelHeaderClassName = 'training-future-panel-header'
+    ? isModernFocusLayout
+      ? 'training-focus-shell relative z-10 flex h-full flex-col gap-6 px-6 py-6 md:gap-8 md:px-8 md:py-8 xl:gap-10 xl:px-10 xl:py-10'
+      : 'relative z-10 flex h-full flex-col gap-6 px-10 py-8 md:gap-7 md:px-12 md:py-9 xl:gap-8 xl:px-16 xl:py-12'
+    : isModernFocusLayout
+      ? 'training-focus-shell relative z-10 flex flex-col gap-6 px-5 py-5 md:gap-7 md:px-7 md:py-7 xl:gap-8 xl:px-8 xl:py-8'
+      : 'relative z-10 flex flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
+  const trainingOuterInsetClassName = isModernFocusLayout
+    ? ''
+    : isFullscreen
+      ? 'mx-4 md:mx-6 xl:mx-8'
+      : 'mx-2 md:mx-3 xl:mx-4'
+  const headerPanelClassName = isModernFocusLayout
+    ? 'training-focus-header px-5 py-5 md:px-6 md:py-6 xl:px-7'
+    : `training-future-commanddeck ${trainingOuterInsetClassName} px-4 py-3 md:px-5 md:py-4`
+  const contentPanelClassName = `${isModernFocusLayout ? 'training-focus-content' : 'training-future-content'} ${trainingOuterInsetClassName} training-hud-content min-h-0 ${
+    isFullscreen ? 'flex-1' : ''
+  }`
+  const contentInnerClassName = isModernFocusLayout
+    ? 'relative px-5 py-5 md:px-6 md:py-6 xl:px-7 xl:py-7'
+    : 'relative px-4 py-4 md:px-5 md:py-5 xl:px-6 xl:py-6'
+  const hudPanelClassName = isModernFocusLayout ? 'training-focus-panel' : 'training-future-panel'
+  const hudPanelHeaderClassName = isModernFocusLayout ? 'training-focus-panel-header' : 'training-future-panel-header'
+  const controlShellClassName = isModernFocusLayout ? 'training-focus-control-shell' : 'training-future-control-shell'
+  const toolbarButtonClassName = isModernFocusLayout ? 'training-focus-toolbar-button' : 'training-future-toolbar-button'
+  const selectClassName = isModernFocusLayout ? 'training-focus-select' : 'training-future-select'
+  const streamHeaderClassName = isModernFocusLayout
+    ? 'training-focus-stream-header mb-8 flex flex-col gap-4 pb-6 md:mb-9 md:flex-row md:items-end md:justify-between'
+    : 'training-future-stream-header mb-6 flex flex-col gap-3 pb-5 md:mb-7 md:flex-row md:items-end md:justify-between'
+  const mainGridClassName = isModernFocusLayout
+    ? 'flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1.12fr)_320px] xl:items-start xl:gap-10'
+    : 'flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start'
+  const sidebarClassName = isModernFocusLayout
+    ? 'order-1 xl:order-2 xl:sticky xl:top-0 training-focus-sidebar'
+    : 'order-1 xl:order-2 xl:sticky xl:top-0'
+  const mainSectionClassName = isModernFocusLayout
+    ? 'order-2 min-w-0 xl:order-1 training-focus-main'
+    : 'order-2 min-w-0 xl:order-1'
+  const sentenceListClassName = isModernFocusLayout
+    ? 'space-y-6 md:space-y-8 xl:space-y-9'
+    : 'pl-5 md:pl-5 xl:pl-5 space-y-6 md:space-y-7 xl:space-y-8'
+  const sentenceCardClassName = isModernFocusLayout ? 'training-focus-sentence-card' : 'training-future-sentence-card'
+  const sentenceGlowClassName = isModernFocusLayout ? 'training-focus-sentence-glow' : 'training-future-sentence-glow'
+  const sentenceRailClassName = isModernFocusLayout ? 'training-focus-sentence-rail' : 'training-future-sentence-rail'
+  const sentenceDividerClassName = isModernFocusLayout ? 'training-focus-sentence-divider' : 'training-future-sentence-divider'
+  const sentenceBodyClassName = isModernFocusLayout
+    ? 'relative z-10 px-6 py-5 md:px-7 md:py-6 xl:px-8 xl:py-7'
+    : 'relative z-10 pr-4 pl-5 py-[14px] md:pr-[18px] md:pl-6 md:py-4 xl:pr-5 xl:pl-7 xl:py-[18px]'
+  const readingSurfaceClassName = isModernFocusLayout ? 'training-focus-reading-surface' : 'training-future-reading-surface'
+  const dictationSurfaceClassName = isModernFocusLayout ? 'training-focus-dictation-surface' : 'training-future-dictation-surface'
+  const insetClassName = isModernFocusLayout ? 'training-focus-inset' : 'training-future-inset'
+  const denseInsetClassName = isModernFocusLayout
+    ? 'training-focus-inset training-focus-inset--dense'
+    : 'training-future-inset training-future-inset--dense'
+  const warningInsetClassName = isModernFocusLayout
+    ? 'training-focus-inset training-focus-inset--warning'
+    : 'training-future-inset training-future-inset--warning'
+  const reviewInsetClassName = isModernFocusLayout
+    ? 'training-focus-inset training-focus-inset--review'
+    : 'training-future-inset training-future-inset--review'
+  const formInsetClassName = isModernFocusLayout
+    ? 'training-focus-inset training-focus-inset--form'
+    : 'training-future-inset training-future-inset--form'
+  const recordClassName = isModernFocusLayout ? 'training-focus-record' : 'training-future-record'
+  const statBoxClassName = isModernFocusLayout ? 'training-focus-stat-box' : 'training-future-stat-box'
+  const miniButtonClassName = isModernFocusLayout ? 'training-focus-mini-button' : 'training-future-mini-button'
+  const streamCountBadgeClassName = isModernFocusLayout
+    ? 'training-focus-pill'
+    : 'rounded-full border border-green-500/[0.16] bg-black/20 px-2.5 py-1'
+  const activeSentenceBadgeClassName = isModernFocusLayout
+    ? 'training-focus-pill training-focus-pill--active'
+    : 'rounded-full border border-green-400/[0.18] bg-green-500/[0.08] px-2.5 py-1 text-green-300/80'
+  const sentenceTimeBadgeClassName = isModernFocusLayout
+    ? 'training-focus-meta-pill'
+    : 'rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2.5 py-1 text-green-500/[0.58]'
+  const vocabularyCountBadgeClassName = isModernFocusLayout
+    ? 'training-focus-meta-pill text-[10px]'
+    : 'rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-[10px] cyber-label text-green-500/[0.6]'
+  const getSentenceOrderBadgeClassName = (isActive: boolean) =>
+    isModernFocusLayout
+      ? `training-focus-order-pill ${isActive ? 'is-active' : ''}`
+      : `inline-flex min-w-[3.25rem] justify-center rounded-full border px-2 py-1 ${
+          isActive
+            ? 'border-green-400/35 bg-green-500/15 text-green-200'
+            : 'border-green-500/20 bg-black/30 text-green-400/70'
+        }`
   const getVocabularySaveStatusMeta = (saveStatus: SaveStatus) => {
     switch (saveStatus) {
       case 'saving':
@@ -1322,18 +1566,18 @@ export default function TrainingDetailPage() {
     model: DictationSentenceModel,
     result: DictationSentenceResult
   ) => (
-    <div className="training-future-inset training-future-inset--review mt-3 px-4 py-3">
-      <div className="mb-2 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
-        VERIFIED SENTENCE
+    <div className={`${reviewInsetClassName} mt-3 px-4 py-3`}>
+      <div className={`mb-2 text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-500/85' : 'text-green-500/40'}`}>
+        {isModernFocusLayout ? 'Checked line' : 'VERIFIED SENTENCE'}
       </div>
-      <div className="max-w-[46rem] text-[15px] leading-[1.9] text-green-100/92">
+      <div className={`max-w-[46rem] text-[15px] leading-[1.9] ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100/92'}`}>
         {model.segments.map((segment, segmentIndex) => (
           <span key={`review-segment-${segmentIndex}`}>
             {segmentIndex > 0 ? ' ' : null}
             {segment.tokens.map((token, tokenIndex) => {
               if (token.type !== 'word') {
                 return (
-                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className="text-green-300/80">
+                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className={isModernFocusLayout ? 'text-slate-400/85' : 'text-green-300/80'}>
                     {token.value}
                   </span>
                 )
@@ -1343,7 +1587,7 @@ export default function TrainingDetailPage() {
 
               if (!reviewEntry) {
                 return (
-                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className="text-green-100/92">
+                  <span key={`review-token-${segmentIndex}-${tokenIndex}`} className={isModernFocusLayout ? 'text-slate-100' : 'text-green-100/92'}>
                     {token.displayText}
                   </span>
                 )
@@ -1352,7 +1596,13 @@ export default function TrainingDetailPage() {
               return (
                 <span
                   key={`review-token-${segmentIndex}-${tokenIndex}`}
-                  className={reviewEntry.isCorrect ? 'text-green-100/92' : 'text-red-300 underline decoration-red-400/70 decoration-dotted underline-offset-4'}
+                  className={
+                    reviewEntry.isCorrect
+                      ? isModernFocusLayout
+                        ? 'text-slate-100'
+                        : 'text-green-100/92'
+                      : 'text-red-300 underline decoration-red-400/70 decoration-dotted underline-offset-4'
+                  }
                   title={reviewEntry.isCorrect ? undefined : `你写的是 ${reviewEntry.actual || '空白'}`}
                 >
                   {token.displayText}
@@ -1385,8 +1635,11 @@ export default function TrainingDetailPage() {
   return (
     <div 
       data-training-page
+      data-focus-mode={isFocusMode ? 'true' : 'false'}
       className={`min-h-screen relative flex items-center justify-center transition-all duration-300 ${
         isFullscreen ? 'fixed inset-0 z-[100] training-fullscreen' : ''
+      } ${
+        isFocusMode ? 'training-focus-mode' : ''
       }`}
       style={isFullscreen ? {} : { paddingBottom: '45vh', paddingTop: '10vh' }}
     >
@@ -1400,115 +1653,123 @@ export default function TrainingDetailPage() {
           {/* 主HUD屏幕 - 半透明 */}
           <div
             data-training-frame
-            className={`relative backdrop-blur-md border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] transition-all duration-300 ${
-            isFullscreen ? 'bg-black/30 h-full' : 'bg-black/40'
+            className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
+            isFocusMode
+              ? 'training-focus-frame border border-slate-700/70 bg-[#0d1217]/95 backdrop-blur-sm'
+              : 'backdrop-blur-md border-2 border-green-500/50 shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)]'
+          } ${
+            isFullscreen
+              ? isFocusMode ? 'h-full bg-[#0b1014]/96' : 'bg-black/30 h-full'
+              : isFocusMode ? 'bg-[#0d1217]/94' : 'bg-black/40'
           }`}
             style={{
-            boxShadow: '0 0 40px rgba(10,255,10,0.25), inset 0 0 30px rgba(10,255,10,0.1), 0 0 60px rgba(10,255,10,0.15)'
+            boxShadow: isFocusMode
+              ? '0 14px 42px rgba(0,0,0,0.34), inset 0 0 0 1px rgba(255,255,255,0.02)'
+              : '0 0 40px rgba(10,255,10,0.25), inset 0 0 30px rgba(10,255,10,0.1), 0 0 60px rgba(10,255,10,0.15)'
           }}
           >
-            {/* 边框发光效果 */}
-            <div className="absolute inset-0 border-2 border-green-400/20 rounded-lg pointer-events-none animate-pulse" style={{
-              boxShadow: 'inset 0 0 15px rgba(10,255,10,0.2), 0 0 20px rgba(10,255,10,0.15)'
-            }}></div>
-            
-            {/* 能量波动效果 */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(10,255,10,0.04)_40%,transparent_70%)] animate-pulse" style={{ animationDuration: '3s' }}></div>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,transparent_0%,rgba(10,255,10,0.03)_30%,transparent_60%)] animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }}></div>
-            </div>
+            {!isFocusMode && (
+              <>
+                {/* 边框发光效果 */}
+                <div className="absolute inset-0 border-2 border-green-400/20 rounded-lg pointer-events-none animate-pulse" style={{
+                  boxShadow: 'inset 0 0 15px rgba(10,255,10,0.2), 0 0 20px rgba(10,255,10,0.15)'
+                }}></div>
+                
+                {/* 能量波动效果 */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(10,255,10,0.04)_40%,transparent_70%)] animate-pulse" style={{ animationDuration: '3s' }}></div>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,transparent_0%,rgba(10,255,10,0.03)_30%,transparent_60%)] animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }}></div>
+                </div>
 
-            {/* 粒子背景效果 */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {[...Array(15)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-1 h-1 bg-green-400/20 rounded-full animate-pulse"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${2 + Math.random() * 2}s`,
-                    boxShadow: '0 0 3px rgba(10,255,10,0.4)'
-                  }}
-                ></div>
-              ))}
-            </div>
-          {/* HUD网格背景 - 增强版 */}
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
-          
-          {/* 网格光点效果 */}
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(20)].map((_, i) => {
-              const x = (i % 5) * 25 + 12.5
-              const y = Math.floor(i / 5) * 20 + 10
-              return (
-                <div
-                  key={i}
-                  className="absolute w-0.5 h-0.5 bg-green-400/25 rounded-full animate-pulse"
-                  style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    animationDelay: `${i * 0.2}s`,
-                    animationDuration: '2s',
-                    boxShadow: '0 0 2px rgba(10,255,10,0.5)'
-                  }}
-                ></div>
-              )
-            })}
-          </div>
+                {/* 粒子背景效果 */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  {[...Array(15)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="absolute w-1 h-1 bg-green-400/20 rounded-full animate-pulse"
+                      style={{
+                        left: `${Math.random() * 100}%`,
+                        top: `${Math.random() * 100}%`,
+                        animationDelay: `${Math.random() * 2}s`,
+                        animationDuration: `${2 + Math.random() * 2}s`,
+                        boxShadow: '0 0 3px rgba(10,255,10,0.4)'
+                      }}
+                    ></div>
+                  ))}
+                </div>
+                {/* HUD网格背景 - 增强版 */}
+                <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
+                
+                {/* 网格光点效果 */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {[...Array(20)].map((_, i) => {
+                    const x = (i % 5) * 25 + 12.5
+                    const y = Math.floor(i / 5) * 20 + 10
+                    return (
+                      <div
+                        key={i}
+                        className="absolute w-0.5 h-0.5 bg-green-400/25 rounded-full animate-pulse"
+                        style={{
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          animationDelay: `${i * 0.2}s`,
+                          animationDuration: '2s',
+                          boxShadow: '0 0 2px rgba(10,255,10,0.5)'
+                        }}
+                      ></div>
+                    )
+                  })}
+                </div>
 
-          {/* 扫描线效果 - 多层 */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.02),rgba(10,255,10,0.01),rgba(10,255,10,0.02))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-30"></div>
-          
-          {/* 垂直扫描线 */}
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(10,255,10,0.05)_50%,transparent_100%)] bg-[length:100%_4px] pointer-events-none opacity-20 animate-scan-vertical" style={{ animationDuration: '3s' }}></div>
-          
-          {/* 水平扫描线 */}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(10,255,10,0.04)_50%,transparent_100%)] bg-[length:4px_100%] pointer-events-none opacity-15 animate-shimmer" style={{ animationDuration: '4s' }}></div>
+                {/* 扫描线效果 - 多层 */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.02),rgba(10,255,10,0.01),rgba(10,255,10,0.02))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-30"></div>
+                
+                {/* 垂直扫描线 */}
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(10,255,10,0.05)_50%,transparent_100%)] bg-[length:100%_4px] pointer-events-none opacity-20 animate-scan-vertical" style={{ animationDuration: '3s' }}></div>
+                
+                {/* 水平扫描线 */}
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(10,255,10,0.04)_50%,transparent_100%)] bg-[length:4px_100%] pointer-events-none opacity-15 animate-shimmer" style={{ animationDuration: '4s' }}></div>
 
-          {/* 角落装饰 - 增强版 */}
-          {/* 左上角 */}
-          <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50 pointer-events-none">
-            <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-green-400/40"></div>
-            <div className="absolute top-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
-            {/* 发光线条 */}
-            <div className="absolute top-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
-            <div className="absolute top-0 left-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
-          </div>
-          
-          {/* 右上角 */}
-          <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50 pointer-events-none">
-            <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-green-400/40"></div>
-            <div className="absolute top-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
-            {/* 发光线条 */}
-            <div className="absolute top-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
-            <div className="absolute top-0 right-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
-          </div>
-          
-          {/* 左下角 */}
-          <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50 pointer-events-none">
-            <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-green-400/40"></div>
-            <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
-            {/* 发光线条 */}
-            <div className="absolute bottom-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
-            <div className="absolute bottom-0 left-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
-          </div>
-          
-          {/* 右下角 */}
-          <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50 pointer-events-none">
-            <div className="absolute bottom-0 right-0 w-6 h-6 border-b border-r border-green-400/40"></div>
-            <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
-            {/* 发光线条 */}
-            <div className="absolute bottom-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
-            <div className="absolute bottom-0 right-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
-          </div>
-          
-          {/* 边缘光效 */}
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
-          <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
-          <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+                {/* 角落装饰 - 增强版 */}
+                {/* 左上角 */}
+                <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50 pointer-events-none">
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-green-400/40"></div>
+                  <div className="absolute top-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+                  <div className="absolute top-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
+                  <div className="absolute top-0 left-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
+                </div>
+                
+                {/* 右上角 */}
+                <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50 pointer-events-none">
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-green-400/40"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+                  <div className="absolute top-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
+                  <div className="absolute top-0 right-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
+                </div>
+                
+                {/* 左下角 */}
+                <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50 pointer-events-none">
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-green-400/40"></div>
+                  <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+                  <div className="absolute bottom-0 left-0 w-12 h-[2px] bg-gradient-to-r from-green-500/50 to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
+                </div>
+                
+                {/* 右下角 */}
+                <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50 pointer-events-none">
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b border-r border-green-400/40"></div>
+                  <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
+                  <div className="absolute bottom-0 right-0 w-12 h-[2px] bg-gradient-to-l from-green-500/50 to-transparent"></div>
+                  <div className="absolute bottom-0 right-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
+                </div>
+                
+                {/* 边缘光效 */}
+                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+                <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+                <div className="absolute top-0 bottom-0 right-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
+              </>
+            )}
 
           {/* 通知提示 */}
           {notification && (
@@ -1532,23 +1793,29 @@ export default function TrainingDetailPage() {
           )}
 
           <div className={trainingShellClassName}>
-            <div className={`training-future-commanddeck ${trainingOuterInsetClassName} px-4 py-3 md:px-5 md:py-4`}>
+            <div className={headerPanelClassName}>
               <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="min-w-0">
-                  <div className="training-future-kicker inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] cyber-label tracking-[0.28em] text-green-400/75">
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-400/70 shadow-[0_0_4px_rgba(10,255,10,0.45)]"></span>
-                    <span>TRAINING MODULE</span>
+                  <div className={`${isModernFocusLayout ? 'training-focus-kicker text-slate-400/85' : 'training-future-kicker text-green-400/75'} inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10px] cyber-label tracking-[0.28em]`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${isModernFocusLayout ? 'bg-slate-300/80 shadow-[0_0_0_3px_rgba(148,163,184,0.08)]' : 'bg-green-400/70 shadow-[0_0_4px_rgba(10,255,10,0.45)]'}`}></span>
+                    <span>{isModernFocusLayout ? 'FOCUSED SESSION' : 'TRAINING MODULE'}</span>
                   </div>
-                  <h1 className="mt-3 max-w-4xl break-words text-2xl leading-tight text-green-100 md:text-3xl xl:text-[2rem] cyber-title">
+                  <h1 className={`mt-3 max-w-4xl break-words text-2xl leading-tight cyber-title md:text-3xl xl:text-[2rem] ${
+                    isModernFocusLayout ? 'training-focus-title text-slate-50' : 'text-green-100'
+                  }`}>
                     {item.title}
                   </h1>
-                  <div className="mt-2 text-[11px] cyber-label tracking-[0.18em] text-green-500/45">
-                    FOCUSED LISTENING SESSION
+                  <div className={`mt-2 text-[11px] cyber-label tracking-[0.18em] ${
+                    isModernFocusLayout ? 'training-focus-subtitle text-slate-400/80' : 'text-green-500/45'
+                  }`}>
+                    {isModernFocusLayout
+                      ? 'A quieter reading space for deliberate listening, review and repetition.'
+                      : 'FOCUSED LISTENING SESSION'}
                   </div>
                 </div>
-                <div className="training-future-toolbar flex flex-wrap items-center gap-2 xl:max-w-[52%] xl:justify-end">
-                  <div className="training-future-control-shell relative flex items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 shadow-[0_0_12px_rgba(10,255,10,0.05)]">
-                    <span className="text-[10px] cyber-label tracking-[0.22em] text-green-400/70">
+                <div className={`${isModernFocusLayout ? 'training-focus-toolbar' : 'training-future-toolbar'} flex flex-wrap items-center gap-2 xl:max-w-[52%] xl:justify-end`}>
+                  <div className={`${controlShellClassName} relative flex items-center gap-2 px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 shadow-none' : 'text-green-400/70 shadow-[0_0_12px_rgba(10,255,10,0.05)]'}`}>
+                    <span className={`text-[10px] cyber-label tracking-[0.22em] ${isModernFocusLayout ? 'text-slate-400/78' : 'text-green-400/70'}`}>
                       READ FONT
                     </span>
                     <div className="relative min-w-[168px]">
@@ -1560,7 +1827,9 @@ export default function TrainingDetailPage() {
                             setSelectedSentenceFontId(nextFontId)
                           }
                         }}
-                        className="training-font-select training-future-select h-7 w-full appearance-none rounded px-2.5 pr-8 text-[12px] text-green-100 outline-none transition-all"
+                        className={`training-font-select ${selectClassName} h-7 w-full appearance-none rounded px-2.5 pr-8 text-[12px] outline-none transition-all ${
+                          isModernFocusLayout ? 'text-slate-100' : 'text-green-100'
+                        }`}
                         aria-label="Training sentence font"
                         title="Change English sentence font"
                       >
@@ -1571,7 +1840,9 @@ export default function TrainingDetailPage() {
                         ))}
                       </select>
                       <svg
-                        className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-green-400/75"
+                        className={`pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 ${
+                          isModernFocusLayout ? 'text-slate-400/75' : 'text-green-400/75'
+                        }`}
                         viewBox="0 0 20 20"
                         fill="currentColor"
                         aria-hidden="true"
@@ -1587,10 +1858,14 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={handleEditClick}
-                    className="training-future-toolbar-button group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
+                    className={`${toolbarButtonClassName} group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 hover:text-slate-50' : 'text-green-400/70 hover:text-green-300'} transition-all`}
                     style={{ zIndex: 100 }}
                   >
-                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <div className={`absolute inset-0 rounded opacity-0 transition-opacity group-hover/btn:opacity-100 ${
+                      isModernFocusLayout
+                        ? 'bg-gradient-to-r from-transparent via-slate-300/8 to-transparent'
+                        : 'bg-gradient-to-r from-transparent via-green-500/6 to-transparent'
+                    }`}></div>
                     <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -1600,10 +1875,12 @@ export default function TrainingDetailPage() {
                     type="button"
                     onClick={handleDeleteTrainingItem}
                     disabled={isDeleting}
-                    className={`training-future-toolbar-button group/btn relative flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
+                    className={`${toolbarButtonClassName} group/btn relative flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
                       isDeleting
                         ? 'cursor-not-allowed text-red-300/45'
-                        : 'cursor-pointer text-red-300/70 hover:text-red-200'
+                        : isModernFocusLayout
+                          ? 'cursor-pointer text-red-300/78 hover:text-red-200'
+                          : 'cursor-pointer text-red-300/70 hover:text-red-200'
                     }`}
                     style={{ zIndex: 100 }}
                     title={isDeleting ? 'Deleting training...' : 'Delete this training article'}
@@ -1617,11 +1894,15 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className="training-future-toolbar-button group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
+                    className={`${toolbarButtonClassName} group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 hover:text-slate-50' : 'text-green-400/70 hover:text-green-300'} transition-all`}
                     style={{ zIndex: 100 }}
                     title={isFullscreen ? '缩小' : '全屏'}
                   >
-                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <div className={`absolute inset-0 rounded opacity-0 transition-opacity group-hover/btn:opacity-100 ${
+                      isModernFocusLayout
+                        ? 'bg-gradient-to-r from-transparent via-slate-300/8 to-transparent'
+                        : 'bg-gradient-to-r from-transparent via-green-500/6 to-transparent'
+                    }`}></div>
                     {isFullscreen ? (
                       <>
                         <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1641,10 +1922,14 @@ export default function TrainingDetailPage() {
                   <button
                     type="button"
                     onClick={() => router.push('/')}
-                    className="training-future-toolbar-button group/btn relative cursor-pointer px-3 py-1.5 text-xs text-green-400/70 transition-all hover:text-green-300"
+                    className={`${toolbarButtonClassName} group/btn relative cursor-pointer px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 hover:text-slate-50' : 'text-green-400/70 hover:text-green-300'} transition-all`}
                     style={{ zIndex: 100 }}
                   >
-                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-green-500/6 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                    <div className={`absolute inset-0 rounded opacity-0 transition-opacity group-hover/btn:opacity-100 ${
+                      isModernFocusLayout
+                        ? 'bg-gradient-to-r from-transparent via-slate-300/8 to-transparent'
+                        : 'bg-gradient-to-r from-transparent via-green-500/6 to-transparent'
+                    }`}></div>
                     <span className="relative z-10 cyber-button-text">← BACK</span>
                   </button>
                 </div>
@@ -1654,26 +1939,28 @@ export default function TrainingDetailPage() {
             {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
             <div
               ref={contentRef}
-              className={`training-future-content relative ${trainingOuterInsetClassName} training-hud-content min-h-0 ${
-                isFullscreen ? 'flex-1' : ''
-              }`}
+              className={`${contentPanelClassName} relative`}
               style={{
                 maxHeight: isFullscreen ? undefined : '75vh',
               }}
             >
-              <div className="relative px-4 py-4 md:px-5 md:py-5 xl:px-6 xl:py-6">
-                <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-              <aside className="order-1 xl:order-2 xl:sticky xl:top-0">
+              <div className={contentInnerClassName}>
+                <div className={mainGridClassName}>
+              <aside className={sidebarClassName}>
                 <div className="space-y-6">
-                  <div className={`${hudPanelClassName} training-vocabulary-book-panel p-4 md:p-5`}>
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.05)_0%,transparent_55%)] opacity-60"></div>
+                  <div className={`${hudPanelClassName} ${isModernFocusLayout ? '' : 'training-vocabulary-book-panel'} p-4 md:p-5`}>
+                    {!isModernFocusLayout && (
+                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,255,10,0.05)_0%,transparent_55%)] opacity-60"></div>
+                    )}
                     <div className={hudPanelHeaderClassName}>
                       <div className="flex items-center gap-3">
-                        <div className="h-4 w-1 bg-green-500/80"></div>
+                        <div className={`h-4 w-1 ${isModernFocusLayout ? 'bg-slate-300/70' : 'bg-green-500/80'}`}></div>
                         <div>
-                          <h3 className="text-sm cyber-label tracking-[0.28em] text-green-300">AUDIO PLAYER</h3>
-                          <div className="mt-1 text-[10px] cyber-label text-green-500/50">
-                            TIMELINE / PLAYBACK / SPEED
+                          <h3 className={`text-sm cyber-label tracking-[0.28em] ${isModernFocusLayout ? 'text-slate-100' : 'text-green-300'}`}>
+                            {isModernFocusLayout ? 'Audio player' : 'AUDIO PLAYER'}
+                          </h3>
+                          <div className={`mt-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80 tracking-[0.16em]' : 'text-green-500/50'}`}>
+                            {isModernFocusLayout ? 'Timeline, playback and speed' : 'TIMELINE / PLAYBACK / SPEED'}
                           </div>
                         </div>
                       </div>
@@ -1693,9 +1980,9 @@ export default function TrainingDetailPage() {
 
                     {!audioLoaded ? (
                       <div className="relative z-10 py-8 text-center">
-                        <div className="inline-flex items-center gap-2 text-sm cyber-text text-green-400/70">
-                          <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse"></div>
-                          <span>[ LOADING AUDIO... ]</span>
+                        <div className={`inline-flex items-center gap-2 text-sm cyber-text ${isModernFocusLayout ? 'text-slate-400/80' : 'text-green-400/70'}`}>
+                          <div className={`h-2 w-2 rounded-full ${isModernFocusLayout ? 'bg-slate-300' : 'bg-green-400 animate-pulse'}`}></div>
+                          <span>{isModernFocusLayout ? 'Loading audio...' : '[ LOADING AUDIO... ]'}</span>
                         </div>
                       </div>
                     ) : (
@@ -1707,9 +1994,11 @@ export default function TrainingDetailPage() {
                             max={duration || 0}
                             value={currentTime}
                             onChange={handleSeek}
-                            className="audio-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-black/60"
+                            className={`audio-slider h-2 w-full cursor-pointer appearance-none rounded-lg ${isModernFocusLayout ? 'bg-slate-800/80' : 'bg-black/60'}`}
                             style={{
-                              background: `linear-gradient(to right, rgba(10,255,10,0.58) 0%, rgba(10,255,10,0.58) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) 100%)`
+                              background: isModernFocusLayout
+                                ? `linear-gradient(to right, rgba(148,163,184,0.88) 0%, rgba(148,163,184,0.88) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(51,65,85,0.82) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(51,65,85,0.82) 100%)`
+                                : `linear-gradient(to right, rgba(10,255,10,0.58) 0%, rgba(10,255,10,0.58) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) 100%)`
                             }}
                           />
                         </div>
@@ -1718,42 +2007,46 @@ export default function TrainingDetailPage() {
                           <button
                             type="button"
                             onClick={handlePlayPause}
-                            className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-green-500/45 bg-green-500/10 transition-all hover:border-green-500/70 hover:bg-green-500/20"
-                            style={{ boxShadow: '0 0 15px rgba(10,255,10,0.25)' }}
+                            className={`training-focus-play-button flex h-14 w-14 items-center justify-center rounded-full border-2 transition-all ${
+                              isModernFocusLayout
+                                ? 'border-slate-500/40 bg-slate-200/[0.04] hover:border-slate-400/70 hover:bg-slate-200/[0.08]'
+                                : 'border-green-500/45 bg-green-500/10 hover:border-green-500/70 hover:bg-green-500/20'
+                            }`}
+                            style={{ boxShadow: isModernFocusLayout ? '0 8px 18px rgba(0,0,0,0.18)' : '0 0 15px rgba(10,255,10,0.25)' }}
                             title="播放/暂停 (空格)"
                           >
                             {isPlaying ? (
-                              <svg className="h-6 w-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                              <svg className={`h-6 w-6 ${isModernFocusLayout ? 'text-slate-100' : 'text-green-400'}`} fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
                               </svg>
                             ) : (
-                              <svg className="ml-1 h-6 w-6 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                              <svg className={`ml-1 h-6 w-6 ${isModernFocusLayout ? 'text-slate-100' : 'text-green-400'}`} fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
                               </svg>
                             )}
                           </button>
 
                           <div className="grid grid-cols-3 gap-2">
-                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
-                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">CURRENT</div>
-                              <div className="text-sm cyber-number cyber-tabular text-green-300">{formatTime(currentTime)}</div>
+                            <div className={`${statBoxClassName} rounded-lg px-2 py-2 text-center`}>
+                              <div className={`mb-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/55'}`}>{isModernFocusLayout ? 'Current' : 'CURRENT'}</div>
+                              <div className={`text-sm cyber-number cyber-tabular ${isModernFocusLayout ? 'text-slate-100' : 'text-green-300'}`}>{formatTime(currentTime)}</div>
                             </div>
-                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
-                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">TOTAL</div>
-                              <div className="text-sm cyber-number cyber-tabular text-green-300/80">{formatTime(duration)}</div>
+                            <div className={`${statBoxClassName} rounded-lg px-2 py-2 text-center`}>
+                              <div className={`mb-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/55'}`}>{isModernFocusLayout ? 'Total' : 'TOTAL'}</div>
+                              <div className={`text-sm cyber-number cyber-tabular ${isModernFocusLayout ? 'text-slate-300/90' : 'text-green-300/80'}`}>{formatTime(duration)}</div>
                             </div>
-                            <div className="training-future-stat-box rounded-lg px-2 py-2 text-center">
-                              <div className="mb-1 text-[10px] cyber-label text-green-500/55">PROGRESS</div>
-                              <div className="text-sm cyber-number cyber-tabular text-green-300">
+                            <div className={`${statBoxClassName} rounded-lg px-2 py-2 text-center`}>
+                              <div className={`mb-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/55'}`}>{isModernFocusLayout ? 'Progress' : 'PROGRESS'}</div>
+                              <div className={`text-sm cyber-number cyber-tabular ${isModernFocusLayout ? 'text-slate-100' : 'text-green-300'}`}>
                                 {duration > 0 ? Math.round((currentTime / duration) * 100) : 0}%
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="border-t border-green-500/15 pt-3">
-                          <div className="mb-2 text-[10px] cyber-label tracking-[0.24em] text-green-500/50">
-                            SPEED CONTROL
+                        <div className={`border-t pt-3 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-green-500/15'}`}>
+                          <div className={`mb-2 text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/50'}`}>
+                            {isModernFocusLayout ? 'Speed' : 'SPEED CONTROL'}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {[0.5, 0.75, 1, 1.25, 1.5].map((rate) => (
@@ -1761,10 +2054,14 @@ export default function TrainingDetailPage() {
                                 key={rate}
                                 type="button"
                                 onClick={() => handleSpeedChange(rate)}
-                                className={`training-future-mini-button rounded px-3 py-1 text-xs cyber-button-text transition-all ${
+                                className={`${miniButtonClassName} rounded px-3 py-1 text-xs cyber-button-text transition-all ${
                                   playbackRate === rate
-                                    ? 'border-green-500/70 bg-green-500/25 text-green-200'
-                                    : 'border-green-500/25 bg-black/35 text-green-400/70 hover:border-green-500/45 hover:bg-green-500/10'
+                                    ? isModernFocusLayout
+                                      ? 'border-slate-300/60 bg-slate-200/[0.1] text-slate-50'
+                                      : 'border-green-500/70 bg-green-500/25 text-green-200'
+                                    : isModernFocusLayout
+                                      ? 'border-slate-700/60 bg-slate-950/35 text-slate-400 hover:border-slate-500/70 hover:bg-slate-800/45 hover:text-slate-200'
+                                      : 'border-green-500/25 bg-black/35 text-green-400/70 hover:border-green-500/45 hover:bg-green-500/10'
                                 }`}
                               >
                                 {rate}x
@@ -1773,16 +2070,20 @@ export default function TrainingDetailPage() {
                           </div>
                         </div>
 
-                        <div className="training-future-inset rounded-lg px-3 py-2">
+                        <div className={`${insetClassName} rounded-lg px-3 py-2`}>
                           <div className="flex h-4 items-end gap-1">
                             {PLAYER_VISUALIZER_BARS.map((height, index) => (
                               <div
                                 key={index}
-                                className="flex-1 rounded-t bg-green-500/35 transition-all duration-150"
+                                className={`flex-1 rounded-t transition-all duration-150 ${isModernFocusLayout ? 'bg-slate-300/35' : 'bg-green-500/35'}`}
                                 style={{
                                   height: `${height}%`,
                                   opacity: isPlaying ? 0.95 : 0.45,
-                                  boxShadow: isPlaying ? '0 0 5px rgba(10,255,10,0.35)' : 'none',
+                                  boxShadow: isPlaying
+                                    ? isModernFocusLayout
+                                      ? '0 0 6px rgba(148,163,184,0.16)'
+                                      : '0 0 5px rgba(10,255,10,0.35)'
+                                    : 'none',
                                 }}
                               ></div>
                             ))}
@@ -1799,16 +2100,16 @@ export default function TrainingDetailPage() {
                           <div className="flex min-w-0 items-center gap-3">
                             <div className="h-4 w-1 bg-amber-400/80"></div>
                             <div className="min-w-0">
-                              <div className="text-sm cyber-label tracking-[0.28em] text-amber-200">DICTATION LOCK</div>
-                              <div className="mt-1 text-[10px] cyber-label text-amber-300/55">
+                              <div className={`text-sm cyber-label tracking-[0.28em] ${isModernFocusLayout ? 'text-amber-100' : 'text-amber-200'}`}>{isModernFocusLayout ? 'Dictation lock' : 'DICTATION LOCK'}</div>
+                              <div className={`mt-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-amber-300/55'}`}>
                                 Vocabulary and translations stay hidden while dictation mode is active.
                               </div>
                             </div>
                           </div>
                         </div>
-                        <div className="training-future-inset training-future-inset--warning mt-4 rounded-lg px-4 py-5 text-center">
-                          <div className="text-sm cyber-text text-amber-100/80">Listen first. Reveal notes after you finish the line.</div>
-                          <div className="mt-2 text-[10px] cyber-label text-amber-300/55">
+                        <div className={`${warningInsetClassName} mt-4 rounded-lg px-4 py-5 text-center`}>
+                          <div className={`text-sm cyber-text ${isModernFocusLayout ? 'text-slate-200/88' : 'text-amber-100/80'}`}>Listen first. Reveal notes after you finish the line.</div>
+                          <div className={`mt-2 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-amber-300/55'}`}>
                             Turn off dictation mode to reopen the vocabulary book.
                           </div>
                         </div>
@@ -1824,10 +2125,10 @@ export default function TrainingDetailPage() {
                         aria-expanded={isVocabularyBookExpanded}
                         aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
                       >
-                        <div className="h-4 w-1 bg-green-500/80"></div>
+                        <div className={`h-4 w-1 ${isModernFocusLayout ? 'bg-slate-300/70' : 'bg-green-500/80'}`}></div>
                         <div className="min-w-0">
-                          <div className="text-sm cyber-label tracking-[0.28em] text-green-300">VOCABULARY BOOK</div>
-                          <div className="mt-1 text-[10px] cyber-label text-green-500/50">
+                          <div className={`text-sm cyber-label tracking-[0.28em] ${isModernFocusLayout ? 'text-slate-100' : 'text-green-300'}`}>{isModernFocusLayout ? 'Vocabulary notebook' : 'VOCABULARY BOOK'}</div>
+                          <div className={`mt-1 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80 tracking-[0.16em]' : 'text-green-500/50'}`}>
                             {vocabularyBook.length} UNIQUE / {totalVocabularyEntries} TOTAL
                           </div>
                         </div>
@@ -1836,7 +2137,9 @@ export default function TrainingDetailPage() {
                         <button
                           type="button"
                           onClick={isVocabularyBookExpanded ? closeVocabularyBook : openVocabularyBook}
-                          className="training-vocabulary-book-toggle training-future-mini-button flex items-center rounded px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200"
+                          className={`training-vocabulary-book-toggle ${miniButtonClassName} flex items-center rounded px-2 py-1 text-[10px] cyber-button-text transition-colors ${
+                            isModernFocusLayout ? 'text-slate-300/80 hover:text-slate-100' : 'text-green-300/80 hover:border-green-500/30 hover:text-green-200'
+                          }`}
                           aria-expanded={isVocabularyBookExpanded}
                           aria-label={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
                           title={isVocabularyBookExpanded ? 'Hide vocabulary book' : 'Show vocabulary book'}
@@ -1846,7 +2149,9 @@ export default function TrainingDetailPage() {
                         <button
                           type="button"
                           onClick={isVocabularyBookExpanded ? closeVocabularyBook : openVocabularyBook}
-                          className="training-vocabulary-book-toggle training-future-mini-button flex h-7 w-7 items-center justify-center rounded text-green-300/80 transition-colors hover:border-green-500/30 hover:text-green-200"
+                          className={`training-vocabulary-book-toggle ${miniButtonClassName} flex h-7 w-7 items-center justify-center rounded transition-colors ${
+                            isModernFocusLayout ? 'text-slate-300/80 hover:text-slate-100' : 'text-green-300/80 hover:border-green-500/30 hover:text-green-200'
+                          }`}
                           aria-expanded={isVocabularyBookExpanded}
                           aria-label={isVocabularyBookExpanded ? 'Collapse vocabulary book' : 'Expand vocabulary book'}
                           title={isVocabularyBookExpanded ? 'Collapse vocabulary book' : 'Expand vocabulary book'}
@@ -1871,9 +2176,9 @@ export default function TrainingDetailPage() {
                     {isVocabularyBookExpanded && (
                       <div className="training-vocabulary-book-body mt-4 animate-fade-in">
                         {vocabularyBook.length === 0 ? (
-                          <div className="training-future-inset mt-0 rounded-lg border-dashed px-4 py-5 text-center">
-                            <div className="text-sm cyber-text text-green-300/75">No vocabulary recorded on this page yet.</div>
-                            <div className="mt-2 text-[10px] cyber-label text-green-500/50">
+                          <div className={`${insetClassName} mt-0 rounded-lg border-dashed px-4 py-5 text-center`}>
+                            <div className={`text-sm cyber-text ${isModernFocusLayout ? 'text-slate-300/80' : 'text-green-300/75'}`}>No vocabulary recorded on this page yet.</div>
+                            <div className={`mt-2 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/50'}`}>
                               Add structured entries under any sentence to build the notebook.
                             </div>
                           </div>
@@ -1882,17 +2187,17 @@ export default function TrainingDetailPage() {
                             {vocabularyBook.map((entry) => (
                               <div
                                 key={entry.normalizedKey}
-                                className="training-vocabulary-book-record training-future-record rounded-lg px-4 py-3"
+                                className={`training-vocabulary-book-record ${recordClassName} rounded-lg px-4 py-3`}
                               >
                                 <div className="flex flex-col gap-3">
                                   <button
                                     type="button"
                                     onClick={() => scrollToSentence(entry.sentences[0].sentenceId)}
-                                    className="text-left transition-colors hover:text-green-200"
+                                    className={`text-left transition-colors ${isModernFocusLayout ? 'hover:text-slate-50' : 'hover:text-green-200'}`}
                                   >
                                     <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="text-sm cyber-font-readable font-bold text-green-200">{entry.label}</span>
-                                      <span className="text-[10px] cyber-label text-green-500/70">[x{entry.count}]</span>
+                                      <span className={`text-sm cyber-font-readable font-bold ${isModernFocusLayout ? 'text-slate-100' : 'text-green-200'}`}>{entry.label}</span>
+                                      <span className={`text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/70'}`}>[x{entry.count}]</span>
                                     </div>
                                   </button>
                                   <div className="flex flex-wrap gap-2">
@@ -1902,7 +2207,11 @@ export default function TrainingDetailPage() {
                                         key={`${entry.normalizedKey}-${source.sentenceId}`}
                                         onClick={() => scrollToSentence(source.sentenceId)}
                                         title={source.sentenceText}
-                                        className="rounded border border-green-500/25 bg-green-500/5 px-2 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/45 hover:bg-green-500/10"
+                                        className={`rounded border px-2 py-1 text-[10px] cyber-button-text transition-colors ${
+                                          isModernFocusLayout
+                                            ? 'border-slate-700/70 bg-slate-900/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-800/60 hover:text-slate-100'
+                                            : 'border-green-500/25 bg-green-500/5 text-green-300/80 hover:border-green-500/45 hover:bg-green-500/10'
+                                        }`}
                                       >
                                         S{source.sentenceOrder}
                                       </button>
@@ -1921,30 +2230,34 @@ export default function TrainingDetailPage() {
                 </div>
               </aside>
 
-              <section className="order-2 min-w-0 xl:order-1">
+              <section className={mainSectionClassName}>
                 <div className="pt-2 pb-6 md:pt-3 md:pb-8">
-                  <div className="training-future-stream-header mb-6 flex flex-col gap-3 pb-5 md:mb-7 md:flex-row md:items-end md:justify-between">
+                  <div className={streamHeaderClassName}>
                     <div>
-                      <div className="text-[10px] cyber-label tracking-[0.3em] text-green-400/72">SENTENCE STREAM</div>
-                      <div className="mt-1 text-[11px] cyber-label text-green-500/45">
+                      <div className={`text-[10px] cyber-label tracking-[0.3em] ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-400/72'}`}>
+                        {isModernFocusLayout ? 'Transcript' : 'SENTENCE STREAM'}
+                      </div>
+                      <div className={`mt-1 text-[11px] cyber-label ${isModernFocusLayout ? 'text-slate-500/76' : 'text-green-500/45'}`}>
                         {isDictationMode
-                          ? 'Listen first. Type the words you hear before revealing the line.'
-                          : 'Read line by line. Let the English stay in front.'}
+                          ? 'Listen first, type what you hear, then reveal the line.'
+                          : isModernFocusLayout
+                            ? 'Read like a normal article and keep the rhythm of the passage.'
+                            : 'Read line by line. Let the English stay in front.'}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-[10px] cyber-label text-green-500/60">
-                      <span className="rounded-full border border-green-500/[0.16] bg-black/20 px-2.5 py-1">
+                    <div className={`flex flex-wrap gap-2 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/60'}`}>
+                      <span className={streamCountBadgeClassName}>
                         {item.sentences.length} SEGMENTS
                       </span>
                       {activeSentenceLabel && (
-                        <span className="rounded-full border border-green-400/[0.18] bg-green-500/[0.08] px-2.5 py-1 text-green-300/80">
+                        <span className={activeSentenceBadgeClassName}>
                           ACTIVE {activeSentenceLabel}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="pl-5 md:pl-5 xl:pl-5 space-y-6 md:space-y-7 xl:space-y-8">
+                  <div className={sentenceListClassName}>
                     {item.sentences.map((sentence, index) => {
                       const isActive = currentSentenceIndex === index
                       const isRepeating = repeatMode === index
@@ -1979,31 +2292,27 @@ export default function TrainingDetailPage() {
                           ref={(el) => {
                             sentenceRefs.current[index] = el
                           }}
-                          className={`training-future-sentence-card${isActive ? ' is-active' : ''}`}
+                          className={`${sentenceCardClassName}${isActive ? ' is-active' : ''}`}
                         >
-                          <div className="training-future-sentence-glow absolute inset-0"></div>
+                          {!isModernFocusLayout && <div className={`${sentenceGlowClassName} absolute inset-0`}></div>}
                           {isActive && (
-                            <div className="training-future-sentence-rail absolute inset-y-6 left-0 w-[2px] rounded-r-full"></div>
+                            <div className={`${sentenceRailClassName} absolute inset-y-6 left-0 w-[2px] rounded-r-full`}></div>
                           )}
                           <div
-                            className={`training-future-sentence-divider pointer-events-none absolute bottom-0 left-8 right-6 h-px ${
+                            className={`${sentenceDividerClassName} pointer-events-none absolute bottom-0 left-8 right-6 h-px ${
                               isActive ? 'is-active opacity-75' : 'opacity-40'
                             }`}
                           ></div>
 
-                          <div className="relative z-10 pr-4 pl-5 py-[14px] md:pr-[18px] md:pl-6 md:py-4 xl:pr-5 xl:pl-7 xl:py-[18px]">
+                          <div className={sentenceBodyClassName}>
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
                                 <span
-                                  className={`inline-flex min-w-[3.25rem] justify-center rounded-full border px-2 py-1 ${
-                                    isActive
-                                      ? 'border-green-400/35 bg-green-500/15 text-green-200'
-                                      : 'border-green-500/20 bg-black/30 text-green-400/70'
-                                  }`}
+                                  className={getSentenceOrderBadgeClassName(isActive)}
                                 >
                                   S{sentence.order + 1}
                                 </span>
-                                <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2.5 py-1 text-green-500/[0.58]">
+                                <span className={sentenceTimeBadgeClassName}>
                                   {sentence.startTime.toFixed(2)}s - {sentence.endTime.toFixed(2)}s
                                 </span>
                               </div>
@@ -2015,11 +2324,17 @@ export default function TrainingDetailPage() {
                                   className={`flex items-center justify-center rounded-md border px-2 py-1.5 text-xs transition-all ${
                                     canToggleSentenceTranslation
                                       ? isTranslationVisible
-                                        ? 'border-green-400/[0.24] bg-green-500/[0.09] text-green-200'
-                                        : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                        ? isModernFocusLayout
+                                          ? 'border-slate-300/40 bg-slate-200/[0.08] text-slate-50'
+                                          : 'border-green-400/[0.24] bg-green-500/[0.09] text-green-200'
+                                        : isModernFocusLayout
+                                          ? 'border-slate-700/70 bg-slate-900/45 text-slate-300/90 hover:border-slate-500/75 hover:bg-slate-800/55 hover:text-slate-100'
+                                          : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
                                       : isDictationMode && hasTranslation
                                       ? 'cursor-not-allowed border-amber-400/[0.14] bg-black/[0.12] text-amber-200/35'
-                                      : 'cursor-not-allowed border-green-500/[0.08] bg-black/[0.1] text-green-500/[0.3]'
+                                      : isModernFocusLayout
+                                        ? 'cursor-not-allowed border-slate-700/60 bg-slate-950/35 text-slate-500/45'
+                                        : 'cursor-not-allowed border-green-500/[0.08] bg-black/[0.1] text-green-500/[0.3]'
                                   }`}
                                   title={
                                     !hasTranslation
@@ -2051,7 +2366,9 @@ export default function TrainingDetailPage() {
                                   className={`rounded-md border px-2 py-1.5 text-xs cyber-button-text transition-all ${
                                     isRepeating
                                       ? 'border-red-400/50 bg-red-500/20 text-red-300'
-                                      : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                      : isModernFocusLayout
+                                        ? 'border-slate-700/70 bg-slate-900/45 text-slate-300/90 hover:border-slate-500/75 hover:bg-slate-800/55 hover:text-slate-100'
+                                        : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
                                   }`}
                                 title="单句重复播放"
                               >
@@ -2061,25 +2378,25 @@ export default function TrainingDetailPage() {
                             </div>
 
                             {isDictationMode ? (
-                              <div className="mt-3.5 border-t border-amber-400/[0.08] pt-3">
+                              <div className={`mt-3.5 border-t pt-3 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-amber-400/[0.08]'}`}>
                                 <div
                                   onClick={() => handleSentenceClick(sentence)}
-                                  className={`training-future-dictation-surface rounded-xl px-4 py-4 transition-all ${
+                                  className={`${dictationSurfaceClassName} rounded-xl px-4 py-4 transition-all ${
                                     isActive
                                       ? 'is-active'
                                       : ''
                                   }`}
                                 >
                                   <div className="flex flex-wrap items-center justify-between gap-3">
-                                    <div className="text-[10px] cyber-label tracking-[0.24em] text-amber-200/75">
-                                      DICTATION GRID
+                                    <div className={`text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-500/85' : 'text-amber-200/75'}`}>
+                                      {isModernFocusLayout ? 'Dictation' : 'DICTATION GRID'}
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
-                                      <span className="rounded-full border border-amber-400/18 bg-black/20 px-2 py-0.5 text-amber-200/75">
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-slate-400' : 'rounded-full border border-amber-400/18 bg-black/20 px-2 py-0.5 text-amber-200/75'}`}>
                                         {dictationModel.words.length} WORDS
                                       </span>
                                       {dictationResult && (
-                                        <span className="rounded-full border border-amber-400/22 bg-amber-500/[0.08] px-2 py-0.5 text-amber-100">
+                                        <span className={`${isModernFocusLayout ? 'training-focus-pill training-focus-pill--active !text-slate-50' : 'rounded-full border border-amber-400/22 bg-amber-500/[0.08] px-2 py-0.5 text-amber-100'}`}>
                                           {dictationResult.correctCount}/{dictationResult.totalCount}
                                         </span>
                                       )}
@@ -2095,7 +2412,13 @@ export default function TrainingDetailPage() {
                                               <span
                                                 key={`${sentence.id}-symbol-${segmentIndex}-${tokenIndex}`}
                                                 className={`pb-2 text-sm font-bold ${
-                                                  token.type === 'hyphen' ? 'text-green-300/80' : 'text-green-400/60'
+                                                  isModernFocusLayout
+                                                    ? token.type === 'hyphen'
+                                                      ? 'text-slate-400/85'
+                                                      : 'text-slate-500/85'
+                                                    : token.type === 'hyphen'
+                                                      ? 'text-green-300/80'
+                                                      : 'text-green-400/60'
                                                 }`}
                                               >
                                                 {token.value}
@@ -2104,6 +2427,14 @@ export default function TrainingDetailPage() {
                                           }
 
                                           const wordInputValue = dictationState.inputs[token.wordIndex] || ''
+                                          const revealMode = dictationState.revealModes[token.wordIndex] || 'hidden'
+                                          const revealText =
+                                            revealMode === 'initial'
+                                              ? token.answerText.charAt(0)
+                                              : revealMode === 'full'
+                                                ? token.answerText
+                                                : ''
+                                          const isRevealVisible = revealMode !== 'hidden'
                                           const normalizedInputLength = sanitizeDictationInput(wordInputValue).length
                                           const isWordFilled = normalizedInputLength >= token.maxLength
 
@@ -2119,12 +2450,33 @@ export default function TrainingDetailPage() {
                                             >
                                               <div
                                                 className={`absolute inset-0 rounded-lg border transition-all duration-200 ${
-                                                  isWordFilled
-                                                    ? 'border-amber-300/30 bg-amber-500/[0.06] shadow-[0_0_12px_rgba(251,191,36,0.08)]'
-                                                    : 'border-green-500/18 bg-black/25 group-hover/word:border-green-400/30 group-hover/word:bg-green-500/[0.04]'
+                                                  isRevealVisible
+                                                    ? isModernFocusLayout
+                                                      ? 'border-slate-400/55 bg-slate-200/[0.06] shadow-[0_10px_22px_rgba(15,23,42,0.18)]'
+                                                      : 'border-cyan-300/35 bg-cyan-500/[0.06] shadow-[0_0_14px_rgba(34,211,238,0.08)]'
+                                                    : isWordFilled
+                                                    ? isModernFocusLayout
+                                                      ? 'border-slate-500/55 bg-slate-100/[0.05] shadow-[0_0_0_1px_rgba(255,255,255,0.02)]'
+                                                      : 'border-amber-300/30 bg-amber-500/[0.06] shadow-[0_0_12px_rgba(251,191,36,0.08)]'
+                                                    : isModernFocusLayout
+                                                      ? 'border-slate-700/70 bg-slate-950/45 group-hover/word:border-slate-500/70 group-hover/word:bg-slate-900/60'
+                                                      : 'border-green-500/18 bg-black/25 group-hover/word:border-green-400/30 group-hover/word:bg-green-500/[0.04]'
                                                 }`}
                                               ></div>
-                                              <div className="pointer-events-none absolute inset-x-2 bottom-1 h-px bg-gradient-to-r from-transparent via-green-500/18 to-transparent"></div>
+                                              <div className={`pointer-events-none absolute inset-x-2 bottom-1 h-px bg-gradient-to-r from-transparent ${isModernFocusLayout ? 'via-slate-400/18' : 'via-green-500/18'} to-transparent`}></div>
+                                              {isRevealVisible && (
+                                                <div
+                                                  className={`pointer-events-none absolute inset-x-1.5 inset-y-1.5 z-20 flex items-center justify-center rounded-md text-center text-[15px] font-semibold tracking-[0.08em] ${
+                                                    isModernFocusLayout
+                                                      ? 'bg-slate-950/78 text-slate-100'
+                                                      : 'bg-[#081416]/78 text-cyan-100'
+                                                  }`}
+                                                >
+                                                  <span className="truncate px-2">
+                                                    {revealText}
+                                                  </span>
+                                                </div>
+                                              )}
                                               <input
                                                 ref={(element) => setDictationInputRef(sentence.id, token.wordIndex, element)}
                                                 value={wordInputValue}
@@ -2135,8 +2487,20 @@ export default function TrainingDetailPage() {
                                                 spellCheck={false}
                                                 autoCapitalize="off"
                                                 autoCorrect="off"
-                                                className="relative z-10 h-11 w-full rounded-lg border border-transparent bg-transparent px-2.5 pb-1 pt-2 text-center text-[15px] font-semibold tracking-[0.08em] text-green-100 caret-amber-300 outline-none transition-all focus:border-amber-300/28 focus:bg-amber-500/[0.03] focus:shadow-[0_0_12px_rgba(251,191,36,0.12)]"
+                                                readOnly={isRevealVisible}
+                                                className={`relative z-10 h-11 w-full rounded-lg border border-transparent bg-transparent px-2.5 pb-1 pt-2 text-center text-[15px] font-semibold tracking-[0.08em] outline-none transition-all ${
+                                                  isModernFocusLayout
+                                                    ? `${isRevealVisible ? 'text-transparent caret-transparent' : 'text-slate-100 caret-slate-200'} focus:border-slate-400/35 focus:bg-slate-200/[0.03] focus:shadow-[0_0_0_1px_rgba(255,255,255,0.02)]`
+                                                    : `${isRevealVisible ? 'text-transparent caret-transparent' : 'text-green-100 caret-amber-300'} focus:border-amber-300/28 focus:bg-amber-500/[0.03] focus:shadow-[0_0_12px_rgba(251,191,36,0.12)]`
+                                                }`}
                                                 aria-label={`Dictation input for ${token.displayText}`}
+                                                title={
+                                                  revealMode === 'initial'
+                                                    ? 'First-letter hint visible. Press Ctrl+I to hide or Ctrl+L to reveal the full word.'
+                                                    : revealMode === 'full'
+                                                      ? 'Full-word hint visible. Press Ctrl+L to hide.'
+                                                      : 'Press Ctrl+I for the first letter or Ctrl+L for the full word.'
+                                                }
                                               />
                                             </div>
                                           )
@@ -2145,15 +2509,21 @@ export default function TrainingDetailPage() {
                                     ))}
                                   </div>
 
-                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-amber-400/[0.08] pt-3">
+                                    <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 border-t pt-3 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-amber-400/[0.08]'}`}>
                                     <div className="flex flex-wrap items-center gap-2 text-[10px] cyber-label">
-                                      <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75">
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-slate-400' : 'rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75'}`}>
                                         NO PUNCTUATION INPUT
                                       </span>
-                                      <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75">
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-slate-400' : 'rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-green-400/75'}`}>
                                         SPACE JUMPS WHEN FULL
                                       </span>
-                                      <span className="rounded-full border border-amber-400/[0.16] bg-amber-500/[0.05] px-2 py-0.5 text-amber-200/70">
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-slate-400' : 'rounded-full border border-cyan-400/[0.16] bg-cyan-500/[0.05] px-2 py-0.5 text-cyan-200/75'}`}>
+                                        CTRL+I FIRST LETTER
+                                      </span>
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-slate-400' : 'rounded-full border border-cyan-400/[0.16] bg-cyan-500/[0.05] px-2 py-0.5 text-cyan-200/75'}`}>
+                                        CTRL+L FULL WORD
+                                      </span>
+                                      <span className={`${isModernFocusLayout ? 'training-focus-meta-pill text-amber-200/80' : 'rounded-full border border-amber-400/[0.16] bg-amber-500/[0.05] px-2 py-0.5 text-amber-200/70'}`}>
                                         EMPTY SUBMIT OK
                                       </span>
                                     </div>
@@ -2165,12 +2535,20 @@ export default function TrainingDetailPage() {
                                       }}
                                       className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
                                         dictationResult
-                                          ? 'border-amber-300/45 bg-amber-500/[0.12] text-amber-100 hover:border-amber-200/60 hover:bg-amber-500/[0.16]'
+                                          ? isModernFocusLayout
+                                            ? 'border-slate-300/60 bg-slate-200/[0.1] text-slate-50 hover:border-slate-200/70 hover:bg-slate-200/[0.12]'
+                                            : 'border-amber-300/45 bg-amber-500/[0.12] text-amber-100 hover:border-amber-200/60 hover:bg-amber-500/[0.16]'
                                           : isDictationSentenceCompleteState
-                                          ? 'border-amber-400/35 bg-amber-500/[0.08] text-amber-100 hover:border-amber-300/55 hover:bg-amber-500/[0.14]'
+                                          ? isModernFocusLayout
+                                            ? 'border-slate-400/35 bg-slate-200/[0.06] text-slate-100 hover:border-slate-300/55 hover:bg-slate-200/[0.1]'
+                                            : 'border-amber-400/35 bg-amber-500/[0.08] text-amber-100 hover:border-amber-300/55 hover:bg-amber-500/[0.14]'
                                           : hasAnyDictationInput
-                                          ? 'border-amber-400/30 bg-amber-500/[0.05] text-amber-100/90 hover:border-amber-300/45 hover:bg-amber-500/[0.1]'
-                                          : 'border-amber-400/24 bg-black/20 text-amber-200/80 hover:border-amber-300/40 hover:bg-amber-500/[0.08]'
+                                          ? isModernFocusLayout
+                                            ? 'border-slate-500/30 bg-slate-200/[0.04] text-slate-100/90 hover:border-slate-400/45 hover:bg-slate-200/[0.08]'
+                                            : 'border-amber-400/30 bg-amber-500/[0.05] text-amber-100/90 hover:border-amber-300/45 hover:bg-amber-500/[0.1]'
+                                          : isModernFocusLayout
+                                            ? 'border-slate-700/70 bg-slate-950/35 text-slate-300/80 hover:border-slate-500/60 hover:bg-slate-900/55'
+                                            : 'border-amber-400/24 bg-black/20 text-amber-200/80 hover:border-amber-300/40 hover:bg-amber-500/[0.08]'
                                       }`}
                                       title="Submit this line at any time, even if some words are blank"
                                     >
@@ -2181,11 +2559,11 @@ export default function TrainingDetailPage() {
                                   {dictationResult && renderDictationReview(dictationModel, dictationResult)}
 
                                   {isTranslationVisible && sentence.translation && (
-                                    <div className="training-future-inset mt-3 rounded-lg px-4 py-3">
-                                      <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
+                                    <div className={`${insetClassName} mt-3 rounded-lg px-4 py-3`}>
+                                      <div className={`mb-1 text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/40'}`}>
                                         TRANSLATION
                                       </div>
-                                      <p className="max-w-[44rem] text-[13px] leading-[1.75] text-green-200/60 md:text-sm">
+                                      <p className={`max-w-[44rem] text-[13px] leading-[1.75] md:text-sm ${isModernFocusLayout ? 'text-slate-300/88' : 'text-green-200/60'}`}>
                                         {sentence.translation}
                                       </p>
                                     </div>
@@ -2196,26 +2574,26 @@ export default function TrainingDetailPage() {
                               <>
                             <div
                               onClick={() => handleSentenceClick(sentence)}
-                              className={`training-future-reading-surface mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
+                              className={`${readingSurfaceClassName} mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
                                   isActive
-                                    ? 'text-green-100'
-                                    : 'text-gray-100 hover:text-green-100'
+                                    ? isModernFocusLayout ? 'text-slate-50' : 'text-green-100'
+                                    : isModernFocusLayout ? 'text-slate-200 hover:text-slate-50' : 'text-gray-100 hover:text-green-100'
                                 }`}
                             >
-                              <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className}`}>
+                              <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className} ${isModernFocusLayout ? 'tracking-[0.01em]' : ''}`}>
                                 {highlightedSentenceText}
                               </p>
                             </div>
 
-                            <div className="mt-3.5 border-t border-green-500/[0.08] pt-2.5">
+                            <div className={`mt-3.5 border-t pt-2.5 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-green-500/[0.08]'}`}>
                               <button
                                 type="button"
                                 onClick={() => toggleNotes(sentence.id)}
                                 className="flex w-full items-center justify-between gap-3 text-left"
                               >
                                 <span className="flex flex-wrap items-center gap-2">
-                                  <span className="text-xs cyber-label tracking-[0.24em] text-green-300/90">VOCABULARY</span>
-                                  <span className="rounded-full border border-green-500/[0.12] bg-black/[0.16] px-2 py-0.5 text-[10px] cyber-label text-green-500/[0.6]">
+                                  <span className={`text-xs cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-300/90' : 'text-green-300/90'}`}>VOCABULARY</span>
+                                  <span className={vocabularyCountBadgeClassName}>
                                     {vocabularyCount} ITEMS
                                   </span>
                                   {saveStatusMeta && (
@@ -2225,7 +2603,7 @@ export default function TrainingDetailPage() {
                                   )}
                                 </span>
                                 <span
-                                  className="flex h-5 w-5 items-center justify-center text-green-400/70 transition-transform duration-200"
+                                  className={`flex h-5 w-5 items-center justify-center transition-transform duration-200 ${isModernFocusLayout ? 'text-slate-400/90' : 'text-green-400/70'}`}
                                   style={{ transform: isNotesExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
                                 >
                                   <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -2239,18 +2617,18 @@ export default function TrainingDetailPage() {
                               </button>
 
                               {isTranslationVisible && sentence.translation && (
-                                <div className="training-future-inset mt-3 rounded-lg px-4 py-3">
-                                  <div className="mb-1 text-[10px] cyber-label tracking-[0.24em] text-green-500/40">
-                                    TRANSLATION
+                                <div className={`${insetClassName} mt-3 rounded-lg px-4 py-3`}>
+                                  <div className={`mb-1 text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/40'}`}>
+                                    {isModernFocusLayout ? 'Translation' : 'TRANSLATION'}
                                   </div>
-                                  <p className="max-w-[44rem] text-[13px] leading-[1.75] text-green-200/60 md:text-sm">
+                                  <p className={`max-w-[44rem] text-[13px] leading-[1.75] md:text-sm ${isModernFocusLayout ? 'text-slate-300/88' : 'text-green-200/60'}`}>
                                     {sentence.translation}
                                   </p>
                                 </div>
                               )}
 
                               {isNotesExpanded && (
-                                <div className="training-future-inset training-future-inset--dense mt-2.5 animate-fade-in rounded-xl p-3">
+                                <div className={`${denseInsetClassName} mt-2.5 animate-fade-in rounded-xl p-3`}>
                                   {vocabularyCount > 0 ? (
                                     <div className="mb-3 space-y-2.5">
                                       {vocabularyState.items.map((entry) => {
@@ -2260,14 +2638,14 @@ export default function TrainingDetailPage() {
                                         return (
                                           <div
                                             key={`${sentence.id}-${getVocabularyEntryKey(entry)}`}
-                                            className={`training-future-record flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 ${
+                                            className={`${recordClassName} flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 ${
                                               isLegacyEntry
                                                 ? 'is-legacy border-dashed'
                                                 : ''
                                             }`}
                                           >
                                             <div className="min-w-0">
-                                              <div className="break-words text-sm cyber-font-readable text-green-100">
+                                              <div className={`break-words text-sm cyber-font-readable ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100'}`}>
                                                 {entryLabel}
                                               </div>
                                               {isLegacyEntry && (
@@ -2287,7 +2665,9 @@ export default function TrainingDetailPage() {
                                               className={`shrink-0 transition-colors ${
                                                 isLegacyEntry
                                                   ? 'text-amber-200/75 hover:text-red-300'
-                                                  : 'text-green-300/80 hover:text-red-300'
+                                                  : isModernFocusLayout
+                                                    ? 'text-slate-400/85 hover:text-red-300'
+                                                    : 'text-green-300/80 hover:text-red-300'
                                               }`}
                                               aria-label={`Remove ${entryLabel}`}
                                               title={`Remove ${entryLabel}`}
@@ -2299,7 +2679,7 @@ export default function TrainingDetailPage() {
                                       })}
                                     </div>
                                   ) : (
-                                    <div className="training-future-inset mb-3 rounded-md border-dashed px-3 py-3 text-[10px] cyber-label text-green-500/50">
+                                    <div className={`${insetClassName} mb-3 rounded-md border-dashed px-3 py-3 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/50'}`}>
                                       No vocabulary yet. Add a structured entry below.
                                     </div>
                                   )}
@@ -2309,7 +2689,7 @@ export default function TrainingDetailPage() {
                                       event.preventDefault()
                                       handleVocabularySubmit(sentence.id)
                                     }}
-                                    className="training-future-inset training-future-inset--form space-y-3 rounded-lg p-3"
+                                    className={`${formInsetClassName} space-y-3 rounded-lg p-3`}
                                   >
                                     <div>
                                       <input
@@ -2317,7 +2697,11 @@ export default function TrainingDetailPage() {
                                         onChange={(event) => handleVocabularyHeadwordChange(sentence.id, event.target.value)}
                                         placeholder="separate"
                                         spellCheck={false}
-                                        className="w-full rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                        className={`w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                                          isModernFocusLayout
+                                            ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                                            : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                                        }`}
                                       />
                                     </div>
 
@@ -2326,7 +2710,11 @@ export default function TrainingDetailPage() {
                                         <button
                                           type="button"
                                           onClick={() => handleVocabularyAddSense(sentence.id)}
-                                          className="rounded border border-green-500/20 bg-black/30 px-2.5 py-1 text-[10px] cyber-button-text text-green-300/80 transition-colors hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200"
+                                          className={`rounded border px-2.5 py-1 text-[10px] cyber-button-text transition-colors ${
+                                            isModernFocusLayout
+                                              ? 'border-slate-700/80 bg-slate-950/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-900/70 hover:text-slate-100'
+                                              : 'border-green-500/20 bg-black/30 text-green-300/80 hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200'
+                                          }`}
                                         >
                                           + POS
                                         </button>
@@ -2335,16 +2723,20 @@ export default function TrainingDetailPage() {
                                       {vocabularyState.form.senses.map((sense, senseIndex) => (
                                         <div
                                           key={`${sentence.id}-sense-${senseIndex}`}
-                                          className="training-future-record rounded-lg p-3"
+                                          className={`${recordClassName} rounded-lg p-3`}
                                         >
                                           <div className="flex items-start justify-between gap-3">
-                                            <div className="text-[10px] cyber-label tracking-[0.22em] text-green-500/55">
-                                              POS SELECT
+                                            <div className={`text-[10px] cyber-label tracking-[0.22em] ${isModernFocusLayout ? 'text-slate-500/78' : 'text-green-500/55'}`}>
+                                              {isModernFocusLayout ? 'Part of speech' : 'POS SELECT'}
                                             </div>
                                             <button
                                               type="button"
                                               onClick={() => handleVocabularyRemoveSense(sentence.id, senseIndex)}
-                                              className="rounded-md border border-green-500/16 bg-black/20 px-3 py-2 text-[10px] cyber-button-text text-green-300/70 transition-colors hover:border-red-400/35 hover:text-red-300 disabled:cursor-not-allowed disabled:text-green-500/35"
+                                              className={`rounded-md border px-3 py-2 text-[10px] cyber-button-text transition-colors disabled:cursor-not-allowed ${
+                                                isModernFocusLayout
+                                                  ? 'border-slate-700/80 bg-slate-950/45 text-slate-300/75 hover:border-red-400/35 hover:text-red-300 disabled:text-slate-600/70'
+                                                  : 'border-green-500/16 bg-black/20 text-green-300/70 hover:border-red-400/35 hover:text-red-300 disabled:text-green-500/35'
+                                              }`}
                                               disabled={vocabularyState.form.senses.length === 1}
                                               aria-label={`Remove sense ${senseIndex + 1}`}
                                               title={`Remove sense ${senseIndex + 1}`}
@@ -2365,8 +2757,12 @@ export default function TrainingDetailPage() {
                                                   key={`${sentence.id}-sense-${senseIndex}-${option.value}`}
                                                   className={`relative inline-flex cursor-pointer items-center rounded-md border px-2.5 py-1.5 text-[10px] cyber-button-text transition-all ${
                                                     isSelected
-                                                      ? 'border-green-400/38 bg-green-500/[0.14] text-green-100 shadow-[0_0_14px_rgba(10,255,10,0.08)]'
-                                                      : 'border-green-500/18 bg-black/25 text-green-300/75 hover:border-green-500/34 hover:bg-green-500/[0.06] hover:text-green-200'
+                                                      ? isModernFocusLayout
+                                                        ? 'border-slate-300/65 bg-slate-200/[0.1] text-slate-50 shadow-[0_10px_20px_rgba(15,23,42,0.18)]'
+                                                        : 'border-green-400/38 bg-green-500/[0.14] text-green-100 shadow-[0_0_14px_rgba(10,255,10,0.08)]'
+                                                      : isModernFocusLayout
+                                                        ? 'border-slate-700/80 bg-slate-950/45 text-slate-300/80 hover:border-slate-500/75 hover:bg-slate-900/65 hover:text-slate-100'
+                                                        : 'border-green-500/18 bg-black/25 text-green-300/75 hover:border-green-500/34 hover:bg-green-500/[0.06] hover:text-green-200'
                                                   }`}
                                                 >
                                                   <input
@@ -2387,7 +2783,11 @@ export default function TrainingDetailPage() {
                                             onChange={(event) => handleVocabularySenseChange(sentence.id, senseIndex, 'meaning', event.target.value)}
                                             placeholder="使分离"
                                             spellCheck={false}
-                                            className="mt-3 w-full rounded-md border border-green-500/20 bg-black/30 px-3 py-2 text-sm cyber-input-font text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40 focus:outline-none"
+                                            className={`mt-3 w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                                              isModernFocusLayout
+                                                ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                                                : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                                            }`}
                                           />
                                         </div>
                                       ))}
@@ -2399,8 +2799,12 @@ export default function TrainingDetailPage() {
                                         disabled={!isVocabularyFormReady}
                                         className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
                                           isVocabularyFormReady
-                                            ? 'border-green-500/28 bg-green-500/[0.08] text-green-200 hover:border-green-500/45 hover:bg-green-500/[0.12]'
-                                            : 'cursor-not-allowed border-green-500/12 bg-black/25 text-green-500/35'
+                                            ? isModernFocusLayout
+                                              ? 'border-slate-400/35 bg-slate-200/[0.08] text-slate-100 hover:border-slate-300/55 hover:bg-slate-200/[0.12]'
+                                              : 'border-green-500/28 bg-green-500/[0.08] text-green-200 hover:border-green-500/45 hover:bg-green-500/[0.12]'
+                                            : isModernFocusLayout
+                                              ? 'cursor-not-allowed border-slate-700/70 bg-slate-950/45 text-slate-500/65'
+                                              : 'cursor-not-allowed border-green-500/12 bg-black/25 text-green-500/35'
                                         }`}
                                       >
                                         ADD ENTRY

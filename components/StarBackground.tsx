@@ -116,7 +116,7 @@ export default function StarBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
+      className="star-background fixed inset-0 pointer-events-none"
       style={{ 
         background: 'transparent',
         zIndex: 0

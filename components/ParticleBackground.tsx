@@ -223,7 +223,7 @@ export default function ParticleBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
+      className="particle-background fixed inset-0 pointer-events-none"
       style={{ 
         background: 'transparent',
         zIndex: 1

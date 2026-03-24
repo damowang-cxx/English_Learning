@@ -1,18 +1,19 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages, Keyboard } from 'lucide-react'
+import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages, Keyboard, MoonStar } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
+import { useFocusMode } from '@/contexts/FocusModeContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 
 const DEFAULT_DOCK_SCALE = 0.5
 const TRAINING_DOCK_SCALE = 0.62
 const TRAINING_DOCK_BUTTON_SIZE = 48
 const TRAINING_DOCK_BUTTON_GAP = 12
-const TRAINING_DOCK_BUTTON_COUNT = 5
+const TRAINING_DOCK_BUTTON_COUNT = 6
 const TRAINING_DOCK_VIEWPORT_PADDING = 12
 const TRAINING_DOCK_FRAME_CLEARANCE = 10
 const TRAINING_DOCK_BOTTOM_OFFSET = 28
@@ -126,6 +127,7 @@ export default function CockpitPanel() {
   const appPathname = stripBasePath(pathname || '/')
   const translationContext = useTranslation()
   const { isDictationMode, toggleDictationMode, setIsDictationMode } = useDictationMode()
+  const { isFocusMode, toggleFocusMode, setIsFocusMode } = useFocusMode()
   const [currentTime, setCurrentTime] = useState('')
   const [engineLevel, setEngineLevel] = useState(85)
   const [shieldLevel, setShieldLevel] = useState(100)
@@ -180,12 +182,20 @@ export default function CockpitPanel() {
   const floatingButtonIconSize = isTrainingPage ? 20 : 24
   const showFloatingButtonLabels = !isTrainingPage
   const isTranslationToggleDisabled = isTrainingPage && isDictationMode
+  const trainingDockOuterClassName = isTrainingPage ? 'training-dock-button' : ''
+  const trainingDockShellClassName = isTrainingPage ? 'training-dock-button-shell' : ''
 
   useEffect(() => {
     if (!isTrainingPage && isDictationMode) {
       setIsDictationMode(false)
     }
   }, [isTrainingPage, isDictationMode, setIsDictationMode])
+
+  useEffect(() => {
+    if (!isTrainingPage && isFocusMode) {
+      setIsFocusMode(false)
+    }
+  }, [isTrainingPage, isFocusMode, setIsFocusMode])
   
   // 监听路由变化，控制动画阶段
   useEffect(() => {
@@ -443,6 +453,10 @@ export default function CockpitPanel() {
     toggleDictationMode()
   }
 
+  const handleFocusMode = () => {
+    toggleFocusMode()
+  }
+
   // 获取训练条目列表
   const fetchTrainingItems = async () => {
     setLoadingItems(true)
@@ -474,7 +488,7 @@ export default function CockpitPanel() {
       
       {/* 驾驶舱 Overlay */}
       {/* 全局扫描线效果 (Scanlines) */}
-      <div className="absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] opacity-20"></div>
+      <div className="cockpit-panel-overlay absolute inset-0 pointer-events-none z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] opacity-20"></div>
 
       {/* 顶部装饰栏 */}
       <div className="absolute top-0 left-0 w-full h-24 z-40 flex justify-between items-start pointer-events-none cockpit-panel-chrome">
@@ -1339,10 +1353,42 @@ export default function CockpitPanel() {
               : 'opacity 0s linear 0s, transform 0.7s cubic-bezier(0.4, 0, 0.2, 1), left 0s linear 0s, top 0s linear 0s, bottom 0s linear 0s, right 0s linear 0s, gap 0.3s ease-out 0s',
           }}
         >
+          {isTrainingPage && (
+            <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleFocusMode} title="Focus mode">
+              <div className={`focus-mode-toggle-shell ${trainingDockShellClassName} relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
+                isFocusMode
+                  ? 'is-active border-slate-200/80 bg-slate-100/12 shadow-[0_0_18px_rgba(226,232,240,0.18)]'
+                  : 'border-slate-300/35 bg-slate-200/[0.05] shadow-[0_0_10px_rgba(148,163,184,0.08)] group-hover:bg-slate-100/[0.1] group-hover:shadow-[0_0_18px_rgba(148,163,184,0.16)]'
+              }`}>
+                <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(226,232,240,.08)_49%,rgba(226,232,240,.08)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(226,232,240,.08)_49%,rgba(226,232,240,.08)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(226,232,240,0.16)_50%,transparent_100%)] bg-[length:100%_4px] opacity-0 group-hover:opacity-100 animate-scan-vertical transition-opacity duration-300"></div>
+                <div className="absolute inset-0 rounded-full border border-slate-200/18 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow transition-opacity duration-300"></div>
+                <div className="absolute inset-[-2px] rounded-full border border-slate-300/10 opacity-0 group-hover:opacity-100 group-hover:animate-spin-slow-reverse transition-opacity duration-300"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={`h-2 w-2 rounded-full bg-slate-100 shadow-[0_0_8px_rgba(226,232,240,0.4)] transition-opacity duration-300 ${
+                    isFocusMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                  }`}></div>
+                </div>
+                <div className="absolute inset-0 rounded-full bg-slate-100/10 scale-0 group-active:scale-150 opacity-0 group-active:opacity-100 transition-all duration-500 pointer-events-none"></div>
+                <MoonStar
+                  className={`relative z-10 transition-colors duration-300 group-active:scale-90 ${
+                    isFocusMode ? 'text-slate-50' : 'text-slate-200 group-hover:text-slate-50'
+                  }`}
+                  size={floatingButtonIconSize}
+                />
+              </div>
+              {showFloatingButtonLabels && (
+                <div className={`training-dock-button-label mt-2 text-[10px] font-mono transition-colors duration-300 ${
+                  isFocusMode ? 'text-slate-50' : 'text-slate-200'
+                }`}>FOCUS</div>
+              )}
+            </div>
+          )}
+
           {/* TRANSLATIONS 按钮 - 只在训练页面显示，在WARP左侧 */}
           {isTrainingPage && (
-            <div className="text-center group cursor-pointer relative" onClick={handleDictation} title="Dictation mode">
-              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
+            <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleDictation} title="Dictation mode">
+              <div className={`${trainingDockShellClassName} ${isDictationMode ? 'is-active' : ''} relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
                 isDictationMode
                   ? 'border-amber-400/80 bg-amber-500/15 shadow-[0_0_25px_rgba(251,191,36,0.55),0_0_50px_rgba(251,191,36,0.24)]'
                   : 'border-amber-400/45 bg-amber-500/[0.08] shadow-[0_0_15px_rgba(251,191,36,0.25)] group-hover:bg-amber-500/[0.16] group-hover:shadow-[0_0_25px_rgba(251,191,36,0.45),0_0_50px_rgba(251,191,36,0.2)] group-active:shadow-[0_0_35px_rgba(251,191,36,0.65),inset_0_0_20px_rgba(251,191,36,0.18)]'
@@ -1362,7 +1408,7 @@ export default function CockpitPanel() {
                 }`} size={floatingButtonIconSize} />
               </div>
               {showFloatingButtonLabels && (
-                <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 ${
+                <div className={`training-dock-button-label mt-2 text-[10px] font-mono transition-colors duration-300 ${
                   isDictationMode ? 'text-amber-100' : 'text-amber-300'
                 }`}>DICT</div>
               )}
@@ -1370,9 +1416,9 @@ export default function CockpitPanel() {
           )}
 
           {isTrainingPage && (
-            <div className="text-center group cursor-pointer relative" onClick={handleTranslations} title="Translations">
+            <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleTranslations} title="Translations">
               {/* 按钮容器 */}
-              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
+              <div className={`${trainingDockShellClassName} ${translationContext?.showTranslations && !isTranslationToggleDisabled ? 'is-active' : ''} relative ${floatingButtonShellSizeClassName} rounded-full border-2 flex items-center justify-center ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 overflow-hidden ${
                 isTranslationToggleDisabled
                   ? 'border-green-500/20 bg-black/10 shadow-[0_0_10px_rgba(34,197,94,0.08)]'
                   : translationContext?.showTranslations
@@ -1414,7 +1460,7 @@ export default function CockpitPanel() {
                 }`} size={floatingButtonIconSize} />
               </div>
               {showFloatingButtonLabels && (
-                <div className={`text-[10px] mt-2 font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
+                <div className={`training-dock-button-label mt-2 text-[10px] font-mono transition-colors duration-300 group-active:text-green-500 group-hover:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)] ${
                   isTranslationToggleDisabled
                     ? 'text-green-500/30'
                     : translationContext?.showTranslations
@@ -1426,9 +1472,9 @@ export default function CockpitPanel() {
           )}
 
           {/* WARP 按钮 - 在AUTOPILOT左侧 */}
-          <div className="text-center group cursor-pointer relative" onClick={handleWarp} title="Warp">
+          <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleWarp} title="Warp">
             {/* 按钮容器 */}
-            <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-red-500/50 flex items-center justify-center bg-red-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(255,0,0,0.3)] group-hover:shadow-[0_0_25px_rgba(255,0,0,0.6),0_0_50px_rgba(255,0,0,0.3)] group-active:shadow-[0_0_35px_rgba(255,0,0,0.8),inset_0_0_20px_rgba(255,0,0,0.2)] overflow-hidden`}>
+            <div className={`${trainingDockShellClassName} relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-red-500/50 flex items-center justify-center bg-red-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(255,0,0,0.3)] group-hover:shadow-[0_0_25px_rgba(255,0,0,0.6),0_0_50px_rgba(255,0,0,0.3)] group-active:shadow-[0_0_35px_rgba(255,0,0,0.8),inset_0_0_20px_rgba(255,0,0,0.2)] overflow-hidden`}>
               {/* 背景网格 */}
               <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(255,0,0,.1)_49%,rgba(255,0,0,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(255,0,0,.1)_49%,rgba(255,0,0,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -1452,7 +1498,7 @@ export default function CockpitPanel() {
               <Rocket className="text-red-400 relative z-10 group-hover:text-red-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(255,0,0,0.8)]" size={floatingButtonIconSize} />
             </div>
             {showFloatingButtonLabels && (
-              <div className="text-[10px] text-red-400 mt-2 font-mono group-hover:text-red-300 transition-colors duration-300 group-active:text-red-500 group-hover:drop-shadow-[0_0_4px_rgba(255,0,0,0.6)]">WARP</div>
+              <div className="training-dock-button-label mt-2 text-[10px] font-mono text-red-400 transition-colors duration-300 group-hover:text-red-300 group-active:text-red-500 group-hover:drop-shadow-[0_0_4px_rgba(255,0,0,0.6)]">WARP</div>
             )}
           </div>
 
@@ -1470,8 +1516,8 @@ export default function CockpitPanel() {
 
           {/* HOME 按钮 - 只在非首页时显示，位于WARP和MENU中间 */}
           {!isHomePage && (
-            <div className="text-center group cursor-pointer relative" onClick={handleHome} title="Home">
-              <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-purple-500/50 flex items-center justify-center bg-purple-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.3)] group-active:shadow-[0_0_35px_rgba(168,85,247,0.8),inset_0_0_20px_rgba(168,85,247,0.2)] relative overflow-hidden`}>
+            <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleHome} title="Home">
+              <div className={`${trainingDockShellClassName} relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-purple-500/50 flex items-center justify-center bg-purple-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] group-hover:shadow-[0_0_25px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.3)] group-active:shadow-[0_0_35px_rgba(168,85,247,0.8),inset_0_0_20px_rgba(168,85,247,0.2)] relative overflow-hidden`}>
                 {/* 背景网格 */}
                 <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(168,85,247,.1)_49%,rgba(168,85,247,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(168,85,247,.1)_49%,rgba(168,85,247,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
@@ -1494,14 +1540,14 @@ export default function CockpitPanel() {
                 <Home className="text-purple-400 relative z-10 group-hover:text-purple-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" size={floatingButtonIconSize} />
               </div>
               {showFloatingButtonLabels && (
-                <div className="text-[10px] text-purple-400 mt-2 font-mono group-hover:text-purple-300 transition-colors duration-300 group-active:text-purple-500 group-hover:drop-shadow-[0_0_4px_rgba(168,85,247,0.6)]">HOME</div>
+                <div className="training-dock-button-label mt-2 text-[10px] font-mono text-purple-400 transition-colors duration-300 group-hover:text-purple-300 group-active:text-purple-500 group-hover:drop-shadow-[0_0_4px_rgba(168,85,247,0.6)]">HOME</div>
               )}
             </div>
           )}
 
           {/* MENU 按钮 - 在AUTOPILOT右侧 */}
-          <div className="text-center group cursor-pointer relative" onClick={handleMenu} title="Menu">
-            <div className={`relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-cyan-500/50 flex items-center justify-center bg-cyan-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(0,243,255,0.3)] group-hover:shadow-[0_0_25px_rgba(0,243,255,0.6),0_0_50px_rgba(0,243,255,0.3)] group-active:shadow-[0_0_35px_rgba(0,243,255,0.8),inset_0_0_20px_rgba(0,243,255,0.2)] relative overflow-hidden`}>
+          <div className={`text-center group cursor-pointer relative ${trainingDockOuterClassName}`} onClick={handleMenu} title="Menu">
+            <div className={`${trainingDockShellClassName} relative ${floatingButtonShellSizeClassName} rounded-full border-2 border-cyan-500/50 flex items-center justify-center bg-cyan-900/10 ${floatingButtonHoverScaleClassName} group-active:scale-95 transition-all duration-300 shadow-[0_0_15px_rgba(0,243,255,0.3)] group-hover:shadow-[0_0_25px_rgba(0,243,255,0.6),0_0_50px_rgba(0,243,255,0.3)] group-active:shadow-[0_0_35px_rgba(0,243,255,0.8),inset_0_0_20px_rgba(0,243,255,0.2)] relative overflow-hidden`}>
               {/* 背景网格 */}
               <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_48%,rgba(0,243,255,.1)_49%,rgba(0,243,255,.1)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(0,243,255,.1)_49%,rgba(0,243,255,.1)_51%,transparent_52%)] bg-[length:8px_8px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -1524,7 +1570,7 @@ export default function CockpitPanel() {
               <Menu className="text-cyan-400 relative z-10 group-hover:text-cyan-300 transition-colors duration-300 group-active:scale-90 group-hover:drop-shadow-[0_0_8px_rgba(0,243,255,0.8)]" size={floatingButtonIconSize} />
             </div>
             {showFloatingButtonLabels && (
-              <div className="text-[10px] text-cyan-400 mt-2 font-mono group-hover:text-cyan-300 transition-colors duration-300 group-active:text-cyan-500 group-hover:drop-shadow-[0_0_4px_rgba(0,243,255,0.6)]">MENU</div>
+              <div className="training-dock-button-label mt-2 text-[10px] font-mono text-cyan-400 transition-colors duration-300 group-hover:text-cyan-300 group-active:text-cyan-500 group-hover:drop-shadow-[0_0_4px_rgba(0,243,255,0.6)]">MENU</div>
             )}
           </div>
         </div>

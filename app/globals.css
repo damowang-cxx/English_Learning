@@ -716,6 +716,610 @@ body::-webkit-scrollbar {
   box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.04);
 }
 
+.training-focus-mode {
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at top center, rgba(71, 85, 105, 0.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(30, 41, 59, 0.22), transparent 28%),
+    linear-gradient(180deg, #11161b 0%, #0b1014 100%);
+}
+
+.training-focus-frame {
+  position: relative;
+  border-radius: 1.75rem;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.training-focus-frame::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(1.75rem - 1px);
+  background:
+    radial-gradient(circle at top left, rgba(148, 163, 184, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0));
+  pointer-events: none;
+}
+
+.training-focus-frame::after {
+  content: '';
+  position: absolute;
+  left: 2rem;
+  right: 2rem;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.32), transparent);
+  pointer-events: none;
+}
+
+.training-focus-shell {
+  width: min(100%, 1380px);
+  margin: 0 auto;
+}
+
+.training-focus-header,
+.training-focus-content,
+.training-focus-panel,
+.training-focus-control-shell,
+.training-focus-toolbar-button,
+.training-focus-reading-surface,
+.training-focus-dictation-surface,
+.training-focus-inset,
+.training-focus-record,
+.training-focus-stat-box,
+.training-focus-mini-button {
+  position: relative;
+}
+
+.training-focus-header {
+  border-radius: 1.5rem;
+  border: 1px solid rgba(71, 85, 105, 0.55);
+  background:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(18, 24, 31, 0.96), rgba(13, 18, 24, 0.96));
+  box-shadow:
+    0 22px 40px rgba(2, 6, 23, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(18px);
+}
+
+.training-focus-header::after {
+  content: '';
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.22), transparent);
+  pointer-events: none;
+}
+
+.training-focus-kicker {
+  border: 1px solid rgba(100, 116, 139, 0.42);
+  background: rgba(15, 23, 42, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.training-focus-title {
+  letter-spacing: -0.02em;
+  text-shadow: none;
+}
+
+.training-focus-subtitle {
+  letter-spacing: 0.01em;
+  text-shadow: none;
+}
+
+.training-focus-toolbar {
+  align-items: center;
+}
+
+.training-focus-control-shell,
+.training-focus-toolbar-button {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(71, 85, 105, 0.55);
+  background: linear-gradient(180deg, rgba(19, 25, 33, 0.96), rgba(13, 18, 24, 0.94));
+  box-shadow:
+    0 10px 22px rgba(2, 6, 23, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(14px);
+}
+
+.training-focus-toolbar-button {
+  overflow: hidden;
+}
+
+.training-focus-toolbar-button:hover,
+.training-focus-control-shell:hover {
+  border-color: rgba(148, 163, 184, 0.72);
+  background: linear-gradient(180deg, rgba(24, 31, 40, 0.98), rgba(16, 22, 29, 0.96));
+  box-shadow:
+    0 12px 26px rgba(2, 6, 23, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.training-focus-select {
+  border: 1px solid rgba(71, 85, 105, 0.52);
+  background: rgba(15, 23, 42, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-select:hover {
+  border-color: rgba(148, 163, 184, 0.65);
+}
+
+.training-focus-select:focus {
+  border-color: rgba(226, 232, 240, 0.42);
+  background: rgba(15, 23, 42, 0.48);
+  box-shadow:
+    0 0 0 1px rgba(226, 232, 240, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.training-focus-content {
+  border-radius: 1.6rem;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  background:
+    linear-gradient(180deg, rgba(11, 16, 22, 0.98), rgba(10, 14, 20, 0.96));
+  box-shadow:
+    0 24px 48px rgba(2, 6, 23, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+
+.training-focus-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%);
+  pointer-events: none;
+}
+
+.training-focus-main {
+  min-width: 0;
+}
+
+.training-focus-sidebar {
+  align-self: start;
+}
+
+.training-focus-panel {
+  border-radius: 1.35rem;
+  border: 1px solid rgba(71, 85, 105, 0.46);
+  background:
+    linear-gradient(180deg, rgba(16, 21, 28, 0.94), rgba(12, 17, 23, 0.96));
+  box-shadow:
+    0 18px 34px rgba(2, 6, 23, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.training-focus-panel-header {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.42);
+}
+
+.training-focus-panel-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.42), rgba(148, 163, 184, 0.16), transparent);
+  pointer-events: none;
+}
+
+.training-focus-stream-header {
+  position: relative;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+}
+
+.training-focus-stream-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 140px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.24), rgba(148, 163, 184, 0.08), transparent);
+  pointer-events: none;
+}
+
+.training-focus-pill,
+.training-focus-meta-pill,
+.training-focus-order-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(71, 85, 105, 0.48);
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-pill,
+.training-focus-order-pill {
+  padding: 0.42rem 0.75rem;
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.training-focus-meta-pill {
+  padding: 0.35rem 0.7rem;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.training-focus-pill--active,
+.training-focus-order-pill.is-active {
+  border-color: rgba(226, 232, 240, 0.46);
+  background: rgba(226, 232, 240, 0.08);
+  color: #f8fafc;
+}
+
+.training-focus-sentence-card {
+  border-radius: 1.45rem;
+  border: 1px solid rgba(71, 85, 105, 0.38);
+  background:
+    linear-gradient(180deg, rgba(15, 20, 27, 0.92), rgba(12, 16, 22, 0.96));
+  box-shadow:
+    0 16px 30px rgba(2, 6, 23, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.training-focus-sentence-card:hover {
+  border-color: rgba(100, 116, 139, 0.66);
+  background:
+    linear-gradient(180deg, rgba(17, 23, 31, 0.95), rgba(13, 18, 25, 0.98));
+  box-shadow:
+    0 18px 34px rgba(2, 6, 23, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transform: translateY(-1px);
+}
+
+.training-focus-sentence-card.is-active {
+  border-color: rgba(203, 213, 225, 0.34);
+  background:
+    linear-gradient(180deg, rgba(20, 26, 35, 0.98), rgba(15, 20, 28, 0.98));
+  box-shadow:
+    0 22px 38px rgba(2, 6, 23, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.training-focus-sentence-glow {
+  display: none;
+}
+
+.training-focus-sentence-rail {
+  background: linear-gradient(180deg, rgba(226, 232, 240, 0.5), rgba(148, 163, 184, 0.12), transparent);
+  opacity: 0.9;
+}
+
+.training-focus-sentence-divider {
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent);
+}
+
+.training-focus-reading-surface,
+.training-focus-dictation-surface {
+  border-radius: 1.2rem;
+  border: 1px solid rgba(51, 65, 85, 0.34);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01)),
+    rgba(15, 23, 42, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-reading-surface:hover {
+  border-color: rgba(100, 116, 139, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.014)),
+    rgba(15, 23, 42, 0.28);
+}
+
+.training-focus-dictation-surface.is-active {
+  border-color: rgba(148, 163, 184, 0.46);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.015)),
+    rgba(15, 23, 42, 0.32);
+}
+
+.training-focus-inset {
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.34);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.22), rgba(10, 14, 20, 0.58));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 8px 16px rgba(2, 6, 23, 0.14);
+}
+
+.training-focus-inset--dense {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.24), rgba(10, 14, 20, 0.66));
+}
+
+.training-focus-inset--warning {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: linear-gradient(180deg, rgba(120, 53, 15, 0.12), rgba(17, 24, 39, 0.82));
+}
+
+.training-focus-inset--review {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.48), rgba(11, 15, 21, 0.82));
+}
+
+.training-focus-inset--form {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.38), rgba(10, 14, 20, 0.84));
+}
+
+.training-focus-record {
+  border-radius: 1rem;
+  border: 1px solid rgba(51, 65, 85, 0.36);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.3), rgba(10, 14, 20, 0.68));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-record.is-legacy {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: linear-gradient(180deg, rgba(120, 53, 15, 0.12), rgba(17, 24, 39, 0.68));
+}
+
+.training-focus-stat-box {
+  border-radius: 0.95rem;
+  border: 1px solid rgba(71, 85, 105, 0.42);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.36), rgba(12, 17, 23, 0.72));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-mini-button {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(71, 85, 105, 0.46);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.34), rgba(11, 15, 21, 0.74));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.training-focus-mini-button:hover {
+  border-color: rgba(148, 163, 184, 0.66);
+  background: linear-gradient(180deg, rgba(21, 29, 39, 0.42), rgba(14, 19, 26, 0.82));
+  box-shadow: 0 10px 18px rgba(2, 6, 23, 0.16);
+}
+
+.training-focus-play-button {
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.2);
+}
+
+.training-focus-content.training-hud-content {
+  scrollbar-color: rgba(148, 163, 184, 0.48) rgba(30, 41, 59, 0.45);
+}
+
+.training-focus-content.training-hud-content::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.46);
+  border-left: 1px solid rgba(71, 85, 105, 0.32);
+}
+
+.training-focus-content.training-hud-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.72), rgba(100, 116, 139, 0.58));
+  border: 2px solid rgba(71, 85, 105, 0.35);
+  box-shadow:
+    0 0 10px rgba(15, 23, 42, 0.2),
+    inset 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.training-focus-content.training-hud-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgba(203, 213, 225, 0.78), rgba(148, 163, 184, 0.62));
+  border-color: rgba(148, 163, 184, 0.42);
+  box-shadow:
+    0 0 12px rgba(15, 23, 42, 0.24),
+    inset 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-vocabulary-book-header::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-vocabulary-book-record::after {
+  display: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll {
+  scrollbar-color: rgba(148, 163, 184, 0.42) rgba(30, 41, 59, 0.38);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.38);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(148, 163, 184, 0.66), rgba(100, 116, 139, 0.48));
+  border-color: rgba(71, 85, 105, 0.25);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-font-select option {
+  background: #111827;
+  color: #e2e8f0;
+}
+
+@media (max-width: 1279px) {
+  .training-focus-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .training-focus-header,
+  .training-focus-content,
+  .training-focus-panel,
+  .training-focus-sentence-card,
+  .training-focus-reading-surface,
+  .training-focus-dictation-surface,
+  .training-focus-inset,
+  .training-focus-record {
+    border-radius: 1.1rem;
+  }
+}
+
+body[data-training-focus-mode='true'] {
+  background-color: #0b1014;
+  background-image:
+    radial-gradient(circle at top center, rgba(71, 85, 105, 0.14), transparent 34%),
+    linear-gradient(180deg, #11161b 0%, #0b1014 100%);
+}
+
+body[data-training-focus-mode='true'] .star-background,
+body[data-training-focus-mode='true'] .particle-background,
+body[data-training-focus-mode='true'] .scan-line,
+body[data-training-focus-mode='true'] .cockpit-panel-overlay,
+body[data-training-focus-mode='true'] .cockpit-panel-chrome {
+  display: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .animate-pulse,
+body[data-training-focus-mode='true'] [data-training-page] .animate-shimmer,
+body[data-training-focus-mode='true'] [data-training-page] .animate-scan-vertical,
+body[data-training-focus-mode='true'] [data-training-page] .animate-spin-slow,
+body[data-training-focus-mode='true'] [data-training-page] .animate-spin-slow-reverse,
+body[data-training-focus-mode='true'] [data-training-page] .cyber-neon,
+body[data-training-focus-mode='true'] [data-training-page] .cyber-glow-pulse {
+  animation: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .cyber-title,
+body[data-training-focus-mode='true'] [data-training-page] .cyber-label,
+body[data-training-focus-mode='true'] [data-training-page] .cyber-number,
+body[data-training-focus-mode='true'] [data-training-page] .cyber-text {
+  text-shadow: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-commanddeck,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-content,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-panel,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-control-shell,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-toolbar-button,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-card,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-inset,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-dictation-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-stat-box,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-record,
+body[data-training-focus-mode='true'] [data-training-page] .training-vocabulary-book-panel {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+  background:
+    linear-gradient(165deg, rgba(18, 22, 27, 0.94) 0%, rgba(11, 14, 18, 0.9) 100%) !important;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(8px);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-commanddeck::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-commanddeck::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-content::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-content::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-panel::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-panel::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-panel-header::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-stream-header::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-control-shell::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-toolbar-button::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-inset--review::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-inset--form::before,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-record::before {
+  display: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-kicker,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-select,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-mini-button {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  box-shadow: none !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-card:hover,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-card.is-active {
+  border-color: rgba(203, 213, 225, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(20, 24, 29, 0.95), rgba(14, 17, 21, 0.9)) !important;
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-glow {
+  opacity: 0 !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-rail {
+  background: linear-gradient(180deg, rgba(226, 232, 240, 0.55), rgba(148, 163, 184, 0.2)) !important;
+  box-shadow: none !important;
+  opacity: 0.6;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-sentence-divider {
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.24), transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-reading-surface:hover,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-dictation-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-future-dictation-surface.is-active {
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  background:
+    linear-gradient(145deg, rgba(17, 20, 24, 0.9), rgba(11, 14, 18, 0.88)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-future-word-highlight {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  color: #f8fafc;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(148, 163, 184, 0.08)) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(15, 18, 22, 0.92)) !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: blur(8px);
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell.is-active {
+  border-color: rgba(226, 232, 240, 0.56) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(28, 32, 38, 0.96)) !important;
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.24),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+}
+
+body[data-training-focus-mode='true'] .focus-mode-toggle-shell.is-active {
+  border-color: rgba(248, 250, 252, 0.72) !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell > .absolute {
+  display: none !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell svg,
+body[data-training-focus-mode='true'] .training-dock-button-label {
+  color: rgba(226, 232, 240, 0.86) !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
 /* 确保训练页面时 body 和 html 不显示滚动条 */
 [data-training-page] {
   overflow: hidden;
