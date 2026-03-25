@@ -53,7 +53,8 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   TrainingItem: 'TrainingItem',
   Sentence: 'Sentence',
-  UserNote: 'UserNote'
+  UserNote: 'UserNote',
+  LearningDailyStat: 'LearningDailyStat'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -104,6 +105,20 @@ export const UserNoteScalarFieldEnum = {
 } as const
 
 export type UserNoteScalarFieldEnum = (typeof UserNoteScalarFieldEnum)[keyof typeof UserNoteScalarFieldEnum]
+
+
+export const LearningDailyStatScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  dateKey: 'dateKey',
+  studySeconds: 'studySeconds',
+  audioSeconds: 'audioSeconds',
+  dictationSeconds: 'dictationSeconds',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LearningDailyStatScalarFieldEnum = (typeof LearningDailyStatScalarFieldEnum)[keyof typeof LearningDailyStatScalarFieldEnum]
 
 
 export const SortOrder = {

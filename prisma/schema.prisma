@@ -48,3 +48,19 @@ model UserNote {
   @@index([sentenceId])
   @@index([userId])
 }
+
+// 学习日统计
+model LearningDailyStat {
+  id              String   @id @default(cuid())
+  userId          String   @default("default")
+  dateKey         String   // YYYY-MM-DD
+  studySeconds    Int      @default(0)
+  audioSeconds    Int      @default(0)
+  dictationSeconds Int     @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, dateKey])
+  @@index([userId])
+  @@index([dateKey])
+}

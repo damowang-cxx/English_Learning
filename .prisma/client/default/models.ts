@@ -11,4 +11,5 @@
 export type * from './models/TrainingItem'
 export type * from './models/Sentence'
 export type * from './models/UserNote'
+export type * from './models/LearningDailyStat'
 export type * from './commonInputTypes'

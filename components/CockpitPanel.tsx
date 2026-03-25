@@ -8,6 +8,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
 import { useFocusMode } from '@/contexts/FocusModeContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
+import { formatDurationToClock, STREAK_THRESHOLD_SECONDS, toLocalDateKey } from '@/lib/learning-stats'
 
 const DEFAULT_DOCK_SCALE = 0.5
 const TRAINING_DOCK_SCALE = 0.62
@@ -23,6 +24,51 @@ interface TrainingItem {
   title: string
   createdAt: string
   sentences: Array<{ id: string }>
+}
+
+interface LearningHeatmapDay {
+  dateKey: string
+  seconds: number
+  level: 0 | 1 | 2 | 3 | 4
+}
+
+interface LearningStatsOverview {
+  todayStudySeconds: number
+  currentStreakDays: number
+  streakThresholdSeconds: number
+  heatmapDays: LearningHeatmapDay[]
+}
+
+const DEFAULT_LEARNING_OVERVIEW: LearningStatsOverview = {
+  todayStudySeconds: 0,
+  currentStreakDays: 0,
+  streakThresholdSeconds: STREAK_THRESHOLD_SECONDS,
+  heatmapDays: [],
+}
+
+const HEATMAP_LEVEL_CLASS: Record<LearningHeatmapDay['level'], string> = {
+  0: 'bg-cyan-900/20 border-cyan-900/30',
+  1: 'bg-cyan-700/35 border-cyan-600/40',
+  2: 'bg-cyan-500/45 border-cyan-400/50',
+  3: 'bg-cyan-400/60 border-cyan-300/60',
+  4: 'bg-cyan-300/80 border-cyan-200/70 shadow-[0_0_10px_rgba(34,211,238,0.4)]',
+}
+
+function formatHeatmapTooltip(day: LearningHeatmapDay) {
+  const duration = formatDurationToClock(day.seconds)
+  return `${day.dateKey} | ${duration}`
+}
+
+function buildHeatmapWeekColumns(days: LearningHeatmapDay[]): LearningHeatmapDay[][] {
+  if (days.length === 0) {
+    return []
+  }
+
+  const columns: LearningHeatmapDay[][] = []
+  for (let index = 0; index < days.length; index += 7) {
+    columns.push(days.slice(index, index + 7))
+  }
+  return columns
 }
 
 // -----------------------------------------------------------------------------
@@ -129,11 +175,12 @@ export default function CockpitPanel() {
   const { isDictationMode, toggleDictationMode, setIsDictationMode } = useDictationMode()
   const { isFocusMode, toggleFocusMode, setIsFocusMode } = useFocusMode()
   const [currentTime, setCurrentTime] = useState('')
-  const [engineLevel, setEngineLevel] = useState(85)
-  const [shieldLevel, setShieldLevel] = useState(100)
+  const [engineLevel] = useState(85)
+  const [shieldLevel] = useState(100)
   const [showMenu, setShowMenu] = useState(false)
   const [trainingItems, setTrainingItems] = useState<TrainingItem[]>([])
   const [loadingItems, setLoadingItems] = useState(false)
+  const [learningOverview, setLearningOverview] = useState<LearningStatsOverview>(DEFAULT_LEARNING_OVERVIEW)
   
   // 左侧仪表盘动态数值状态
   const [speed, setSpeed] = useState(2997)
@@ -184,6 +231,10 @@ export default function CockpitPanel() {
   const isTranslationToggleDisabled = isTrainingPage && isDictationMode
   const trainingDockOuterClassName = isTrainingPage ? 'training-dock-button' : ''
   const trainingDockShellClassName = isTrainingPage ? 'training-dock-button-shell' : ''
+  const learningHeatmapColumns = React.useMemo(
+    () => buildHeatmapWeekColumns(learningOverview.heatmapDays),
+    [learningOverview.heatmapDays],
+  )
 
   useEffect(() => {
     if (!isTrainingPage && isDictationMode) {
@@ -474,11 +525,49 @@ export default function CockpitPanel() {
   }
 
   // 模拟数据波动
+  const fetchLearningOverview = async () => {
+    try {
+      const dateKey = toLocalDateKey(new Date())
+      const response = await fetch(
+        withBasePath(`/api/learning-stats/overview?days=365&todayDateKey=${encodeURIComponent(dateKey)}`),
+        { cache: 'no-store' },
+      )
+
+      if (!response.ok) {
+        return
+      }
+
+      const payload = await response.json() as LearningStatsOverview
+      setLearningOverview({
+        todayStudySeconds: payload.todayStudySeconds || 0,
+        currentStreakDays: payload.currentStreakDays || 0,
+        streakThresholdSeconds: payload.streakThresholdSeconds || STREAK_THRESHOLD_SECONDS,
+        heatmapDays: Array.isArray(payload.heatmapDays) ? payload.heatmapDays : [],
+      })
+    } catch (error) {
+      console.error('Error fetching learning overview:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (!isHomePage) {
+      return
+    }
+
+    void fetchLearningOverview()
+    const timer = window.setInterval(() => {
+      void fetchLearningOverview()
+    }, 30000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [isHomePage])
+
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date()
       setCurrentTime(now.toLocaleTimeString('en-US', { hour12: false }))
-      setEngineLevel(prev => Math.min(100, Math.max(70, prev + (Math.random() - 0.5) * 5)))
     }, 1000)
     return () => clearInterval(timer)
   }, [])
@@ -541,7 +630,65 @@ export default function CockpitPanel() {
         ></div>
 
         {/* 左侧仪表板 - 超强优化版 */}
-        <div className="w-[30%] h-[80%] bg-gradient-to-br from-black/50 via-gray-900/40 to-black/50 backdrop-blur-md border-2 border-cyan-800/60 p-6 relative rounded-tr-3xl overflow-hidden shadow-[0_0_30px_rgba(0,243,255,0.15),inset_0_0_20px_rgba(0,243,255,0.05)] group">
+        <div className="w-[30%] h-[80%] bg-gradient-to-br from-black/70 via-slate-950/70 to-black/70 backdrop-blur-md border-2 border-cyan-700/50 p-5 relative rounded-tr-3xl overflow-hidden shadow-[0_0_24px_rgba(34,211,238,0.12),inset_0_0_18px_rgba(34,211,238,0.06)]">
+          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(0deg,transparent_48%,rgba(34,211,238,.05)_49%,rgba(34,211,238,.05)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(34,211,238,.05)_49%,rgba(34,211,238,.05)_51%,transparent_52%)] bg-[length:10px_10px] opacity-30" />
+          <div className="absolute top-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
+          <div className="relative z-10 flex h-full flex-col">
+            <div className="mb-3 flex items-center justify-between border-b border-cyan-700/40 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
+                <h3 className="font-mono text-xs tracking-[0.18em] text-cyan-300">LEARNING DASHBOARD</h3>
+              </div>
+              <span className="font-mono text-[10px] text-cyan-500">365D</span>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
+                <div className="font-mono text-[9px] tracking-[0.16em] text-cyan-500">TODAY</div>
+                <div className="mt-1 font-mono text-xl font-semibold text-cyan-200">
+                  {formatDurationToClock(learningOverview.todayStudySeconds)}
+                </div>
+              </div>
+              <div className="rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
+                <div className="font-mono text-[9px] tracking-[0.16em] text-cyan-500">STREAK</div>
+                <div className="mt-1 font-mono text-xl font-semibold text-cyan-200">
+                  {learningOverview.currentStreakDays}d
+                </div>
+                <div className="font-mono text-[9px] text-cyan-500/80">&gt;=20m/day</div>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="font-mono text-[10px] tracking-[0.16em] text-cyan-400">CONTRIBUTIONS</div>
+                <div className="font-mono text-[9px] text-cyan-500">LEVEL 0-4</div>
+              </div>
+              {learningHeatmapColumns.length === 0 ? (
+                <div className="flex h-[116px] items-center justify-center font-mono text-[10px] text-cyan-600/70">
+                  NO STUDY DATA YET
+                </div>
+              ) : (
+                <div className="min-h-0 overflow-hidden">
+                  <div className="flex h-[116px] items-start gap-[3px]">
+                    {learningHeatmapColumns.map((column, columnIndex) => (
+                      <div key={`heatmap-col-${columnIndex}`} className="flex flex-col gap-[3px]">
+                        {column.map((day) => (
+                          <div
+                            key={day.dateKey}
+                            title={formatHeatmapTooltip(day)}
+                            className={`h-3 w-3 rounded-[2px] border ${HEATMAP_LEVEL_CLASS[day.level]} transition-transform duration-150 hover:scale-110`}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {false && (<div className="w-[30%] h-[80%] bg-gradient-to-br from-black/50 via-gray-900/40 to-black/50 backdrop-blur-md border-2 border-cyan-800/60 p-6 relative rounded-tr-3xl overflow-hidden shadow-[0_0_30px_rgba(0,243,255,0.15),inset_0_0_20px_rgba(0,243,255,0.05)] group">
           {/* 粒子背景效果 */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             {[...Array(20)].map((_, i) => (
@@ -801,7 +948,7 @@ export default function CockpitPanel() {
 
           {/* 系统状态按钮组 - 增强版 */}
           <div className="grid grid-cols-3 gap-2 mb-3 relative z-10">
-             {['NAV', 'COM', 'LIF'].map((sys, idx) => (
+             {['NAV', 'COM', 'LIF'].map((sys) => (
                <button 
                  key={sys} 
                  className="relative border border-cyan-700/50 bg-cyan-900/20 text-cyan-300 text-xs py-2 hover:bg-cyan-500/30 hover:text-white hover:border-cyan-400 transition-all font-mono group/btn overflow-hidden"
@@ -958,7 +1105,7 @@ export default function CockpitPanel() {
           </div>
           <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-cyan-500/30"></div>
           <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-cyan-500/30"></div>
-        </div>
+        </div>)}
 
         {/* 中间 - 较低的控制台，尽量不遮挡视线 */}
         <div className={`flex-1 mx-4 h-[30%] bg-black/60 backdrop-blur rounded-t-xl border-t border-cyan-500/30 flex items-center justify-center relative transition-all duration-500 ease-in-out ${

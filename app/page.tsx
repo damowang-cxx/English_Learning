@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from 'next/cache'
+import Link from 'next/link'
 import HomeTrainingGrid, { type HomeTrainingCardItem } from '@/components/HomeTrainingGrid'
 import { prisma } from '@/lib/prisma'
 
@@ -46,6 +47,19 @@ export default async function Home() {
           maxWidth: '1000px',
         }}
       >
+        <div className="mb-4 flex items-center justify-end">
+          <Link
+            href="/vocabulary"
+            className="home-global-vocab-button group inline-flex items-center gap-2 rounded-md px-3 py-2"
+            title="Open global vocabulary library"
+            aria-label="Open global vocabulary library"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400/70 transition-colors group-hover:bg-cyan-300"></span>
+            <span className="font-mono text-[11px] tracking-[0.24em] text-cyan-300/78 transition-colors group-hover:text-cyan-200">
+              GLOBAL VOCAB
+            </span>
+          </Link>
+        </div>
         <HomeTrainingGrid items={items} />
       </div>
     </div>

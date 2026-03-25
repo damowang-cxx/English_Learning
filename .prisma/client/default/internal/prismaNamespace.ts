@@ -386,7 +386,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   TrainingItem: 'TrainingItem',
   Sentence: 'Sentence',
-  UserNote: 'UserNote'
+  UserNote: 'UserNote',
+  LearningDailyStat: 'LearningDailyStat'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -402,7 +403,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "trainingItem" | "sentence" | "userNote"
+    modelProps: "trainingItem" | "sentence" | "userNote" | "learningDailyStat"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -628,6 +629,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    LearningDailyStat: {
+      payload: Prisma.$LearningDailyStatPayload<ExtArgs>
+      fields: Prisma.LearningDailyStatFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LearningDailyStatFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LearningDailyStatFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        findFirst: {
+          args: Prisma.LearningDailyStatFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LearningDailyStatFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        findMany: {
+          args: Prisma.LearningDailyStatFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>[]
+        }
+        create: {
+          args: Prisma.LearningDailyStatCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        createMany: {
+          args: Prisma.LearningDailyStatCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LearningDailyStatCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>[]
+        }
+        delete: {
+          args: Prisma.LearningDailyStatDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        update: {
+          args: Prisma.LearningDailyStatUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        deleteMany: {
+          args: Prisma.LearningDailyStatDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LearningDailyStatUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LearningDailyStatUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>[]
+        }
+        upsert: {
+          args: Prisma.LearningDailyStatUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LearningDailyStatPayload>
+        }
+        aggregate: {
+          args: Prisma.LearningDailyStatAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLearningDailyStat>
+        }
+        groupBy: {
+          args: Prisma.LearningDailyStatGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LearningDailyStatGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LearningDailyStatCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LearningDailyStatCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -699,6 +774,20 @@ export const UserNoteScalarFieldEnum = {
 } as const
 
 export type UserNoteScalarFieldEnum = (typeof UserNoteScalarFieldEnum)[keyof typeof UserNoteScalarFieldEnum]
+
+
+export const LearningDailyStatScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  dateKey: 'dateKey',
+  studySeconds: 'studySeconds',
+  audioSeconds: 'audioSeconds',
+  dictationSeconds: 'dictationSeconds',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LearningDailyStatScalarFieldEnum = (typeof LearningDailyStatScalarFieldEnum)[keyof typeof LearningDailyStatScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -848,6 +937,7 @@ export type GlobalOmitConfig = {
   trainingItem?: Prisma.TrainingItemOmit
   sentence?: Prisma.SentenceOmit
   userNote?: Prisma.UserNoteOmit
+  learningDailyStat?: Prisma.LearningDailyStatOmit
 }
 
 /* Types for Logging */

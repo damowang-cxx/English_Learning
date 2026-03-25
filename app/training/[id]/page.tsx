@@ -6,6 +6,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
 import { useFocusMode } from '@/contexts/FocusModeContext'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
+import { toLocalDateKey } from '@/lib/learning-stats'
 import {
   buildDictationSentenceModel,
   createEmptyDictationInputs,
@@ -70,6 +71,20 @@ interface SentenceVocabularyState {
   items: VocabularyEntry[]
   form: VocabularyFormState
   saveStatus: SaveStatus
+  lookup: SentenceVocabularyLookupState
+}
+
+interface VocabularySuggestion {
+  word: string
+  phonetic: string
+  translationPreview: string
+}
+
+interface SentenceVocabularyLookupState {
+  suggestions: VocabularySuggestion[]
+  isLoading: boolean
+  isHydrating: boolean
+  isOpen: boolean
 }
 
 interface SentenceDictationState {
@@ -80,10 +95,18 @@ interface SentenceDictationState {
 
 type DictationRevealMode = 'hidden' | 'initial' | 'full'
 
+const createEmptySentenceVocabularyLookupState = (): SentenceVocabularyLookupState => ({
+  suggestions: [],
+  isLoading: false,
+  isHydrating: false,
+  isOpen: false,
+})
+
 const createEmptySentenceVocabularyState = (): SentenceVocabularyState => ({
   items: [],
   form: createEmptyVocabularyFormState(),
   saveStatus: 'idle',
+  lookup: createEmptySentenceVocabularyLookupState(),
 })
 
 const VOCABULARY_POS_OPTIONS = [
@@ -248,6 +271,7 @@ export default function TrainingDetailPage() {
   const [sentenceVocabulary, setSentenceVocabulary] = useState<Record<string, SentenceVocabularyState>>({})
   const [sentenceDictation, setSentenceDictation] = useState<Record<string, SentenceDictationState>>({})
   const [isVocabularyBookExpanded, setIsVocabularyBookExpanded] = useState(false)
+  const [activeVocabularyModalSentenceId, setActiveVocabularyModalSentenceId] = useState<string | null>(null)
   const [selectedSentenceFontId, setSelectedSentenceFontId] = useState<TrainingSentenceFontId>(
     DEFAULT_TRAINING_SENTENCE_FONT_ID
   )
@@ -279,6 +303,14 @@ export default function TrainingDetailPage() {
   const vocabularySaveResetTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const pendingVocabularySaveRef = useRef<Record<string, VocabularyEntry[]>>({})
   const vocabularySaveInFlightRef = useRef<Record<string, boolean>>({})
+  const vocabularySuggestTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const vocabularySuggestRequestIdsRef = useRef<Record<string, number>>({})
+  const vocabularySuggestBlurTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const heartbeatLastTickAtRef = useRef<number | null>(null)
+  const heartbeatInFlightRef = useRef(false)
+  const isPlayingRef = useRef(false)
+  const isDictationModeRef = useRef(false)
+  const lastDictationInputAtRef = useRef(0)
 
   useEffect(() => {
     fetchTrainingItem()
@@ -297,6 +329,7 @@ export default function TrainingDetailPage() {
   useEffect(() => {
     setExpandedTranslations(new Set())
     setCollapsedGlobalTranslations(new Set())
+    setActiveVocabularyModalSentenceId(null)
   }, [item?.id])
 
   useEffect(() => {
@@ -347,6 +380,93 @@ export default function TrainingDetailPage() {
       return nextState
     })
   }, [item])
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying
+  }, [isPlaying])
+
+  useEffect(() => {
+    isDictationModeRef.current = isDictationMode
+  }, [isDictationMode])
+
+  const pushLearningHeartbeat = useEffectEvent(async () => {
+    if (!item || heartbeatInFlightRef.current) {
+      return
+    }
+
+    const now = Date.now()
+    const lastTickAt = heartbeatLastTickAtRef.current ?? now
+    const elapsedSeconds = Math.floor((now - lastTickAt) / 1000)
+    heartbeatLastTickAtRef.current = now
+
+    if (elapsedSeconds <= 0 || document.hidden) {
+      return
+    }
+
+    const isAudioActive = isPlayingRef.current
+    const isDictationActive =
+      isDictationModeRef.current
+      && (now - lastDictationInputAtRef.current) <= 8000
+
+    if (!isAudioActive && !isDictationActive) {
+      return
+    }
+
+    heartbeatInFlightRef.current = true
+    try {
+      await fetch(withBasePath('/api/learning-stats/heartbeat'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateKey: toLocalDateKey(new Date()),
+          studyDeltaSec: elapsedSeconds,
+          audioDeltaSec: isAudioActive ? elapsedSeconds : 0,
+          dictationDeltaSec: isDictationActive ? elapsedSeconds : 0,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to push learning heartbeat:', error)
+    } finally {
+      heartbeatInFlightRef.current = false
+    }
+  })
+
+  useEffect(() => {
+    if (!item) {
+      return
+    }
+
+    heartbeatLastTickAtRef.current = Date.now()
+
+    const timer = window.setInterval(() => {
+      void pushLearningHeartbeat()
+    }, 10000)
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        heartbeatLastTickAtRef.current = Date.now()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      heartbeatLastTickAtRef.current = null
+    }
+  }, [item?.id])
+
+  useEffect(() => (
+    () => {
+      Object.values(vocabularySaveTimersRef.current).forEach((timer) => clearTimeout(timer))
+      Object.values(vocabularySaveResetTimersRef.current).forEach((timer) => clearTimeout(timer))
+      Object.values(vocabularySuggestTimersRef.current).forEach((timer) => clearTimeout(timer))
+      Object.values(vocabularySuggestBlurTimersRef.current).forEach((timer) => clearTimeout(timer))
+    }
+  ), [])
 
   useEffect(() => {
     const storedFontId = window.localStorage.getItem(TRAINING_SENTENCE_FONT_STORAGE_KEY)
@@ -414,6 +534,11 @@ export default function TrainingDetailPage() {
   // 键盘快捷键支持
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && activeVocabularyModalSentenceId) {
+        e.preventDefault()
+        setActiveVocabularyModalSentenceId(null)
+        return
+      }
       // 如果正在输入，不处理快捷键
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return
@@ -434,7 +559,7 @@ export default function TrainingDetailPage() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isPlaying, duration, isEditing])
+  }, [isPlaying, duration, isEditing, activeVocabularyModalSentenceId])
 
   const handleTrainingShortcut = useEffectEvent((event: KeyboardEvent) => {
     if (
@@ -487,7 +612,7 @@ export default function TrainingDetailPage() {
           return
         }
         event.preventDefault()
-        setShowTranslations((prev) => !prev)
+        setShowTranslations(!showTranslations)
         return
       case 'd':
       case 'D':
@@ -927,10 +1052,15 @@ export default function TrainingDetailPage() {
 
     Object.values(vocabularySaveTimersRef.current).forEach((timer) => clearTimeout(timer))
     Object.values(vocabularySaveResetTimersRef.current).forEach((timer) => clearTimeout(timer))
+    Object.values(vocabularySuggestTimersRef.current).forEach((timer) => clearTimeout(timer))
+    Object.values(vocabularySuggestBlurTimersRef.current).forEach((timer) => clearTimeout(timer))
     vocabularySaveTimersRef.current = {}
     vocabularySaveResetTimersRef.current = {}
     pendingVocabularySaveRef.current = {}
     vocabularySaveInFlightRef.current = {}
+    vocabularySuggestTimersRef.current = {}
+    vocabularySuggestRequestIdsRef.current = {}
+    vocabularySuggestBlurTimersRef.current = {}
 
     const vocabularyEntries = await Promise.all(
       item.sentences.map(async (sentence) => {
@@ -947,8 +1077,8 @@ export default function TrainingDetailPage() {
           return [
             sentence.id,
             {
+              ...createEmptySentenceVocabularyState(),
               items: parseVocabularyWords(data.words || ''),
-              form: createEmptyVocabularyFormState(),
               saveStatus: 'idle' as const,
             },
           ] as const
@@ -970,6 +1100,21 @@ export default function TrainingDetailPage() {
       newExpanded.add(sentenceId)
     }
     setExpandedNotes(newExpanded)
+  }
+
+  const openVocabularyEntryModal = (sentenceId: string) => {
+    clearVocabularySuggestBlurTimer(sentenceId)
+    setActiveVocabularyModalSentenceId(sentenceId)
+  }
+
+  const closeVocabularyEntryModal = () => {
+    if (activeVocabularyModalSentenceId) {
+      clearVocabularySuggestTimer(activeVocabularyModalSentenceId)
+      clearVocabularySuggestBlurTimer(activeVocabularyModalSentenceId)
+      closeVocabularySuggestions(activeVocabularyModalSentenceId)
+    }
+
+    setActiveVocabularyModalSentenceId(null)
   }
 
   const openVocabularyBook = () => {
@@ -1009,6 +1154,156 @@ export default function TrainingDetailPage() {
     })
   }
 
+  const updateVocabularyLookupState = (
+    sentenceId: string,
+    updater: (lookup: SentenceVocabularyLookupState) => SentenceVocabularyLookupState
+  ) => {
+    updateSentenceVocabularyState(sentenceId, (current) => ({
+      ...current,
+      lookup: updater(current.lookup),
+    }))
+  }
+
+  const clearVocabularySuggestTimer = (sentenceId: string) => {
+    const timer = vocabularySuggestTimersRef.current[sentenceId]
+    if (timer) {
+      clearTimeout(timer)
+      delete vocabularySuggestTimersRef.current[sentenceId]
+    }
+  }
+
+  const clearVocabularySuggestBlurTimer = (sentenceId: string) => {
+    const timer = vocabularySuggestBlurTimersRef.current[sentenceId]
+    if (timer) {
+      clearTimeout(timer)
+      delete vocabularySuggestBlurTimersRef.current[sentenceId]
+    }
+  }
+
+  const closeVocabularySuggestions = (sentenceId: string) => {
+    clearVocabularySuggestBlurTimer(sentenceId)
+    updateVocabularyLookupState(sentenceId, (lookup) => ({
+      ...lookup,
+      isOpen: false,
+    }))
+  }
+
+  const fetchVocabularySuggestions = async (sentenceId: string, query: string) => {
+    const trimmedQuery = query.trim()
+
+    clearVocabularySuggestTimer(sentenceId)
+
+    if (!trimmedQuery) {
+      updateVocabularyLookupState(sentenceId, () => createEmptySentenceVocabularyLookupState())
+      return
+    }
+
+    const requestId = (vocabularySuggestRequestIdsRef.current[sentenceId] || 0) + 1
+    vocabularySuggestRequestIdsRef.current[sentenceId] = requestId
+
+    updateVocabularyLookupState(sentenceId, (lookup) => ({
+      ...lookup,
+      isLoading: true,
+      isOpen: true,
+    }))
+
+    vocabularySuggestTimersRef.current[sentenceId] = setTimeout(async () => {
+      try {
+        const response = await fetch(withBasePath(`/api/dictionary/suggest?q=${encodeURIComponent(trimmedQuery)}`))
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch dictionary suggestions for ${trimmedQuery}`)
+        }
+
+        const data = await response.json() as { suggestions?: VocabularySuggestion[] }
+
+        if (vocabularySuggestRequestIdsRef.current[sentenceId] !== requestId) {
+          return
+        }
+
+        updateVocabularyLookupState(sentenceId, (lookup) => ({
+          ...lookup,
+          suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
+          isLoading: false,
+          isOpen: true,
+        }))
+      } catch (error) {
+        console.error('Error fetching dictionary suggestions:', error)
+
+        if (vocabularySuggestRequestIdsRef.current[sentenceId] !== requestId) {
+          return
+        }
+
+        updateVocabularyLookupState(sentenceId, () => ({
+          suggestions: [],
+          isLoading: false,
+          isHydrating: false,
+          isOpen: false,
+        }))
+      }
+    }, 140)
+  }
+
+  const autofillVocabularyEntry = async (sentenceId: string, word: string) => {
+    clearVocabularySuggestTimer(sentenceId)
+    clearVocabularySuggestBlurTimer(sentenceId)
+
+    updateVocabularyLookupState(sentenceId, (lookup) => ({
+      ...lookup,
+      isHydrating: true,
+      isLoading: false,
+      isOpen: false,
+    }))
+
+    try {
+      const response = await fetch(withBasePath(`/api/dictionary/entry?word=${encodeURIComponent(word)}`))
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dictionary entry for ${word}`)
+      }
+
+      const data = await response.json() as {
+        entry?: {
+          word: string
+          phonetic: string
+          senses: VocabularyFormSenseDraft[]
+        } | null
+      }
+
+      if (!data.entry) {
+        throw new Error(`Dictionary entry missing for ${word}`)
+      }
+
+      updateSentenceVocabularyState(sentenceId, (current) => ({
+        ...current,
+        form: {
+          headword: data.entry?.word || word,
+          phonetic: data.entry?.phonetic || '',
+          senses: data.entry?.senses?.length
+            ? data.entry.senses
+            : [createEmptyVocabularySenseDraft()],
+        },
+        saveStatus: 'idle',
+        lookup: {
+          ...current.lookup,
+          suggestions: [],
+          isHydrating: false,
+          isLoading: false,
+          isOpen: false,
+        },
+      }))
+    } catch (error) {
+      console.error('Error hydrating dictionary entry:', error)
+      updateVocabularyLookupState(sentenceId, (lookup) => ({
+        ...lookup,
+        isHydrating: false,
+        isLoading: false,
+        isOpen: false,
+      }))
+      setNotification({ type: 'error', message: 'Offline dictionary lookup failed for this word.' })
+    }
+  }
+
   const addVocabularyItemsToSentence = (
     sentenceId: string,
     nextEntries: VocabularyEntry[],
@@ -1023,6 +1318,7 @@ export default function TrainingDetailPage() {
       items: mergedItems,
       form: options?.resetForm ? createEmptyVocabularyFormState() : current.form,
       saveStatus: 'idle',
+      lookup: options?.resetForm ? createEmptySentenceVocabularyLookupState() : current.lookup,
     }))
 
     if (didChange) {
@@ -1045,7 +1341,60 @@ export default function TrainingDetailPage() {
     updateVocabularyFormState(sentenceId, (form) => ({
       ...form,
       headword: value,
+      phonetic: '',
     }))
+
+    void fetchVocabularySuggestions(sentenceId, value)
+  }
+
+  const handleVocabularyPhoneticChange = (sentenceId: string, value: string) => {
+    updateVocabularyFormState(sentenceId, (form) => ({
+      ...form,
+      phonetic: value,
+    }))
+  }
+
+  const handleVocabularyHeadwordFocus = (sentenceId: string) => {
+    clearVocabularySuggestBlurTimer(sentenceId)
+    const current = sentenceVocabulary[sentenceId] || createEmptySentenceVocabularyState()
+
+    if (current.lookup.suggestions.length === 0) {
+      return
+    }
+
+    updateVocabularyLookupState(sentenceId, (lookup) => ({
+      ...lookup,
+      isOpen: true,
+    }))
+  }
+
+  const handleVocabularyHeadwordBlur = (sentenceId: string) => {
+    clearVocabularySuggestBlurTimer(sentenceId)
+    vocabularySuggestBlurTimersRef.current[sentenceId] = setTimeout(() => {
+      closeVocabularySuggestions(sentenceId)
+    }, 120)
+  }
+
+  const handleVocabularyHeadwordKeyDown = (
+    sentenceId: string,
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    const current = sentenceVocabulary[sentenceId] || createEmptySentenceVocabularyState()
+
+    if (event.key === 'Escape' && current.lookup.isOpen) {
+      event.preventDefault()
+      closeVocabularySuggestions(sentenceId)
+      return
+    }
+
+    if (
+      event.key === 'Tab' &&
+      !event.shiftKey &&
+      current.lookup.suggestions.length > 0
+    ) {
+      event.preventDefault()
+      void autofillVocabularyEntry(sentenceId, current.lookup.suggestions[0].word)
+    }
   }
 
   const handleVocabularySenseChange = (
@@ -1088,13 +1437,23 @@ export default function TrainingDetailPage() {
 
     if (!nextEntry) {
       setNotification({ type: 'error', message: 'Please enter a headword, part of speech, and meaning.' })
-      return
+      return false
     }
 
     addVocabularyItemsToSentence(sentenceId, [nextEntry], {
       immediate: true,
       resetForm: true,
     })
+
+    return true
+  }
+
+  const handleVocabularyModalSubmit = (sentenceId: string) => {
+    const didSubmit = handleVocabularySubmit(sentenceId)
+
+    if (didSubmit) {
+      closeVocabularyEntryModal()
+    }
   }
 
   const handleVocabularyRemove = (sentenceId: string, entry: VocabularyEntry) => {
@@ -1200,6 +1559,8 @@ export default function TrainingDetailPage() {
     wordIndex: number,
     value: string
   ) => {
+    lastDictationInputAtRef.current = Date.now()
+
     const word = model.words[wordIndex]
 
     if (!word) {
@@ -1226,6 +1587,8 @@ export default function TrainingDetailPage() {
     wordIndex: number,
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
+    lastDictationInputAtRef.current = Date.now()
+
     const word = model.words[wordIndex]
 
     if (!word) {
@@ -1453,6 +1816,16 @@ export default function TrainingDetailPage() {
       )
     : {}
   const selectedSentenceFont = getTrainingSentenceFontOption(selectedSentenceFontId)
+  const activeVocabularyModalSentence = item && activeVocabularyModalSentenceId
+    ? item.sentences.find((sentence) => sentence.id === activeVocabularyModalSentenceId) || null
+    : null
+  const activeVocabularyModalState = activeVocabularyModalSentence
+    ? sentenceVocabulary[activeVocabularyModalSentence.id] || createEmptySentenceVocabularyState()
+    : null
+  const activeVocabularyModalLookup = activeVocabularyModalState?.lookup || createEmptySentenceVocabularyLookupState()
+  const isActiveVocabularyModalFormReady = activeVocabularyModalState
+    ? isVocabularyFormSubmittable(activeVocabularyModalState.form)
+    : false
   const isModernFocusLayout = isFocusMode
   const trainingShellClassName = isFullscreen
     ? isModernFocusLayout
@@ -2199,6 +2572,11 @@ export default function TrainingDetailPage() {
                                       <span className={`text-sm cyber-font-readable font-bold ${isModernFocusLayout ? 'text-slate-100' : 'text-green-200'}`}>{entry.label}</span>
                                       <span className={`text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/70'}`}>[x{entry.count}]</span>
                                     </div>
+                                    {entry.phonetic && (
+                                      <div className={`mt-1 text-[11px] ${isModernFocusLayout ? 'text-slate-400/82' : 'text-green-300/66'}`}>
+                                        {entry.phonetic}
+                                      </div>
+                                    )}
                                   </button>
                                   <div className="flex flex-wrap gap-2">
                                     {entry.sentences.map((source) => (
@@ -2264,6 +2642,7 @@ export default function TrainingDetailPage() {
                       const isNotesExpanded = expandedNotes.has(sentence.id)
                       const vocabularyState =
                         sentenceVocabulary[sentence.id] || createEmptySentenceVocabularyState()
+                      const vocabularyLookup = vocabularyState.lookup
                       const vocabularyCount = vocabularyState.items.length
                       const isVocabularyFormReady = isVocabularyFormSubmittable(vocabularyState.form)
                       const saveStatusMeta = getVocabularySaveStatusMeta(vocabularyState.saveStatus)
@@ -2480,6 +2859,9 @@ export default function TrainingDetailPage() {
                                               <input
                                                 ref={(element) => setDictationInputRef(sentence.id, token.wordIndex, element)}
                                                 value={wordInputValue}
+                                                onFocus={() => {
+                                                  lastDictationInputAtRef.current = Date.now()
+                                                }}
                                                 onClick={(event) => event.stopPropagation()}
                                                 onChange={(event) => handleDictationInputChange(sentence.id, dictationModel, token.wordIndex, event.target.value)}
                                                 onKeyDown={(event) => handleDictationKeyDown(sentence.id, dictationModel, token.wordIndex, event)}
@@ -2628,7 +3010,7 @@ export default function TrainingDetailPage() {
                               )}
 
                               {isNotesExpanded && (
-                                <div className={`${denseInsetClassName} mt-2.5 animate-fade-in rounded-xl p-3`}>
+                                <div className={`${denseInsetClassName} vocabulary-editor-shell mt-2.5 animate-fade-in rounded-xl p-3`}>
                                   {vocabularyCount > 0 ? (
                                     <div className="mb-3 space-y-2.5">
                                       {vocabularyState.items.map((entry) => {
@@ -2648,6 +3030,11 @@ export default function TrainingDetailPage() {
                                               <div className={`break-words text-sm cyber-font-readable ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100'}`}>
                                                 {entryLabel}
                                               </div>
+                                              {entry.phonetic && (
+                                                <div className={`mt-1 text-[11px] ${isModernFocusLayout ? 'text-slate-400/85' : 'text-green-300/68'}`}>
+                                                  {entry.phonetic}
+                                                </div>
+                                              )}
                                               {isLegacyEntry && (
                                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px]">
                                                   <span className="rounded-full border border-amber-400/30 bg-amber-500/[0.08] px-2 py-0.5 cyber-label text-amber-200/80">
@@ -2678,46 +3065,143 @@ export default function TrainingDetailPage() {
                                         )
                                       })}
                                     </div>
-                                  ) : (
-                                    <div className={`${insetClassName} mb-3 rounded-md border-dashed px-3 py-3 text-[10px] cyber-label ${isModernFocusLayout ? 'text-slate-500/80' : 'text-green-500/50'}`}>
-                                      No vocabulary yet. Add a structured entry below.
-                                    </div>
-                                  )}
+                                  ) : null}
 
+                                  <div className="mb-3 flex items-center justify-end">
+                                    <button
+                                      type="button"
+                                      onClick={() => openVocabularyEntryModal(sentence.id)}
+                                      className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
+                                        isModernFocusLayout
+                                          ? 'border-slate-400/35 bg-slate-200/[0.08] text-slate-100 hover:border-slate-300/55 hover:bg-slate-200/[0.12]'
+                                          : 'border-green-500/28 bg-green-500/[0.08] text-green-200 hover:border-green-500/45 hover:bg-green-500/[0.12]'
+                                      }`}
+                                      aria-label={`Create vocabulary entry for sentence ${sentence.order + 1}`}
+                                      title="Create vocabulary entry"
+                                    >
+                                      + NEW ENTRY
+                                    </button>
+                                  </div>
+
+                                  {false && (
                                   <form
                                     onSubmit={(event) => {
                                       event.preventDefault()
                                       handleVocabularySubmit(sentence.id)
                                     }}
-                                    className={`${formInsetClassName} space-y-3 rounded-lg p-3`}
+                                    className={`${formInsetClassName} vocabulary-entry-form-shell space-y-3 rounded-lg p-3`}
                                   >
-                                    <div>
-                                      <input
-                                        value={vocabularyState.form.headword}
-                                        onChange={(event) => handleVocabularyHeadwordChange(sentence.id, event.target.value)}
-                                        placeholder="separate"
-                                        spellCheck={false}
-                                        className={`w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
-                                          isModernFocusLayout
-                                            ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
-                                            : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
-                                        }`}
-                                      />
-                                    </div>
-
                                     <div className="space-y-2.5">
-                                      <div className="flex justify-end">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleVocabularyAddSense(sentence.id)}
-                                          className={`rounded border px-2.5 py-1 text-[10px] cyber-button-text transition-colors ${
+                                      <div className="relative">
+                                        <input
+                                          value={vocabularyState.form.headword}
+                                          onChange={(event) => handleVocabularyHeadwordChange(sentence.id, event.target.value)}
+                                          onFocus={() => handleVocabularyHeadwordFocus(sentence.id)}
+                                          onBlur={() => handleVocabularyHeadwordBlur(sentence.id)}
+                                          onKeyDown={(event) => handleVocabularyHeadwordKeyDown(sentence.id, event)}
+                                          placeholder="separate"
+                                          spellCheck={false}
+                                          autoComplete="off"
+                                          aria-controls={`${sentence.id}-vocabulary-suggestions`}
+                                          className={`w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
                                             isModernFocusLayout
-                                              ? 'border-slate-700/80 bg-slate-950/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-900/70 hover:text-slate-100'
-                                              : 'border-green-500/20 bg-black/30 text-green-300/80 hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200'
+                                              ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                                              : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
                                           }`}
-                                        >
-                                          + POS
-                                        </button>
+                                        />
+
+                                        {vocabularyLookup.isOpen && (vocabularyLookup.isLoading || vocabularyLookup.suggestions.length > 0) && (
+                                          <div
+                                            id={`${sentence.id}-vocabulary-suggestions`}
+                                            className={`vocabulary-headword-suggestions absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-lg border shadow-[0_18px_36px_rgba(2,6,23,0.45)] ${
+                                              isModernFocusLayout
+                                                ? 'border-slate-700/80 bg-slate-950/95'
+                                                : 'border-green-500/22 bg-[#020d08]/95'
+                                            }`}
+                                          >
+                                            {vocabularyLookup.isLoading ? (
+                                              <div className={`px-3 py-2 text-[11px] cyber-label ${isModernFocusLayout ? 'text-slate-400/78' : 'text-green-300/62'}`}>
+                                                SEARCHING ECDICT...
+                                              </div>
+                                            ) : (
+                                              vocabularyLookup.suggestions.map((suggestion, suggestionIndex) => (
+                                                <button
+                                                  key={`${sentence.id}-dictionary-suggestion-${suggestion.word}-${suggestionIndex}`}
+                                                  type="button"
+                                                  onMouseDown={(event) => {
+                                                    event.preventDefault()
+                                                    void autofillVocabularyEntry(sentence.id, suggestion.word)
+                                                  }}
+                                                  className={`block w-full border-b px-3 py-2 text-left transition-colors last:border-b-0 ${
+                                                    isModernFocusLayout
+                                                      ? 'border-slate-800/80 hover:bg-slate-900/78'
+                                                      : 'border-green-500/14 hover:bg-green-500/[0.06]'
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className={`text-sm cyber-font-readable ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100'}`}>
+                                                      {suggestion.word}
+                                                    </span>
+                                                    {suggestion.phonetic && (
+                                                      <span className={`text-[11px] ${isModernFocusLayout ? 'text-slate-400/80' : 'text-green-300/65'}`}>
+                                                        {suggestion.phonetic}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  {suggestion.translationPreview && (
+                                                    <div className={`mt-1 text-[10px] leading-5 cyber-label ${isModernFocusLayout ? 'text-slate-500/82' : 'text-green-400/52'}`}>
+                                                      {suggestion.translationPreview}
+                                                    </div>
+                                                  )}
+                                                </button>
+                                              ))
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <input
+                                          value={vocabularyState.form.phonetic}
+                                          onChange={(event) => handleVocabularyPhoneticChange(sentence.id, event.target.value)}
+                                          placeholder="/ˈsepərət/"
+                                          spellCheck={false}
+                                          className={`min-w-0 flex-1 rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                                            isModernFocusLayout
+                                              ? 'border-slate-700/80 bg-slate-950/55 text-slate-200 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                                              : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                                          }`}
+                                        />
+                                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+                                          <span className={`text-[10px] cyber-label ${
+                                            vocabularyLookup.isHydrating
+                                              ? isModernFocusLayout
+                                                ? 'text-slate-300/78'
+                                                : 'text-green-200/75'
+                                              : isModernFocusLayout
+                                                ? 'text-slate-500/72'
+                                                : 'text-green-500/48'
+                                          }`}>
+                                            {vocabularyLookup.isHydrating
+                                              ? 'FILLING FROM ECDICT...'
+                                              : vocabularyLookup.suggestions.length > 0
+                                                ? 'TAB: FIRST MATCH'
+                                                : vocabularyState.form.headword.trim().length > 0
+                                                  ? 'ECDICT READY'
+                                                  : 'TYPE TO SEARCH'}
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleVocabularyAddSense(sentence.id)}
+                                            className={`rounded border px-2.5 py-1 text-[10px] cyber-button-text transition-colors ${
+                                              isModernFocusLayout
+                                                ? 'border-slate-700/80 bg-slate-950/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-900/70 hover:text-slate-100'
+                                                : 'border-green-500/20 bg-black/30 text-green-300/80 hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200'
+                                            }`}
+                                          >
+                                            + POS
+                                          </button>
+                                        </div>
                                       </div>
 
                                       {vocabularyState.form.senses.map((sense, senseIndex) => (
@@ -2811,6 +3295,7 @@ export default function TrainingDetailPage() {
                                       </button>
                                     </div>
                                   </form>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -2831,6 +3316,280 @@ export default function TrainingDetailPage() {
   </div>
 
       {/* 编辑模态框 */}
+      {activeVocabularyModalSentence && activeVocabularyModalState && (
+        <div
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm"
+          onClick={closeVocabularyEntryModal}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sentence-vocabulary-modal-title"
+            className={`w-full max-w-2xl overflow-visible rounded-xl border shadow-[0_24px_60px_rgba(2,6,23,0.55)] ${
+              isModernFocusLayout
+                ? 'border-slate-700/80 bg-slate-950/95'
+                : 'border-green-500/28 bg-[#020c08]/95'
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={`flex items-start justify-between gap-4 border-b px-4 py-3 md:px-5 md:py-4 ${
+              isModernFocusLayout
+                ? 'border-slate-700/75'
+                : 'border-green-500/[0.18]'
+            }`}>
+              <div className="min-w-0">
+                <div className={`text-[10px] cyber-label tracking-[0.24em] ${isModernFocusLayout ? 'text-slate-400/80' : 'text-green-400/75'}`}>
+                  NEW VOCABULARY ENTRY
+                </div>
+                <div id="sentence-vocabulary-modal-title" className={`mt-1 text-sm cyber-font-readable ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100'}`}>
+                  S{activeVocabularyModalSentence.order + 1} • {activeVocabularyModalSentence.text.slice(0, 72)}
+                  {activeVocabularyModalSentence.text.length > 72 ? '…' : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeVocabularyEntryModal}
+                className={`shrink-0 rounded border px-2.5 py-1 text-[10px] cyber-button-text transition-colors ${
+                  isModernFocusLayout
+                    ? 'border-slate-600/75 bg-slate-900/55 text-slate-300/85 hover:border-slate-400/75 hover:text-slate-100'
+                    : 'border-green-500/25 bg-black/35 text-green-300/80 hover:border-green-400/40 hover:text-green-200'
+                }`}
+                aria-label="Close vocabulary modal"
+              >
+                CLOSE
+              </button>
+            </div>
+
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                handleVocabularyModalSubmit(activeVocabularyModalSentence.id)
+              }}
+              className="space-y-3 p-4 md:p-5"
+            >
+              <div className={`${formInsetClassName} vocabulary-entry-form-shell space-y-3 rounded-lg p-3`}>
+                <div className="space-y-2.5">
+                  <div className="relative">
+                    <input
+                      value={activeVocabularyModalState.form.headword}
+                      onChange={(event) => handleVocabularyHeadwordChange(activeVocabularyModalSentence.id, event.target.value)}
+                      onFocus={() => handleVocabularyHeadwordFocus(activeVocabularyModalSentence.id)}
+                      onBlur={() => handleVocabularyHeadwordBlur(activeVocabularyModalSentence.id)}
+                      onKeyDown={(event) => handleVocabularyHeadwordKeyDown(activeVocabularyModalSentence.id, event)}
+                      placeholder="separate"
+                      spellCheck={false}
+                      autoComplete="off"
+                      aria-controls={`${activeVocabularyModalSentence.id}-vocabulary-modal-suggestions`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                        isModernFocusLayout
+                          ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                          : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                      }`}
+                    />
+
+                    {activeVocabularyModalLookup.isOpen && (
+                      activeVocabularyModalLookup.isLoading || activeVocabularyModalLookup.suggestions.length > 0
+                    ) && (
+                      <div
+                        id={`${activeVocabularyModalSentence.id}-vocabulary-modal-suggestions`}
+                        className={`vocabulary-headword-suggestions absolute left-0 right-0 z-30 mt-2 overflow-hidden rounded-lg border shadow-[0_18px_36px_rgba(2,6,23,0.45)] ${
+                          isModernFocusLayout
+                            ? 'border-slate-700/80 bg-slate-950/95'
+                            : 'border-green-500/22 bg-[#020d08]/95'
+                        }`}
+                      >
+                        {activeVocabularyModalLookup.isLoading ? (
+                          <div className={`px-3 py-2 text-[11px] cyber-label ${isModernFocusLayout ? 'text-slate-400/78' : 'text-green-300/62'}`}>
+                            SEARCHING ECDICT...
+                          </div>
+                        ) : (
+                          activeVocabularyModalLookup.suggestions.map((suggestion, suggestionIndex) => (
+                            <button
+                              key={`${activeVocabularyModalSentence.id}-dictionary-modal-suggestion-${suggestion.word}-${suggestionIndex}`}
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault()
+                                void autofillVocabularyEntry(activeVocabularyModalSentence.id, suggestion.word)
+                              }}
+                              className={`block w-full border-b px-3 py-2 text-left transition-colors last:border-b-0 ${
+                                isModernFocusLayout
+                                  ? 'border-slate-800/80 hover:bg-slate-900/78'
+                                  : 'border-green-500/14 hover:bg-green-500/[0.06]'
+                              }`}
+                            >
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`text-sm cyber-font-readable ${isModernFocusLayout ? 'text-slate-100' : 'text-green-100'}`}>
+                                  {suggestion.word}
+                                </span>
+                                {suggestion.phonetic && (
+                                  <span className={`text-[11px] ${isModernFocusLayout ? 'text-slate-400/80' : 'text-green-300/65'}`}>
+                                    {suggestion.phonetic}
+                                  </span>
+                                )}
+                              </div>
+                              {suggestion.translationPreview && (
+                                <div className={`mt-1 text-[10px] leading-5 cyber-label ${isModernFocusLayout ? 'text-slate-500/82' : 'text-green-400/52'}`}>
+                                  {suggestion.translationPreview}
+                                </div>
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                      value={activeVocabularyModalState.form.phonetic}
+                      onChange={(event) => handleVocabularyPhoneticChange(activeVocabularyModalSentence.id, event.target.value)}
+                      placeholder="/ˈsepərət/"
+                      spellCheck={false}
+                      className={`min-w-0 flex-1 rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                        isModernFocusLayout
+                          ? 'border-slate-700/80 bg-slate-950/55 text-slate-200 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                          : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                      }`}
+                    />
+                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                      <span className={`text-[10px] cyber-label ${
+                        activeVocabularyModalLookup.isHydrating
+                          ? isModernFocusLayout
+                            ? 'text-slate-300/78'
+                            : 'text-green-200/75'
+                          : isModernFocusLayout
+                            ? 'text-slate-500/72'
+                            : 'text-green-500/48'
+                      }`}>
+                        {activeVocabularyModalLookup.isHydrating
+                          ? 'FILLING FROM ECDICT...'
+                          : activeVocabularyModalLookup.suggestions.length > 0
+                            ? 'TAB: FIRST MATCH'
+                            : activeVocabularyModalState.form.headword.trim().length > 0
+                              ? 'ECDICT READY'
+                              : 'TYPE TO SEARCH'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleVocabularyAddSense(activeVocabularyModalSentence.id)}
+                        className={`rounded border px-2.5 py-1 text-[10px] cyber-button-text transition-colors ${
+                          isModernFocusLayout
+                            ? 'border-slate-700/80 bg-slate-950/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-900/70 hover:text-slate-100'
+                            : 'border-green-500/20 bg-black/30 text-green-300/80 hover:border-green-500/35 hover:bg-green-500/[0.05] hover:text-green-200'
+                        }`}
+                      >
+                        + POS
+                      </button>
+                    </div>
+                  </div>
+
+                  {activeVocabularyModalState.form.senses.map((sense, senseIndex) => (
+                    <div
+                      key={`${activeVocabularyModalSentence.id}-modal-sense-${senseIndex}`}
+                      className={`${recordClassName} rounded-lg p-3`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className={`text-[10px] cyber-label tracking-[0.22em] ${isModernFocusLayout ? 'text-slate-500/78' : 'text-green-500/55'}`}>
+                          {isModernFocusLayout ? 'Part of speech' : 'POS SELECT'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleVocabularyRemoveSense(activeVocabularyModalSentence.id, senseIndex)}
+                          className={`rounded-md border px-3 py-2 text-[10px] cyber-button-text transition-colors disabled:cursor-not-allowed ${
+                            isModernFocusLayout
+                              ? 'border-slate-700/80 bg-slate-950/45 text-slate-300/75 hover:border-red-400/35 hover:text-red-300 disabled:text-slate-600/70'
+                              : 'border-green-500/16 bg-black/20 text-green-300/70 hover:border-red-400/35 hover:text-red-300 disabled:text-green-500/35'
+                          }`}
+                          disabled={activeVocabularyModalState.form.senses.length === 1}
+                          aria-label={`Remove sense ${senseIndex + 1}`}
+                          title={`Remove sense ${senseIndex + 1}`}
+                        >
+                          REMOVE
+                        </button>
+                      </div>
+                      <div
+                        className="mt-2 flex flex-wrap gap-2"
+                        role="radiogroup"
+                        aria-label={`Part of speech for sense ${senseIndex + 1}`}
+                      >
+                        {VOCABULARY_POS_OPTIONS.map((option) => {
+                          const isSelected = sense.pos === option.value
+
+                          return (
+                            <label
+                              key={`${activeVocabularyModalSentence.id}-modal-sense-${senseIndex}-${option.value}`}
+                              className={`relative inline-flex cursor-pointer items-center rounded-md border px-2.5 py-1.5 text-[10px] cyber-button-text transition-all ${
+                                isSelected
+                                  ? isModernFocusLayout
+                                    ? 'border-slate-300/65 bg-slate-200/[0.1] text-slate-50 shadow-[0_10px_20px_rgba(15,23,42,0.18)]'
+                                    : 'border-green-400/38 bg-green-500/[0.14] text-green-100 shadow-[0_0_14px_rgba(10,255,10,0.08)]'
+                                  : isModernFocusLayout
+                                    ? 'border-slate-700/80 bg-slate-950/45 text-slate-300/80 hover:border-slate-500/75 hover:bg-slate-900/65 hover:text-slate-100'
+                                    : 'border-green-500/18 bg-black/25 text-green-300/75 hover:border-green-500/34 hover:bg-green-500/[0.06] hover:text-green-200'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`sentence-${activeVocabularyModalSentence.id}-modal-sense-${senseIndex}-pos`}
+                                value={option.value}
+                                checked={isSelected}
+                                onChange={(event) => handleVocabularySenseChange(activeVocabularyModalSentence.id, senseIndex, 'pos', event.target.value)}
+                                className="sr-only"
+                              />
+                              <span>{option.label}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                      <input
+                        value={sense.meaning}
+                        onChange={(event) => handleVocabularySenseChange(activeVocabularyModalSentence.id, senseIndex, 'meaning', event.target.value)}
+                        placeholder="使分离"
+                        spellCheck={false}
+                        className={`mt-3 w-full rounded-md border px-3 py-2 text-sm cyber-input-font focus:outline-none ${
+                          isModernFocusLayout
+                            ? 'border-slate-700/80 bg-slate-950/55 text-slate-100 placeholder:text-slate-500/60 focus:border-slate-400/60 focus:bg-slate-900/70'
+                            : 'border-green-500/20 bg-black/30 text-gray-100 placeholder:text-green-500/35 focus:border-green-500/40'
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeVocabularyEntryModal}
+                  className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-colors ${
+                    isModernFocusLayout
+                      ? 'border-slate-700/80 bg-slate-950/55 text-slate-300/85 hover:border-slate-500/75 hover:bg-slate-900/70 hover:text-slate-100'
+                      : 'border-green-500/16 bg-black/25 text-green-300/75 hover:border-green-500/34 hover:bg-green-500/[0.06] hover:text-green-200'
+                  }`}
+                >
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  disabled={!isActiveVocabularyModalFormReady}
+                  className={`rounded border px-3 py-1.5 text-xs cyber-button-text transition-all ${
+                    isActiveVocabularyModalFormReady
+                      ? isModernFocusLayout
+                        ? 'border-slate-400/35 bg-slate-200/[0.08] text-slate-100 hover:border-slate-300/55 hover:bg-slate-200/[0.12]'
+                        : 'border-green-500/28 bg-green-500/[0.08] text-green-200 hover:border-green-500/45 hover:bg-green-500/[0.12]'
+                      : isModernFocusLayout
+                        ? 'cursor-not-allowed border-slate-700/70 bg-slate-950/45 text-slate-500/65'
+                        : 'cursor-not-allowed border-green-500/12 bg-black/25 text-green-500/35'
+                  }`}
+                >
+                  ADD ENTRY
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isEditing && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setIsEditing(false)}>
           <div className="w-[95%] max-w-5xl mx-auto relative bg-black/90 border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>

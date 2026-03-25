@@ -32,3 +32,8 @@ export type Sentence = Prisma.SentenceModel
  * 
  */
 export type UserNote = Prisma.UserNoteModel
+/**
+ * Model LearningDailyStat
+ * 
+ */
+export type LearningDailyStat = Prisma.LearningDailyStatModel

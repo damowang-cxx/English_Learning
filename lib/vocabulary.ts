@@ -12,6 +12,7 @@ export interface VocabularyEntry {
   headword: string
   headwordKey: string
   senses: VocabularySense[]
+  phonetic?: string
   rawText?: string
   isLegacyInvalid?: boolean
 }
@@ -23,6 +24,7 @@ export interface VocabularyFormSenseDraft {
 
 export interface VocabularyFormState {
   headword: string
+  phonetic: string
   senses: VocabularyFormSenseDraft[]
 }
 
@@ -41,6 +43,7 @@ export interface VocabularyBookItem {
   label: string
   normalizedKey: string
   senses: VocabularySense[]
+  phonetic?: string
   count: number
   sentences: VocabularyBookSentenceRef[]
 }
@@ -87,8 +90,17 @@ export function createEmptyVocabularySenseDraft(): VocabularyFormSenseDraft {
 export function createEmptyVocabularyFormState(): VocabularyFormState {
   return {
     headword: '',
+    phonetic: '',
     senses: [createEmptyVocabularySenseDraft()],
   }
+}
+
+function normalizeVocabularyPhonetic(value: string | undefined) {
+  if (!value) {
+    return ''
+  }
+
+  return normalizeSpacing(value)
 }
 
 function normalizeVocabularySense(sense: VocabularySense) {
@@ -155,6 +167,7 @@ function normalizeVocabularyEntry(entry: VocabularyEntry) {
   }
 
   const headword = normalizeHeadwordLabel(entry.headword)
+  const phonetic = normalizeVocabularyPhonetic(entry.phonetic)
   const senses = dedupeVocabularySenses(entry.senses || [])
 
   if (!headword || senses.length === 0) {
@@ -165,6 +178,7 @@ function normalizeVocabularyEntry(entry: VocabularyEntry) {
     headword,
     headwordKey: normalizeVocabularyKey(headword),
     senses,
+    ...(phonetic ? { phonetic } : {}),
   }
 }
 
@@ -270,6 +284,7 @@ function normalizeVocabularyEntryFromUnknown(value: unknown) {
   return normalizeVocabularyEntry({
     headword: record.headword,
     headwordKey: typeof record.headwordKey === 'string' ? record.headwordKey : normalizeVocabularyKey(record.headword),
+    phonetic: typeof record.phonetic === 'string' ? record.phonetic : '',
     senses,
   })
 }
@@ -325,6 +340,7 @@ export function mergeVocabularyWords(existing: VocabularyEntry[], incoming: Voca
     mergedEntries[existingIndex] = {
       ...currentEntry,
       senses: dedupeVocabularySenses([...currentEntry.senses, ...normalizedEntry.senses]),
+      phonetic: currentEntry.phonetic || normalizedEntry.phonetic || '',
     }
   }
 
@@ -374,6 +390,7 @@ function serializeVocabularyEntry(entry: VocabularyEntry) {
   return {
     headword: entry.headword,
     headwordKey: entry.headwordKey,
+    ...(entry.phonetic ? { phonetic: entry.phonetic } : {}),
     senses: entry.senses.map((sense) => ({
       pos: sense.pos,
       meaning: sense.meaning,
@@ -395,6 +412,7 @@ export function buildVocabularyEntryFromForm(form: VocabularyFormState) {
   }
 
   const headword = normalizeHeadwordLabel(form.headword)
+  const phonetic = normalizeVocabularyPhonetic(form.phonetic)
   const senses = dedupeVocabularySenses(
     form.senses
       .map((sense) => normalizeVocabularySense({ pos: sense.pos, meaning: sense.meaning }))
@@ -409,6 +427,7 @@ export function buildVocabularyEntryFromForm(form: VocabularyFormState) {
     headword,
     headwordKey: normalizeVocabularyKey(headword),
     senses,
+    ...(phonetic ? { phonetic } : {}),
   }
 }
 
@@ -468,6 +487,7 @@ export function buildVocabularyBook(
           label,
           normalizedKey: itemKey,
           senses: [...item.senses],
+          phonetic: item.phonetic,
           count: 0,
           sentences: [],
         }
@@ -475,9 +495,11 @@ export function buildVocabularyBook(
         bookItems.push(vocabularyBookItem)
       } else if (isVocabularyEntryStructured(item)) {
         vocabularyBookItem.senses = dedupeVocabularySenses([...vocabularyBookItem.senses, ...item.senses])
+        vocabularyBookItem.phonetic = vocabularyBookItem.phonetic || item.phonetic
         vocabularyBookItem.label = formatVocabularyEntry({
           headword: vocabularyBookItem.headword,
           headwordKey: vocabularyBookItem.normalizedKey,
+          phonetic: vocabularyBookItem.phonetic,
           senses: vocabularyBookItem.senses,
         })
       }

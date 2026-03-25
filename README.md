@@ -119,6 +119,28 @@ NEXT_PUBLIC_BASE_PATH=/listen
 
 确保 `public/audio` 目录有写入权限，用于存储上传的音频文件。
 
+## Global Vocabulary Library
+
+- Homepage now includes a `GLOBAL VOCAB` entry button above the training card grid.
+- Global vocabulary page path: `http://localhost:3000/listen/vocabulary`
+- Production path: `https://enlearningforreveone.site/listen/vocabulary`
+
+### New APIs
+
+- `GET /listen/api/vocabulary/global`
+  - Returns aggregated structured vocabulary across all trainings.
+  - Query params: `userId` (default `default`), `q`, `sort` (`frequency | alphabet | recent`).
+- `GET /listen/api/vocabulary/global/export`
+  - Returns Myqwerty-compatible export payload:
+  - `version`, `generatedAt`, `totalWords`, `words[]`
+
+### Myqwerty Sync Notes
+
+- Myqwerty pull source defaults to `/listen/api/vocabulary/global/export`.
+- For local cross-port testing, set `VITE_ENGLISH_LEARNING_EXPORT_URL`, e.g.:
+  - `http://localhost:3000/listen/api/vocabulary/global/export`
+  - `http://localhost:4000/listen/api/vocabulary/global/export`
+
 ## 数据库模型
 
 - **TrainingItem**：训练条目（标题、音频路径等）
