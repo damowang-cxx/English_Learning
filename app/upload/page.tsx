@@ -64,6 +64,7 @@ export default function UploadPage() {
     
     // 添加句子到列表
     setSentences([...sentences, { ...currentSentence }])
+    setErrors((prev) => ({ ...prev, sentences: '' }))
     setCurrentSentence({
       text: '',
       translation: '',
@@ -126,7 +127,7 @@ export default function UploadPage() {
       newErrors.audio = '请选择音频文件'
     }
     
-    if (sentences.length === 0 && !currentSentence.text.trim()) {
+    if (sentences.length === 0) {
       newErrors.sentences = '请至少添加一个句子分段'
     }
     
@@ -143,7 +144,7 @@ export default function UploadPage() {
     }
     
     // 检查是否有未保存的句子
-    const hasUnsaved = currentSentence.text.trim() && 
+    const hasUnsaved = false && currentSentence.text.trim() && 
                        currentSentence.startTime >= 0 && 
                        currentSentence.endTime > currentSentence.startTime
     
@@ -173,7 +174,7 @@ export default function UploadPage() {
     setIsUploading(true)
     try {
       const formData = new FormData()
-      formData.append('title', title)
+      formData.append('title', title.trim())
       formData.append('audio', audioFile)
       formData.append('sentences', JSON.stringify(finalSentences))
 
@@ -438,7 +439,6 @@ export default function UploadPage() {
                       }`}
                       rows={3}
                       placeholder="Enter English sentence... (Press Enter to add)"
-                      required
                     />
                     {validationErrors.text && (
                       <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
@@ -499,7 +499,6 @@ export default function UploadPage() {
                               ? 'border-red-500/80 focus:border-red-500' 
                               : 'border-red-500/30 focus:border-red-500/60'
                           }`}
-                          required
                         />
                         <div className="flex flex-col gap-1">
                           <button
@@ -559,7 +558,6 @@ export default function UploadPage() {
                               ? 'border-red-500/80 focus:border-red-500' 
                               : 'border-red-500/30 focus:border-red-500/60'
                           }`}
-                          required
                         />
                         <div className="flex flex-col gap-1">
                           <button

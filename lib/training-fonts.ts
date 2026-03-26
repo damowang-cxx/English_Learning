@@ -1,31 +1,42 @@
-import {
-  Atkinson_Hyperlegible,
-  IBM_Plex_Mono,
-  Literata,
-  Source_Sans_3,
-} from 'next/font/google'
+import localFont from 'next/font/local'
 
-const hyperlegibleSans = Atkinson_Hyperlegible({
-  subsets: ['latin'],
-  weight: ['400', '700'],
+const readingSerif = localFont({
+  src: [
+    { path: '../app/fonts/training/newsreader-400.ttf', weight: '400', style: 'normal' },
+    { path: '../app/fonts/training/newsreader-500.ttf', weight: '500', style: 'normal' },
+    { path: '../app/fonts/training/newsreader-600.ttf', weight: '600', style: 'normal' },
+    { path: '../app/fonts/training/newsreader-700.ttf', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
 })
 
-const humanistSans = Source_Sans_3({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
+const readingSans = localFont({
+  src: [
+    { path: '../app/fonts/training/public-sans-400.ttf', weight: '400', style: 'normal' },
+    { path: '../app/fonts/training/public-sans-500.ttf', weight: '500', style: 'normal' },
+    { path: '../app/fonts/training/public-sans-600.ttf', weight: '600', style: 'normal' },
+    { path: '../app/fonts/training/public-sans-700.ttf', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
 })
 
-const bookSerif = Literata({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
+const modernSans = localFont({
+  src: [
+    { path: '../app/fonts/training/plus-jakarta-sans-400.ttf', weight: '400', style: 'normal' },
+    { path: '../app/fonts/training/plus-jakarta-sans-500.ttf', weight: '500', style: 'normal' },
+    { path: '../app/fonts/training/plus-jakarta-sans-600.ttf', weight: '600', style: 'normal' },
+    { path: '../app/fonts/training/plus-jakarta-sans-700.ttf', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
 })
 
-const modernMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
+const futureTech = localFont({
+  src: [
+    { path: '../app/fonts/training/exo-2-400.ttf', weight: '400', style: 'normal' },
+    { path: '../app/fonts/training/exo-2-500.ttf', weight: '500', style: 'normal' },
+    { path: '../app/fonts/training/exo-2-600.ttf', weight: '600', style: 'normal' },
+    { path: '../app/fonts/training/exo-2-700.ttf', weight: '700', style: 'normal' },
+  ],
   display: 'swap',
 })
 
@@ -38,24 +49,24 @@ export const TRAINING_SENTENCE_FONT_OPTIONS = [
     className: 'cyber-font-readable',
   },
   {
-    id: 'hyperlegible-sans',
-    label: 'Hyperlegible Sans',
-    className: hyperlegibleSans.className,
+    id: 'reading-serif',
+    label: 'Reading Serif',
+    className: readingSerif.className,
   },
   {
-    id: 'humanist-sans',
-    label: 'Humanist Sans',
-    className: humanistSans.className,
+    id: 'reading-sans',
+    label: 'Reading Sans',
+    className: readingSans.className,
   },
   {
-    id: 'book-serif',
-    label: 'Book Serif',
-    className: bookSerif.className,
+    id: 'modern-sans',
+    label: 'Modern Sans',
+    className: modernSans.className,
   },
   {
-    id: 'modern-mono',
-    label: 'Modern Mono',
-    className: modernMono.className,
+    id: 'future-tech',
+    label: 'Future Tech',
+    className: futureTech.className,
   },
 ] as const
 
