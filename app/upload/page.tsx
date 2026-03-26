@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { withBasePath } from '@/lib/base-path'
 
@@ -11,471 +11,809 @@ interface Sentence {
   endTime: number
 }
 
+interface ImportedSentenceJson {
+  index?: number
+  en?: string
+  zh?: string
+  start?: number | string
+  end?: number | string
+}
+
+interface ImportStatus {
+  type: 'success' | 'error'
+  message: string
+}
+
+type JsonImportMode = 'replace' | 'append'
+
+interface OverlapAnalysis {
+  indexes: number[]
+  messages: string[]
+}
+
+const createEmptySentence = (startTime = 0): Sentence => ({
+  text: '',
+  translation: '',
+  startTime,
+  endTime: startTime
+})
+
+const getNextDraftTime = (items: Sentence[]) =>
+  items.length > 0 ? items[items.length - 1].endTime : 0
+
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = (seconds % 60).toFixed(2)
+  return mins > 0 ? `${mins}:${secs.padStart(5, '0')}` : `${secs}s`
+}
+
+const normalizeImportedSentence = (record: ImportedSentenceJson, index: number): Sentence => {
+  const text = typeof record.en === 'string' ? record.en.trim() : ''
+  const translation = typeof record.zh === 'string' ? record.zh.trim() : ''
+  const startTime = Number(record.start)
+  const endTime = Number(record.end)
+
+  if (!text) {
+    throw new Error(`JSON item #${index + 1} is missing "en".`)
+  }
+
+  if (!Number.isFinite(startTime) || !Number.isFinite(endTime)) {
+    throw new Error(`JSON item #${index + 1} has an invalid start/end value.`)
+  }
+
+  if (startTime < 0) {
+    throw new Error(`JSON item #${index + 1} has a negative start time.`)
+  }
+
+  if (endTime <= startTime) {
+    throw new Error(`JSON item #${index + 1} must have end > start.`)
+  }
+
+  return { text, translation, startTime, endTime }
+}
+
+const orderImportedRecords = (records: ImportedSentenceJson[]) => {
+  const shouldSortByIndex = records.every(
+    (record) => typeof record?.index === 'number' && Number.isFinite(record.index)
+  )
+
+  if (!shouldSortByIndex) {
+    return records
+  }
+
+  return [...records].sort((first, second) => (first.index as number) - (second.index as number))
+}
+
+const analyzeTimeOverlaps = (items: Sentence[]): OverlapAnalysis => {
+  const overlapIndexes = new Set<number>()
+  const sortedItems = items
+    .map((sentence, index) => ({ ...sentence, index }))
+    .sort((first, second) => {
+      if (first.startTime !== second.startTime) {
+        return first.startTime - second.startTime
+      }
+
+      return first.endTime - second.endTime
+    })
+
+  const messages: string[] = []
+
+  for (let index = 1; index < sortedItems.length; index += 1) {
+    const previous = sortedItems[index - 1]
+    const current = sortedItems[index]
+
+    if (current.startTime < previous.endTime) {
+      overlapIndexes.add(previous.index)
+      overlapIndexes.add(current.index)
+      messages.push(
+        `#${previous.index + 1} (${previous.startTime.toFixed(2)}-${previous.endTime.toFixed(2)}) overlaps #${current.index + 1} (${current.startTime.toFixed(2)}-${current.endTime.toFixed(2)})`
+      )
+    }
+  }
+
+  return {
+    indexes: [...overlapIndexes],
+    messages
+  }
+}
+
 export default function UploadPage() {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [sentences, setSentences] = useState<Sentence[]>([])
-  const [currentSentence, setCurrentSentence] = useState<Sentence>({
-    text: '',
-    translation: '',
-    startTime: 0,
-    endTime: 0
-  })
+  const [currentSentence, setCurrentSentence] = useState<Sentence>(createEmptySentence())
+  const [editingSentenceIndex, setEditingSentenceIndex] = useState<number | null>(null)
+  const [jsonImportMode, setJsonImportMode] = useState<JsonImportMode>('replace')
+  const [jsonImportText, setJsonImportText] = useState('')
+  const [jsonImportStatus, setJsonImportStatus] = useState<ImportStatus | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({})
-  
-  // 输入框引用
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+
   const titleInputRef = useRef<HTMLInputElement>(null)
   const englishTextRef = useRef<HTMLTextAreaElement>(null)
   const startTimeRef = useRef<HTMLInputElement>(null)
-  const endTimeRef = useRef<HTMLInputElement>(null)
+  const jsonFileInputRef = useRef<HTMLInputElement>(null)
 
-  // 页面加载时自动聚焦到标题输入框
   useEffect(() => {
     titleInputRef.current?.focus()
   }, [])
 
-  // 验证当前句子
-  const validateCurrentSentence = (): boolean => {
-    const newErrors: { [key: string]: string } = {}
-    
+  const nextDraftTime = useMemo(() => getNextDraftTime(sentences), [sentences])
+
+  const hasUnsavedSentence = useMemo(() => {
+    const baseline =
+      editingSentenceIndex !== null
+        ? sentences[editingSentenceIndex]
+        : createEmptySentence(nextDraftTime)
+
+    if (!baseline) {
+      return false
+    }
+
+    return (
+      currentSentence.text !== baseline.text ||
+      currentSentence.translation !== baseline.translation ||
+      currentSentence.startTime !== baseline.startTime ||
+      currentSentence.endTime !== baseline.endTime
+    )
+  }, [currentSentence, editingSentenceIndex, nextDraftTime, sentences])
+
+  const overlapAnalysis = useMemo(() => analyzeTimeOverlaps(sentences), [sentences])
+  const overlapIndexSet = useMemo(() => new Set(overlapAnalysis.indexes), [overlapAnalysis.indexes])
+
+  const resetCurrentSentence = (nextSentences: Sentence[]) => {
+    setCurrentSentence(createEmptySentence(getNextDraftTime(nextSentences)))
+    setEditingSentenceIndex(null)
+    setValidationErrors({})
+  }
+
+  const validateCurrentSentence = () => {
+    const nextErrors: Record<string, string> = {}
+
     if (!currentSentence.text.trim()) {
-      newErrors.text = '请填写英语句子'
+      nextErrors.text = 'Please enter the English sentence.'
     }
-    
+
     if (currentSentence.startTime < 0) {
-      newErrors.startTime = '开始时间不能为负数'
+      nextErrors.startTime = 'Start time cannot be negative.'
     }
-    
+
     if (currentSentence.endTime <= currentSentence.startTime) {
-      newErrors.endTime = '结束时间必须大于开始时间'
+      nextErrors.endTime = 'End time must be greater than start time.'
     }
-    
-    setValidationErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+
+    setValidationErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
   }
 
   const handleAddSentence = () => {
     if (!validateCurrentSentence()) {
       return
     }
-    
-    // 添加句子到列表
-    setSentences([...sentences, { ...currentSentence }])
-    setErrors((prev) => ({ ...prev, sentences: '' }))
-    setCurrentSentence({
-      text: '',
-      translation: '',
-      startTime: currentSentence.endTime,
+
+    const nextSentence: Sentence = {
+      text: currentSentence.text.trim(),
+      translation: currentSentence.translation.trim(),
+      startTime: currentSentence.startTime,
       endTime: currentSentence.endTime
-    })
-    setValidationErrors({})
-    
-    // 聚焦到英语文本输入框
+    }
+
+    const nextSentences =
+      editingSentenceIndex === null
+        ? [...sentences, nextSentence]
+        : sentences.map((sentence, index) =>
+            index === editingSentenceIndex ? nextSentence : sentence
+          )
+
+    setSentences(nextSentences)
+    setErrors((prev) => ({ ...prev, sentences: '', submit: '' }))
+    setJsonImportStatus(null)
+    resetCurrentSentence(nextSentences)
+
     setTimeout(() => {
       englishTextRef.current?.focus()
-    }, 100)
+    }, 0)
   }
 
-  // 键盘快捷键处理
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Ctrl/Cmd + Enter 提交表单
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault()
-      void submitForm()
+  const handleEditSentence = (index: number) => {
+    setCurrentSentence({ ...sentences[index] })
+    setEditingSentenceIndex(index)
+    setValidationErrors({})
+    setJsonImportStatus(null)
+
+    setTimeout(() => {
+      englishTextRef.current?.focus()
+    }, 0)
+  }
+
+  const handleCancelEdit = () => {
+    resetCurrentSentence(sentences)
+  }
+
+  const handleRemoveSentence = (index: number) => {
+    const nextSentences = sentences.filter((_, sentenceIndex) => sentenceIndex !== index)
+    setSentences(nextSentences)
+    setErrors((prev) => ({ ...prev, sentences: '' }))
+    setJsonImportStatus(null)
+
+    if (editingSentenceIndex === null) {
       return
     }
-    
-    // Enter 添加句子（在英语文本框中）
-    if (e.key === 'Enter' && !e.shiftKey && document.activeElement === englishTextRef.current) {
-      e.preventDefault()
-      handleAddSentence()
+
+    if (editingSentenceIndex === index) {
+      resetCurrentSentence(nextSentences)
       return
     }
-    
-    // Tab 键在时间输入框之间切换时自动填充
-    if (e.key === 'Tab' && document.activeElement === startTimeRef.current) {
-      if (!currentSentence.endTime || currentSentence.endTime <= currentSentence.startTime) {
-        setCurrentSentence({
-          ...currentSentence,
-          endTime: currentSentence.startTime + 1
-        })
+
+    if (editingSentenceIndex > index) {
+      setEditingSentenceIndex(editingSentenceIndex - 1)
+    }
+  }
+
+  const runImport = ({
+    rawText,
+    sourceLabel,
+    mode
+  }: {
+    rawText: string
+    sourceLabel: string
+    mode: JsonImportMode
+  }) => {
+    const parsed = JSON.parse(rawText)
+
+    if (!Array.isArray(parsed)) {
+      throw new Error('The JSON root must be an array.')
+    }
+
+    const orderedRecords = orderImportedRecords(parsed as ImportedSentenceJson[])
+    const importedSentences = orderedRecords.map((record, index) =>
+      normalizeImportedSentence(record, index)
+    )
+
+    const shouldConfirmReplace =
+      mode === 'replace' &&
+      (sentences.length > 0 || hasUnsavedSentence || editingSentenceIndex !== null)
+    const shouldConfirmAppend =
+      mode === 'append' && (hasUnsavedSentence || editingSentenceIndex !== null)
+
+    if (
+      shouldConfirmReplace &&
+      !window.confirm(
+        'Replace mode will clear the current sentence list and the current draft. Continue?'
+      )
+    ) {
+      return
+    }
+
+    if (
+      shouldConfirmAppend &&
+      !window.confirm(
+        'Append mode will keep the current list but clear the current draft/editing state. Continue?'
+      )
+    ) {
+      return
+    }
+
+    const nextSentences =
+      mode === 'append' ? [...sentences, ...importedSentences] : importedSentences
+    const nextOverlapAnalysis = analyzeTimeOverlaps(nextSentences)
+
+    setSentences(nextSentences)
+    setErrors((prev) => ({ ...prev, sentences: '', submit: '' }))
+    resetCurrentSentence(nextSentences)
+    setJsonImportStatus({
+      type: 'success',
+      message:
+        mode === 'append'
+          ? `Imported ${importedSentences.length} segments from ${sourceLabel} and appended them to the list.${nextOverlapAnalysis.messages.length > 0 ? ` Detected ${nextOverlapAnalysis.messages.length} time overlap(s).` : ''}`
+          : `Imported ${importedSentences.length} segments from ${sourceLabel}.${nextOverlapAnalysis.messages.length > 0 ? ` Detected ${nextOverlapAnalysis.messages.length} time overlap(s).` : ''}`
+    })
+  }
+
+  const handleJsonFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    try {
+      const rawText = await file.text()
+      runImport({
+        rawText,
+        sourceLabel: file.name,
+        mode: jsonImportMode
+      })
+    } catch (error) {
+      setJsonImportStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'JSON import failed.'
+      })
+    } finally {
+      if (jsonFileInputRef.current) {
+        jsonFileInputRef.current.value = ''
       }
     }
   }
-  
-  // 检查当前是否有未保存的句子
-  const hasUnsavedSentence = currentSentence.text.trim() && 
-                              currentSentence.startTime >= 0 && 
-                              currentSentence.endTime > currentSentence.startTime
 
-  const handleRemoveSentence = (index: number) => {
-    setSentences(sentences.filter((_, i) => i !== index))
+  const handleJsonTextImport = () => {
+    if (!jsonImportText.trim()) {
+      setJsonImportStatus({
+        type: 'error',
+        message: 'Paste JSON text before importing.'
+      })
+      return
+    }
+
+    try {
+      runImport({
+        rawText: jsonImportText,
+        sourceLabel: 'pasted JSON',
+        mode: jsonImportMode
+      })
+      setJsonImportText('')
+    } catch (error) {
+      setJsonImportStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'JSON import failed.'
+      })
+    }
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault()
+      void submitForm()
+      return
+    }
+
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey &&
+      document.activeElement === englishTextRef.current
+    ) {
+      event.preventDefault()
+      handleAddSentence()
+      return
+    }
+
+    if (event.key === 'Tab' && document.activeElement === startTimeRef.current) {
+      if (!currentSentence.endTime || currentSentence.endTime <= currentSentence.startTime) {
+        setCurrentSentence((prev) => ({ ...prev, endTime: prev.startTime + 1 }))
+      }
+    }
   }
 
   const submitForm = async () => {
-    // 验证表单
-    const newErrors: { [key: string]: string } = {}
-    
+    const nextErrors: Record<string, string> = {}
+
     if (!title.trim()) {
-      newErrors.title = '请填写标题'
+      nextErrors.title = 'Please enter the title.'
     }
-    
+
     if (!audioFile) {
-      newErrors.audio = '请选择音频文件'
+      nextErrors.audio = 'Please choose an audio file.'
     }
-    
+
     if (sentences.length === 0) {
-      newErrors.sentences = '请至少添加一个句子分段'
+      nextErrors.sentences = 'Please add at least one saved segment.'
     }
-    
-    setErrors(newErrors)
-    
-    if (Object.keys(newErrors).length > 0) {
-      // 滚动到第一个错误
-      const firstErrorKey = Object.keys(newErrors)[0]
-      if (firstErrorKey === 'title') {
-        titleInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    setErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length > 0) {
+      if (nextErrors.title) {
         titleInputRef.current?.focus()
       }
       return
     }
-    
-    // 检查是否有未保存的句子
-    const hasUnsaved = false && currentSentence.text.trim() && 
-                       currentSentence.startTime >= 0 && 
-                       currentSentence.endTime > currentSentence.startTime
-    
-    let finalSentences = [...sentences]
-    
-    if (hasUnsaved) {
-      if (!validateCurrentSentence()) {
-        setErrors({ sentences: '请先完成并保存未完成的句子分段' })
-        englishTextRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        englishTextRef.current?.focus()
-        return
-      }
-      finalSentences = [...sentences, { ...currentSentence }]
-    }
-    
-    if (finalSentences.length === 0) {
-      setErrors({ sentences: '请至少添加一个句子分段' })
-      return
-    }
 
-    // 检查音频文件是否存在
     if (!audioFile) {
-      setErrors({ audio: '请选择音频文件' })
       return
     }
 
     setIsUploading(true)
+
     try {
       const formData = new FormData()
       formData.append('title', title.trim())
       formData.append('audio', audioFile)
-      formData.append('sentences', JSON.stringify(finalSentences))
+      formData.append('sentences', JSON.stringify(sentences))
 
-      console.log('Sending request...', { sentencesCount: finalSentences.length })
       const response = await fetch(withBasePath('/api/training-items'), {
         method: 'POST',
         body: formData
       })
 
-      console.log('Response status:', response.status)
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Upload failed:', errorText)
-        throw new Error(`上传失败: ${response.status}`)
+        throw new Error(`Upload failed: ${response.status}`)
       }
 
       const data = await response.json()
-      console.log('Upload success:', data)
       router.push(`/training/${data.id}`)
     } catch (error) {
-      console.error('Upload error:', error)
-      setErrors({ submit: `上传失败，请重试: ${error instanceof Error ? error.message : '未知错误'}` })
+      setErrors((prev) => ({
+        ...prev,
+        submit: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }))
     } finally {
       setIsUploading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    await submitForm()
-  }
-
-  // 时间快捷调整函数
   const adjustTime = (field: 'startTime' | 'endTime', delta: number) => {
-    setCurrentSentence({
-      ...currentSentence,
-      [field]: Math.max(0, currentSentence[field] + delta)
-    })
-    setValidationErrors({})
-  }
-
-  // 格式化时间显示
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60)
-    const secs = (seconds % 60).toFixed(2)
-    return mins > 0 ? `${mins}:${secs.padStart(5, '0')}` : `${secs}s`
+    setCurrentSentence((prev) => ({
+      ...prev,
+      [field]: Math.max(0, Number((prev[field] + delta).toFixed(2)))
+    }))
+    setValidationErrors((prev) => ({ ...prev, [field]: '' }))
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center" style={{ paddingBottom: '45vh', paddingTop: '10vh' }}>
-      {/* HUD屏幕容器 */}
+    <div
+      className="min-h-screen relative flex items-center justify-center"
+      style={{ paddingBottom: '45vh', paddingTop: '10vh' }}
+    >
       <div className="w-[95%] max-w-5xl mx-auto relative" style={{ zIndex: 50 }}>
-        {/* 主HUD屏幕 */}
-        <div className="relative bg-black/70 backdrop-blur-md border-2 border-red-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(255,0,0,0.3),inset_0_0_30px_rgba(255,0,0,0.1)]">
-          {/* 顶部装饰栏 */}
-          <div className="relative border-b-2 border-red-500/50 bg-gradient-to-r from-red-900/30 via-transparent to-transparent p-4 z-10">
-            <div className="flex items-center justify-between relative z-20">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(255,0,0,0.8)]"></div>
-                <h1 className="text-2xl cyber-title text-red-400 cyber-neon">
-                  [ UPLOAD MODULE ]
-                </h1>
+        <div className="relative overflow-hidden rounded-lg border-2 border-red-500/50 bg-black/70 shadow-[0_0_40px_rgba(255,0,0,0.3),inset_0_0_30px_rgba(255,0,0,0.1)] backdrop-blur-md">
+          <div className="relative z-10 border-b-2 border-red-500/50 bg-gradient-to-r from-red-900/30 via-transparent to-transparent p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(255,0,0,0.8)]" />
+                  <h1 className="text-2xl cyber-title text-red-400 cyber-neon">
+                    [ UPLOAD MODULE ]
+                  </h1>
+                </div>
+                <div className="mt-2 text-xs cyber-label text-red-500/60">
+                  TRAINING ITEM CREATION INTERFACE
+                </div>
               </div>
               <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  router.push('/')
-                }}
-                className="text-red-400/70 hover:text-red-300 cyber-button-text text-sm transition-colors px-3 py-1 border border-red-500/30 hover:border-red-500/50 rounded cursor-pointer relative z-30"
-                style={{ zIndex: 100 }}
                 type="button"
+                onClick={() => router.push('/')}
+                className="rounded border border-red-500/30 px-3 py-1 text-sm text-red-400/70 transition-colors hover:border-red-500/50 hover:text-red-300"
               >
                 ← BACK
               </button>
             </div>
-            <div className="mt-2 text-xs cyber-label text-red-500/60 relative z-20">
-              TRAINING ITEM CREATION INTERFACE
-            </div>
           </div>
 
-          {/* HUD网格背景 */}
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] opacity-30 pointer-events-none" />
 
-          {/* 扫描线效果 */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(255,0,0,0.01),rgba(255,0,0,0.03))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-40"></div>
-
-          {/* 角落装饰 */}
-          <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-red-500/50"></div>
-          <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-red-500/50"></div>
-          <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-red-500/50"></div>
-          <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-red-500/50"></div>
-
-          {/* 内容区域 */}
           <div className="relative p-8">
-            <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-8">
-              {/* 基础信息区域 */}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submitForm()
+              }}
+              onKeyDown={handleKeyDown}
+              className="space-y-8"
+            >
               <div className="space-y-6">
                 <div className="border-l-2 border-red-500/50 pl-4">
-                  <label className="block text-red-400 cyber-label mb-3 flex items-center gap-2">
-                    <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <label className="mb-3 flex items-center gap-2 text-red-400 cyber-label">
+                    <span className="h-1 w-1 rounded-full bg-red-400" />
                     TITLE *
-                    {title.length > 0 && (
-                      <span className="text-[10px] cyber-number text-red-500/60 normal-case ml-auto">
-                        {title.length} chars
-                      </span>
-                    )}
                   </label>
                   <input
                     ref={titleInputRef}
-                    type="text"
                     value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value)
-                      if (errors.title) {
-                        setErrors({ ...errors, title: '' })
-                      }
+                    onChange={(event) => {
+                      setTitle(event.target.value)
+                      setErrors((prev) => ({ ...prev, title: '' }))
                     }}
-                    className={`w-full px-4 py-3 bg-black/40 border cyber-input-font text-gray-200 focus:outline-none focus:bg-black/60 transition-all ${
-                      errors.title 
-                        ? 'border-red-500/80 focus:border-red-500' 
+                    className={`w-full border bg-black/40 px-4 py-3 text-gray-200 focus:bg-black/60 focus:outline-none ${
+                      errors.title
+                        ? 'border-red-500/80'
                         : 'border-red-500/30 focus:border-red-500/60'
                     }`}
                     placeholder="Enter training item title..."
-                    required
                   />
-                  {errors.title && (
-                    <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
-                      ⚠ {errors.title}
-                    </div>
-                  )}
+                  {errors.title ? (
+                    <div className="mt-1 text-xs text-red-400/80">! {errors.title}</div>
+                  ) : null}
                 </div>
 
                 <div className="border-l-2 border-red-500/50 pl-4">
-                  <label className="block text-red-400 cyber-label mb-3 flex items-center gap-2">
-                    <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                  <label className="mb-3 flex items-center gap-2 text-red-400 cyber-label">
+                    <span className="h-1 w-1 rounded-full bg-red-400" />
                     AUDIO FILE *
-                    {audioFile && (
-                      <span className="text-[10px] cyber-number text-red-500/60 normal-case ml-auto">
-                        {(audioFile.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
-                    )}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={(e) => {
-                        setAudioFile(e.target.files?.[0] || null)
-                        if (errors.audio) {
-                          setErrors({ ...errors, audio: '' })
-                        }
-                      }}
-                      className={`w-full px-4 py-3 bg-black/40 border cyber-input-font text-gray-300 focus:outline-none focus:bg-black/60 transition-all file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-red-500/20 file:text-red-400 file:cyber-button-text file:text-sm file:cursor-pointer hover:file:bg-red-500/30 ${
-                        errors.audio 
-                          ? 'border-red-500/80 focus:border-red-500' 
-                          : 'border-red-500/30 focus:border-red-500/60'
-                      }`}
-                      required
-                    />
-                    {audioFile && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="text-xs cyber-text text-red-400/70 flex-1">
-                          ✓ Selected: {audioFile.name}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setAudioFile(null)}
-                          className="text-xs cyber-button-text text-red-400/60 hover:text-red-400 px-2 py-1 border border-red-500/30 hover:border-red-500/50 rounded transition-colors"
-                        >
-                          CLEAR
-                        </button>
-                      </div>
-                    )}
-                    {errors.audio && (
-                      <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
-                        ⚠ {errors.audio}
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(event) => {
+                      setAudioFile(event.target.files?.[0] || null)
+                      setErrors((prev) => ({ ...prev, audio: '' }))
+                    }}
+                    className={`w-full border bg-black/40 px-4 py-3 text-gray-300 file:mr-4 file:border-0 file:bg-red-500/20 file:px-3 file:py-1 file:text-red-400 ${
+                      errors.audio
+                        ? 'border-red-500/80'
+                        : 'border-red-500/30 focus:border-red-500/60'
+                    }`}
+                  />
+                  {audioFile ? (
+                    <div className="mt-2 text-xs text-red-400/70">Selected: {audioFile.name}</div>
+                  ) : null}
+                  {errors.audio ? (
+                    <div className="mt-1 text-xs text-red-400/80">! {errors.audio}</div>
+                  ) : null}
                 </div>
               </div>
 
-              {/* 句子分段区域 */}
               <div className="border-t-2 border-red-500/30 pt-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="h-[2px] w-8 bg-red-500"></div>
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="h-[2px] w-8 bg-red-500" />
                   <h2 className="text-xl cyber-title text-red-400">SENTENCE SEGMENTS</h2>
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-red-500/50 to-transparent"></div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs cyber-label text-red-500/60">COUNT: <span className="cyber-number cyber-tabular">{sentences.length}</span></span>
-                    {hasUnsavedSentence && (
-                      <span className="text-xs cyber-text text-yellow-400/70 animate-pulse">(+1 UNSAVED)</span>
-                    )}
-                  </div>
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-red-500/50 to-transparent" />
+                  <span className="text-xs cyber-label text-red-500/60">
+                    COUNT: <span className="cyber-number cyber-tabular">{sentences.length}</span>
+                  </span>
+                  {hasUnsavedSentence ? (
+                    <span className="text-xs text-yellow-400/70">(+1 UNSAVED)</span>
+                  ) : null}
                 </div>
 
-                {/* 已添加的句子列表 */}
-                {sentences.length > 0 && (
-                  <div className="space-y-3 mb-6 max-h-64 overflow-y-auto pr-2">
-                    {sentences.map((sentence, index) => (
-                      <div
-                        key={index}
-                        className="p-4 bg-black/40 border border-red-500/20 rounded relative group hover:border-red-500/40 transition-all"
+                <div className="mb-6 rounded border border-red-500/20 bg-black/30 p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="mb-2 flex items-center gap-2">
+                        <div className="h-4 w-1 bg-red-500" />
+                        <h3 className="text-sm cyber-label text-red-400">IMPORT JSON SEGMENTS</h3>
+                      </div>
+                      <div className="text-xs text-red-500/60">
+                        Supports fields: index, en, zh, start, end
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setJsonImportMode('replace')}
+                        className={`rounded border px-3 py-1 text-xs transition-colors ${
+                          jsonImportMode === 'replace'
+                            ? 'border-red-400/70 bg-red-500/20 text-red-200'
+                            : 'border-red-500/30 text-red-400/70 hover:border-red-500/50 hover:text-red-300'
+                        }`}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs cyber-number cyber-tabular text-red-500/70">#{index + 1}</span>
-                              <p className="cyber-text text-gray-200 text-sm">{sentence.text}</p>
-                            </div>
-                            {sentence.translation && (
-                              <p className="text-xs cyber-text text-gray-400 mb-2 ml-6">{sentence.translation}</p>
-                            )}
-                            <p className="text-xs cyber-label text-red-500/60 ml-6">
-                              TIME: [<span className="cyber-number cyber-tabular">{sentence.startTime.toFixed(2)}</span>s - <span className="cyber-number cyber-tabular">{sentence.endTime.toFixed(2)}</span>s]
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSentence(index)}
-                            className="text-red-400/60 hover:text-red-400 ml-4 cyber-button-text text-xs transition-colors px-2 py-1 border border-red-500/30 hover:border-red-500/50 rounded"
-                          >
-                            DEL
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 添加新句子表单 */}
-                <div className="p-6 bg-black/30 border border-red-500/20 rounded space-y-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-1 h-4 bg-red-500"></div>
-                    <h3 className="text-red-400 cyber-label text-sm">ADD NEW SEGMENT</h3>
-                  </div>
-
-                  <div>
-                    <label className="block text-red-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
-                      <span className="w-1 h-1 bg-red-400 rounded-full"></span>
-                      ENGLISH TEXT *
-                      {currentSentence.text.length > 0 && (
-                        <span className="text-[9px] cyber-number cyber-tabular text-red-500/60 normal-case ml-auto">
-                          {currentSentence.text.length} chars
-                        </span>
-                      )}
-                    </label>
-                    <textarea
-                      ref={englishTextRef}
-                      value={currentSentence.text}
-                      onChange={(e) => {
-                        setCurrentSentence({ ...currentSentence, text: e.target.value })
-                        if (validationErrors.text) {
-                          setValidationErrors({ ...validationErrors, text: '' })
-                        }
-                      }}
-                      className={`w-full px-4 py-3 bg-black/40 border cyber-input-font text-gray-200 focus:outline-none focus:bg-black/60 transition-all resize-none ${
-                        validationErrors.text 
-                          ? 'border-red-500/80 focus:border-red-500' 
-                          : 'border-red-500/30 focus:border-red-500/60'
-                      }`}
-                      rows={3}
-                      placeholder="Enter English sentence... (Press Enter to add)"
-                    />
-                    {validationErrors.text && (
-                      <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
-                        ⚠ {validationErrors.text}
-                      </div>
-                    )}
-                    <div className="mt-1 text-[9px] cyber-label text-red-500/50">
-                      Tip: Press Enter to add segment, Ctrl+Enter to submit
+                        REPLACE
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setJsonImportMode('append')}
+                        className={`rounded border px-3 py-1 text-xs transition-colors ${
+                          jsonImportMode === 'append'
+                            ? 'border-red-400/70 bg-red-500/20 text-red-200'
+                            : 'border-red-500/30 text-red-400/70 hover:border-red-500/50 hover:text-red-300'
+                        }`}
+                      >
+                        APPEND
+                      </button>
                     </div>
                   </div>
 
+                  <div className="rounded border border-red-500/20 bg-black/30 px-3 py-2 text-[11px] text-red-300/70">
+                    JSON files and pasted JSON are parsed locally in the browser only. They are not uploaded or stored.
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs cyber-label text-red-400/80">IMPORT FROM FILE</label>
+                    <input
+                      ref={jsonFileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleJsonFileImport}
+                      className="w-full border border-red-500/30 bg-black/40 px-4 py-3 text-gray-300 file:mr-4 file:border-0 file:bg-red-500/20 file:px-3 file:py-1 file:text-red-400"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs cyber-label text-red-400/80">OR PASTE JSON TEXT</label>
+                    <textarea
+                      value={jsonImportText}
+                      onChange={(event) => setJsonImportText(event.target.value)}
+                      rows={8}
+                      className="w-full resize-y border border-red-500/30 bg-black/40 px-4 py-3 text-sm text-gray-200 focus:border-red-500/60 focus:bg-black/60 focus:outline-none"
+                      placeholder='Paste a JSON array here, for example: [{"index":1,"en":"...","zh":"...","start":0,"end":4.5}]'
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleJsonTextImport}
+                        className="rounded border border-red-500/50 bg-red-500/10 px-4 py-2 text-xs text-red-300 transition-colors hover:border-red-500/70 hover:bg-red-500/20"
+                      >
+                        IMPORT PASTED JSON
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setJsonImportText('')}
+                        className="rounded border border-gray-600/50 px-4 py-2 text-xs text-gray-300 transition-colors hover:border-gray-500/70 hover:text-gray-100"
+                      >
+                        CLEAR TEXT
+                      </button>
+                    </div>
+                  </div>
+
+                  {jsonImportStatus ? (
+                    <div
+                      className={`rounded border px-3 py-2 text-xs ${
+                        jsonImportStatus.type === 'success'
+                          ? 'border-red-500/40 bg-red-500/10 text-red-300'
+                          : 'border-yellow-500/40 bg-yellow-500/10 text-yellow-300'
+                      }`}
+                    >
+                      {jsonImportStatus.message}
+                    </div>
+                  ) : null}
+
+                  {overlapAnalysis.messages.length > 0 ? (
+                    <div className="rounded border border-yellow-500/40 bg-yellow-500/10 px-3 py-3 text-xs text-yellow-200">
+                      <div className="font-medium text-yellow-100">
+                        Detected {overlapAnalysis.messages.length} time overlap(s).
+                      </div>
+                      <div className="mt-1 text-yellow-200/80">
+                        Highlighted segments below should be reviewed before final upload.
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {overlapAnalysis.messages.slice(0, 4).map((message) => (
+                          <div key={message}>{message}</div>
+                        ))}
+                        {overlapAnalysis.messages.length > 4 ? (
+                          <div>...and {overlapAnalysis.messages.length - 4} more</div>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
+                {sentences.length > 0 ? (
+                  <div className="mb-6 max-h-72 space-y-3 overflow-y-auto pr-2">
+                    {sentences.map((sentence, index) => {
+                      const isEditing = editingSentenceIndex === index
+                      const hasOverlap = overlapIndexSet.has(index)
+
+                      return (
+                        <div
+                          key={`${sentence.text}-${index}`}
+                          className={`rounded border p-4 transition-all ${
+                            hasOverlap
+                              ? 'border-yellow-400/60 bg-yellow-950/10 shadow-[0_0_14px_rgba(250,204,21,0.08)]'
+                              : isEditing
+                                ? 'border-red-400/70 bg-red-950/20 shadow-[0_0_16px_rgba(255,0,0,0.12)]'
+                                : 'border-red-500/20 bg-black/40 hover:border-red-500/40'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-2 flex items-center gap-2">
+                                <span className="text-xs cyber-number cyber-tabular text-red-500/70">
+                                  #{index + 1}
+                                </span>
+                                {isEditing ? (
+                                  <span className="rounded border border-red-400/50 px-2 py-0.5 text-[10px] text-red-300">
+                                    EDITING
+                                  </span>
+                                ) : null}
+                                {hasOverlap ? (
+                                  <span className="rounded border border-yellow-400/50 px-2 py-0.5 text-[10px] text-yellow-200">
+                                    TIME OVERLAP
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="text-sm text-gray-200">{sentence.text}</p>
+                              {sentence.translation ? (
+                                <p className="mt-2 text-xs text-gray-400">{sentence.translation}</p>
+                              ) : null}
+                              <p className="mt-2 text-xs text-red-500/60">
+                                TIME: [
+                                <span className="cyber-number cyber-tabular">
+                                  {sentence.startTime.toFixed(2)}
+                                </span>
+                                s -
+                                <span className="cyber-number cyber-tabular">
+                                  {sentence.endTime.toFixed(2)}
+                                </span>
+                                s]
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleEditSentence(index)}
+                                className="rounded border border-red-500/30 px-2 py-1 text-xs text-red-300 transition-colors hover:border-red-500/50 hover:text-red-200"
+                              >
+                                EDIT
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSentence(index)}
+                                className="rounded border border-red-500/30 px-2 py-1 text-xs text-red-400/70 transition-colors hover:border-red-500/50 hover:text-red-300"
+                              >
+                                DEL
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
+
+                <div className="space-y-6 rounded border border-red-500/20 bg-black/30 p-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-1 bg-red-500" />
+                      <h3 className="text-sm cyber-label text-red-400">
+                        {editingSentenceIndex === null
+                          ? 'ADD NEW SEGMENT'
+                          : `EDIT SEGMENT #${editingSentenceIndex + 1}`}
+                      </h3>
+                    </div>
+                    {editingSentenceIndex !== null ? (
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="rounded border border-gray-600/50 px-3 py-1 text-xs text-gray-300 transition-colors hover:border-gray-500/70 hover:text-gray-100"
+                      >
+                        CANCEL EDIT
+                      </button>
+                    ) : null}
+                  </div>
+
                   <div>
-                    <label className="block text-red-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
-                      <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                    <label className="mb-2 flex items-center gap-2 text-xs text-red-400/80 cyber-label">
+                      <span className="h-1 w-1 rounded-full bg-red-400" />
+                      ENGLISH TEXT *
+                    </label>
+                    <textarea
+                      ref={englishTextRef}
+                      rows={3}
+                      value={currentSentence.text}
+                      onChange={(event) => {
+                        setCurrentSentence((prev) => ({ ...prev, text: event.target.value }))
+                        setValidationErrors((prev) => ({ ...prev, text: '' }))
+                      }}
+                      className={`w-full resize-none border bg-black/40 px-4 py-3 text-gray-200 focus:bg-black/60 focus:outline-none ${
+                        validationErrors.text
+                          ? 'border-red-500/80'
+                          : 'border-red-500/30 focus:border-red-500/60'
+                      }`}
+                      placeholder="Enter English sentence... (Press Enter to add/update)"
+                    />
+                    {validationErrors.text ? (
+                      <div className="mt-1 text-xs text-red-400/80">
+                        ! {validationErrors.text}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <label className="mb-2 flex items-center gap-2 text-xs text-red-400/80 cyber-label">
+                      <span className="h-1 w-1 rounded-full bg-red-400" />
                       CHINESE TRANSLATION
                     </label>
                     <input
-                      type="text"
                       value={currentSentence.translation}
-                      onChange={(e) =>
-                        setCurrentSentence({ ...currentSentence, translation: e.target.value })
+                      onChange={(event) =>
+                        setCurrentSentence((prev) => ({
+                          ...prev,
+                          translation: event.target.value
+                        }))
                       }
-                      className="w-full px-4 py-3 bg-black/40 border border-red-500/30 cyber-input-font text-gray-200 focus:outline-none focus:border-red-500/60 focus:bg-black/60 transition-all"
+                      className="w-full border border-red-500/30 bg-black/40 px-4 py-3 text-gray-200 focus:bg-black/60 focus:border-red-500/60 focus:outline-none"
                       placeholder="Enter Chinese translation (optional)..."
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="block text-red-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
-                        <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                      <label className="mb-2 flex items-center gap-2 text-xs text-red-400/80 cyber-label">
+                        <span className="h-1 w-1 rounded-full bg-red-400" />
                         START TIME (S) *
-                        {currentSentence.startTime > 0 && (
-                          <span className="text-[9px] cyber-number cyber-tabular text-red-500/60 normal-case ml-auto">
-                            {formatTime(currentSentence.startTime)}
-                          </span>
-                        )}
+                        <span className="ml-auto text-[10px] text-red-500/60">
+                          {formatTime(currentSentence.startTime)}
+                        </span>
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -484,19 +822,16 @@ export default function UploadPage() {
                           step="0.01"
                           min="0"
                           value={currentSentence.startTime}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0
-                            setCurrentSentence({
-                              ...currentSentence,
-                              startTime: value
-                            })
-                            if (validationErrors.startTime) {
-                              setValidationErrors({ ...validationErrors, startTime: '' })
-                            }
+                          onChange={(event) => {
+                            setCurrentSentence((prev) => ({
+                              ...prev,
+                              startTime: parseFloat(event.target.value) || 0
+                            }))
+                            setValidationErrors((prev) => ({ ...prev, startTime: '' }))
                           }}
-                          className={`flex-1 px-4 py-3 bg-black/40 border cyber-number cyber-tabular text-gray-200 focus:outline-none focus:bg-black/60 transition-all ${
-                            validationErrors.startTime 
-                              ? 'border-red-500/80 focus:border-red-500' 
+                          className={`flex-1 border bg-black/40 px-4 py-3 text-gray-200 focus:bg-black/60 focus:outline-none ${
+                            validationErrors.startTime
+                              ? 'border-red-500/80'
                               : 'border-red-500/30 focus:border-red-500/60'
                           }`}
                         />
@@ -504,58 +839,50 @@ export default function UploadPage() {
                           <button
                             type="button"
                             onClick={() => adjustTime('startTime', 1)}
-                            className="px-2 py-1 text-[10px] bg-red-500/20 border border-red-500/30 cyber-button-text text-red-400 hover:bg-red-500/30 transition-colors"
-                            title="+1s"
+                            className="border border-red-500/30 bg-red-500/20 px-2 py-1 text-[10px] text-red-400"
                           >
                             +1
                           </button>
                           <button
                             type="button"
                             onClick={() => adjustTime('startTime', -1)}
-                            className="px-2 py-1 text-[10px] bg-red-500/20 border border-red-500/30 cyber-button-text text-red-400 hover:bg-red-500/30 transition-colors"
-                            title="-1s"
+                            className="border border-red-500/30 bg-red-500/20 px-2 py-1 text-[10px] text-red-400"
                           >
                             -1
                           </button>
                         </div>
                       </div>
-                      {validationErrors.startTime && (
-                        <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
-                          ⚠ {validationErrors.startTime}
+                      {validationErrors.startTime ? (
+                        <div className="mt-1 text-xs text-red-400/80">
+                          ! {validationErrors.startTime}
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
                     <div>
-                      <label className="block text-red-400/80 cyber-label text-xs mb-2 flex items-center gap-2">
-                        <span className="w-1 h-1 bg-red-400 rounded-full"></span>
+                      <label className="mb-2 flex items-center gap-2 text-xs text-red-400/80 cyber-label">
+                        <span className="h-1 w-1 rounded-full bg-red-400" />
                         END TIME (S) *
-                        {currentSentence.endTime > 0 && (
-                          <span className="text-[9px] cyber-number cyber-tabular text-red-500/60 normal-case ml-auto">
-                            {formatTime(currentSentence.endTime)}
-                          </span>
-                        )}
+                        <span className="ml-auto text-[10px] text-red-500/60">
+                          {formatTime(currentSentence.endTime)}
+                        </span>
                       </label>
                       <div className="flex gap-2">
                         <input
-                          ref={endTimeRef}
                           type="number"
                           step="0.01"
                           min={currentSentence.startTime + 0.01}
                           value={currentSentence.endTime}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value) || 0
-                            setCurrentSentence({
-                              ...currentSentence,
-                              endTime: value
-                            })
-                            if (validationErrors.endTime) {
-                              setValidationErrors({ ...validationErrors, endTime: '' })
-                            }
+                          onChange={(event) => {
+                            setCurrentSentence((prev) => ({
+                              ...prev,
+                              endTime: parseFloat(event.target.value) || 0
+                            }))
+                            setValidationErrors((prev) => ({ ...prev, endTime: '' }))
                           }}
-                          className={`flex-1 px-4 py-3 bg-black/40 border cyber-number cyber-tabular text-gray-200 focus:outline-none focus:bg-black/60 transition-all ${
-                            validationErrors.endTime 
-                              ? 'border-red-500/80 focus:border-red-500' 
+                          className={`flex-1 border bg-black/40 px-4 py-3 text-gray-200 focus:bg-black/60 focus:outline-none ${
+                            validationErrors.endTime
+                              ? 'border-red-500/80'
                               : 'border-red-500/30 focus:border-red-500/60'
                           }`}
                         />
@@ -563,80 +890,56 @@ export default function UploadPage() {
                           <button
                             type="button"
                             onClick={() => adjustTime('endTime', 1)}
-                            className="px-2 py-1 text-[10px] bg-red-500/20 border border-red-500/30 cyber-button-text text-red-400 hover:bg-red-500/30 transition-colors"
-                            title="+1s"
+                            className="border border-red-500/30 bg-red-500/20 px-2 py-1 text-[10px] text-red-400"
                           >
                             +1
                           </button>
                           <button
                             type="button"
                             onClick={() => adjustTime('endTime', -1)}
-                            className="px-2 py-1 text-[10px] bg-red-500/20 border border-red-500/30 cyber-button-text text-red-400 hover:bg-red-500/30 transition-colors"
-                            title="-1s"
+                            className="border border-red-500/30 bg-red-500/20 px-2 py-1 text-[10px] text-red-400"
                           >
                             -1
                           </button>
                         </div>
                       </div>
-                      {validationErrors.endTime && (
-                        <div className="mt-1 text-xs cyber-text text-red-400/80 animate-pulse">
-                          ⚠ {validationErrors.endTime}
+                      {validationErrors.endTime ? (
+                        <div className="mt-1 text-xs text-red-400/80">
+                          ! {validationErrors.endTime}
                         </div>
-                      )}
-                      {currentSentence.endTime <= currentSentence.startTime && currentSentence.endTime > 0 && (
-                        <div className="mt-1 text-xs cyber-text text-yellow-400/80">
-                          ⚠ End time should be greater than start time
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={handleAddSentence}
-                    className="w-full px-6 py-3 bg-red-500/10 border-2 border-red-500/50 cyber-button-text text-red-400 text-sm hover:bg-red-500/20 hover:border-red-500/70 hover:text-red-300 transition-all duration-300 relative group"
+                    className="relative w-full border-2 border-red-500/50 bg-red-500/10 px-6 py-3 text-sm text-red-400 transition-all hover:border-red-500/70 hover:bg-red-500/20 hover:text-red-300"
                   >
-                    <span className="relative z-10">+ ADD SEGMENT</span>
-                    <span className="absolute inset-0 bg-red-500/10 scale-0 group-hover:scale-100 transition-transform duration-300"></span>
-                    <span className="text-[9px] text-red-500/50 font-normal normal-case absolute right-4 top-1/2 transform -translate-y-1/2">
-                      (Enter)
-                    </span>
+                    {editingSentenceIndex === null ? '+ ADD SEGMENT' : 'UPDATE SEGMENT'}
                   </button>
                 </div>
               </div>
 
-              {/* 错误提示 */}
-              {(errors.submit || errors.sentences) && (
-                <div className="pt-4 border-t border-red-500/30">
-                  <div className="p-3 bg-red-500/10 border border-red-500/50 rounded">
-                    <div className="text-xs cyber-text text-red-400">
-                      {errors.submit && <div>⚠ {errors.submit}</div>}
-                      {errors.sentences && <div>⚠ {errors.sentences}</div>}
-                    </div>
-                  </div>
+              {errors.sentences || errors.submit ? (
+                <div className="rounded border border-red-500/50 bg-red-500/10 p-3 text-xs text-red-300">
+                  {errors.sentences ? <div>! {errors.sentences}</div> : null}
+                  {errors.submit ? <div>! {errors.submit}</div> : null}
                 </div>
-              )}
+              ) : null}
 
-              {/* 底部操作栏 */}
-              <div className="flex gap-4 pt-6 border-t-2 border-red-500/30 relative" style={{ zIndex: 100 }}>
+              <div className="flex gap-4 border-t-2 border-red-500/30 pt-6">
                 <button
                   type="submit"
                   disabled={isUploading}
-                  className="flex-1 px-8 py-4 bg-red-500/20 border-2 border-red-500/60 cyber-button-text text-red-400 text-sm hover:bg-red-500/30 hover:border-red-500/80 hover:text-red-300 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-red-500/20 disabled:hover:border-red-500/60 disabled:hover:text-red-400 cursor-pointer relative group"
-                  style={{ zIndex: 100 }}
+                  className="flex-1 border-2 border-red-500/60 bg-red-500/20 px-8 py-4 text-sm text-red-400 transition-all hover:border-red-500/80 hover:bg-red-500/30 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <span className="relative z-10">{isUploading ? '[ UPLOADING... ]' : '[ SUBMIT ]'}</span>
-                  {!isUploading && (
-                    <span className="text-[9px] text-red-500/50 font-normal normal-case absolute right-4 top-1/2 transform -translate-y-1/2">
-                      (Ctrl+Enter)
-                    </span>
-                  )}
+                  {isUploading ? '[ UPLOADING... ]' : '[ SUBMIT ]'}
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push('/')}
-                  className="px-8 py-4 bg-black/40 border-2 border-gray-600/50 cyber-button-text text-gray-400 text-sm hover:bg-black/60 hover:border-gray-500/70 hover:text-gray-300 transition-all duration-300 cursor-pointer relative"
-                  style={{ zIndex: 100 }}
+                  className="border-2 border-gray-600/50 bg-black/40 px-8 py-4 text-sm text-gray-400 transition-all hover:border-gray-500/70 hover:bg-black/60 hover:text-gray-300"
                 >
                   [ CANCEL ]
                 </button>
