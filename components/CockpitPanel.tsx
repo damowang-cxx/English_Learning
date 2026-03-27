@@ -8,7 +8,7 @@ import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
 import { useFocusMode } from '@/contexts/FocusModeContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
-import { formatDurationToClock, STREAK_THRESHOLD_SECONDS, toLocalDateKey } from '@/lib/learning-stats'
+import { HOME_HEATMAP_DAYS, formatDurationToClock, STREAK_THRESHOLD_SECONDS, toLocalDateKey } from '@/lib/learning-stats'
 
 const DEFAULT_DOCK_SCALE = 0.5
 const TRAINING_DOCK_SCALE = 0.62
@@ -35,6 +35,7 @@ interface LearningHeatmapDay {
 interface LearningStatsOverview {
   todayStudySeconds: number
   currentStreakDays: number
+  yearCheckInDays: number
   streakThresholdSeconds: number
   heatmapDays: LearningHeatmapDay[]
 }
@@ -48,6 +49,7 @@ interface LearningHeatmapTooltipState {
 const DEFAULT_LEARNING_OVERVIEW: LearningStatsOverview = {
   todayStudySeconds: 0,
   currentStreakDays: 0,
+  yearCheckInDays: 0,
   streakThresholdSeconds: STREAK_THRESHOLD_SECONDS,
   heatmapDays: [],
 }
@@ -59,6 +61,11 @@ const HEATMAP_LEVEL_CLASS: Record<LearningHeatmapDay['level'], string> = {
   3: 'bg-cyan-500/58 border-cyan-400/75 shadow-[0_0_12px_rgba(34,211,238,0.18)]',
   4: 'bg-cyan-300/82 border-cyan-100/80 shadow-[0_0_16px_rgba(103,232,249,0.28)]',
 }
+const HEATMAP_CELL_SIZE_PX = 14
+const HEATMAP_CELL_GAP_PX = 4
+const HEATMAP_LABEL_COLUMN_WIDTH_PX = 24
+const HEATMAP_LABEL_GRID_GAP_PX = 6
+const HEATMAP_EDGE_SAFE_PADDING_PX = 8
 
 function buildHeatmapWeekColumns(days: LearningHeatmapDay[]): LearningHeatmapDay[][] {
   if (days.length === 0) {
@@ -84,6 +91,18 @@ function formatHeatmapDateLabel(dateKey: string) {
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+function formatDashboardStudyDuration(totalSeconds: number) {
+  const safeSeconds = Number.isFinite(totalSeconds) ? Math.max(0, Math.floor(totalSeconds)) : 0
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+
+  if (hours <= 0) {
+    return `${minutes}min`
+  }
+
+  return `${hours}h:${minutes}min`
 }
 
 // -----------------------------------------------------------------------------
@@ -197,6 +216,9 @@ export default function CockpitPanel() {
   const [loadingItems, setLoadingItems] = useState(false)
   const [learningOverview, setLearningOverview] = useState<LearningStatsOverview>(DEFAULT_LEARNING_OVERVIEW)
   const [heatmapTooltip, setHeatmapTooltip] = useState<LearningHeatmapTooltipState | null>(null)
+  const [heatmapScale, setHeatmapScale] = useState(1)
+  const [heatmapViewportHeight, setHeatmapViewportHeight] = useState(0)
+  const [heatmapVerticalOverflow, setHeatmapVerticalOverflow] = useState(0)
   
   // 左侧仪表盘动态数值状态
   const [speed, setSpeed] = useState(2997)
@@ -251,6 +273,7 @@ export default function CockpitPanel() {
     () => buildHeatmapWeekColumns(learningOverview.heatmapDays),
     [learningOverview.heatmapDays],
   )
+  const learningTodayDateKey = React.useMemo(() => toLocalDateKey(new Date()), [])
   const learningHeatmapWeekRowLabels = React.useMemo(() => {
     const firstColumn = learningHeatmapColumns[0]
     if (!firstColumn) {
@@ -272,6 +295,41 @@ export default function CockpitPanel() {
     }
     return map
   }, [learningHeatmapColumns])
+  const heatmapViewportRef = React.useRef<HTMLDivElement>(null)
+  const heatmapBaseWidth = React.useMemo(() => {
+    if (learningHeatmapColumns.length === 0) {
+      return 0
+    }
+
+    return (
+      HEATMAP_LABEL_COLUMN_WIDTH_PX
+      + HEATMAP_LABEL_GRID_GAP_PX
+      + learningHeatmapColumns.length * HEATMAP_CELL_SIZE_PX
+      + Math.max(learningHeatmapColumns.length - 1, 0) * HEATMAP_CELL_GAP_PX
+    )
+  }, [learningHeatmapColumns.length])
+  const heatmapBaseHeight = React.useMemo(
+    () => (7 * HEATMAP_CELL_SIZE_PX) + (6 * HEATMAP_CELL_GAP_PX),
+    []
+  )
+  const todayHeatmapRowIndex = React.useMemo(() => {
+    const index = learningOverview.heatmapDays.findIndex((day) => day.dateKey === learningTodayDateKey)
+    if (index === -1) {
+      return Math.max(0, learningOverview.heatmapDays.length - 1) % 7
+    }
+    return index % 7
+  }, [learningOverview.heatmapDays, learningTodayDateKey])
+  const scaledHeatmapHeight = React.useMemo(
+    () => heatmapBaseHeight * heatmapScale,
+    [heatmapBaseHeight, heatmapScale]
+  )
+  const heatmapStaticYOffset = React.useMemo(() => {
+    if (heatmapVerticalOverflow > 0) {
+      return 0
+    }
+
+    return Math.max(0, (heatmapViewportHeight - scaledHeatmapHeight) / 2)
+  }, [heatmapVerticalOverflow, heatmapViewportHeight, scaledHeatmapHeight])
 
   useEffect(() => {
     if (!isTrainingPage && isDictationMode) {
@@ -290,6 +348,62 @@ export default function CockpitPanel() {
       setHeatmapTooltip(null)
     }
   }, [isHomePage, heatmapTooltip])
+
+  useEffect(() => {
+    if (!isHomePage || !heatmapViewportRef.current || !heatmapBaseWidth || !heatmapBaseHeight) {
+      setHeatmapScale(1)
+      return
+    }
+
+    const viewport = heatmapViewportRef.current
+
+    const updateHeatmapScale = () => {
+      const viewportWidth = Math.max(0, viewport.clientWidth - (HEATMAP_EDGE_SAFE_PADDING_PX * 2))
+      const viewportHeight = viewport.clientHeight
+      const nextScale = viewportWidth > 0 && heatmapBaseWidth > 0
+        ? viewportWidth / heatmapBaseWidth
+        : 1
+      const nextScaledHeight = heatmapBaseHeight * nextScale
+
+      setHeatmapViewportHeight(viewportHeight)
+      setHeatmapScale(nextScale)
+      setHeatmapVerticalOverflow(Math.max(0, nextScaledHeight - viewportHeight))
+    }
+
+    updateHeatmapScale()
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateHeatmapScale()
+    })
+
+    resizeObserver.observe(viewport)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [isHomePage, heatmapBaseWidth, heatmapBaseHeight])
+
+  useEffect(() => {
+    if (!isHomePage || !heatmapViewportRef.current) {
+      return
+    }
+
+    const viewport = heatmapViewportRef.current
+
+    if (heatmapVerticalOverflow <= 1) {
+      viewport.scrollTop = 0
+      return
+    }
+
+    const scaledCellPitch = (HEATMAP_CELL_SIZE_PX + HEATMAP_CELL_GAP_PX) * heatmapScale
+    const scaledCellSize = HEATMAP_CELL_SIZE_PX * heatmapScale
+    const targetCenterY = (todayHeatmapRowIndex * scaledCellPitch) + (scaledCellSize / 2)
+    const visibleHeight = Math.max(0, viewport.clientHeight - (HEATMAP_EDGE_SAFE_PADDING_PX * 2))
+    const desiredScrollTop = Math.max(0, targetCenterY - (visibleHeight / 2))
+    const maxScrollTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight)
+
+    viewport.scrollTop = Math.min(maxScrollTop, desiredScrollTop)
+  }, [isHomePage, heatmapVerticalOverflow, heatmapScale, todayHeatmapRowIndex])
   
   // 监听路由变化，控制动画阶段
   useEffect(() => {
@@ -572,7 +686,7 @@ export default function CockpitPanel() {
     try {
       const dateKey = toLocalDateKey(new Date())
       const response = await fetch(
-        withBasePath(`/api/learning-stats/overview?days=365&todayDateKey=${encodeURIComponent(dateKey)}`),
+        withBasePath(`/api/learning-stats/overview?days=${HOME_HEATMAP_DAYS}&todayDateKey=${encodeURIComponent(dateKey)}`),
         { cache: 'no-store' },
       )
 
@@ -584,6 +698,7 @@ export default function CockpitPanel() {
       setLearningOverview({
         todayStudySeconds: payload.todayStudySeconds || 0,
         currentStreakDays: payload.currentStreakDays || 0,
+        yearCheckInDays: payload.yearCheckInDays || 0,
         streakThresholdSeconds: payload.streakThresholdSeconds || STREAK_THRESHOLD_SECONDS,
         heatmapDays: Array.isArray(payload.heatmapDays) ? payload.heatmapDays : [],
       })
@@ -673,90 +788,169 @@ export default function CockpitPanel() {
         ></div>
 
         {/* 左侧仪表板 - 超强优化版 */}
-        <div className="w-[30%] h-[80%] bg-gradient-to-br from-black/70 via-slate-950/70 to-black/70 backdrop-blur-md border-2 border-cyan-700/50 p-5 relative rounded-tr-3xl overflow-hidden shadow-[0_0_24px_rgba(34,211,238,0.12),inset_0_0_18px_rgba(34,211,238,0.06)]">
+        <div
+          className="w-[30%] h-[80%] self-end bg-gradient-to-br from-black/70 via-slate-950/70 to-black/70 backdrop-blur-md border-2 border-cyan-700/50 relative rounded-tr-3xl overflow-hidden shadow-[0_0_24px_rgba(34,211,238,0.12),inset_0_0_18px_rgba(34,211,238,0.06)]"
+          style={{ padding: 'clamp(0.72rem, 0.88vw, 0.95rem)' }}
+        >
           <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(0deg,transparent_48%,rgba(34,211,238,.05)_49%,rgba(34,211,238,.05)_51%,transparent_52%),linear-gradient(90deg,transparent_48%,rgba(34,211,238,.05)_49%,rgba(34,211,238,.05)_51%,transparent_52%)] bg-[length:10px_10px] opacity-30" />
           <div className="absolute top-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400/70 to-transparent" />
-          <div className="relative z-10 flex h-full flex-col">
-            <div className="mb-3 flex items-center justify-between border-b border-cyan-700/40 pb-2">
+          <div
+            className="relative z-10 flex h-full flex-col"
+            style={{ gap: 'clamp(0.58rem, 0.95vh, 0.88rem)' }}
+          >
+            <div className="flex items-center justify-between border-b border-cyan-700/40 pb-1.5">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(34,211,238,0.7)]" />
                 <h3 className="font-mono text-xs tracking-[0.18em] text-cyan-300">LEARNING DASHBOARD</h3>
               </div>
-              <span className="font-mono text-[10px] text-cyan-500">365D</span>
+              <span className="font-mono text-[10px] text-cyan-500">{Math.round(HOME_HEATMAP_DAYS / 7)}W</span>
             </div>
 
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <div className="rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="rounded border border-cyan-700/30 bg-black/35 px-2 py-1.5">
                 <div className="font-mono text-[9px] tracking-[0.16em] text-cyan-500">TODAY</div>
-                <div className="mt-1 font-mono text-xl font-semibold text-cyan-200">
-                  {formatDurationToClock(learningOverview.todayStudySeconds)}
+                <div className="mt-0.5 font-mono text-[1.05rem] font-semibold leading-none text-cyan-200">
+                  {formatDashboardStudyDuration(learningOverview.todayStudySeconds)}
                 </div>
               </div>
-              <div className="rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
+              <div className="rounded border border-cyan-700/30 bg-black/35 px-2 py-1.5">
                 <div className="font-mono text-[9px] tracking-[0.16em] text-cyan-500">STREAK</div>
-                <div className="mt-1 font-mono text-xl font-semibold text-cyan-200">
-                  {learningOverview.currentStreakDays}d
+                <div className="mt-0.5 font-mono text-[1.05rem] font-semibold leading-none text-cyan-200">
+                  {learningOverview.currentStreakDays}day
                 </div>
                 <div className="font-mono text-[9px] text-cyan-500/80">&gt;=20m/day</div>
               </div>
+              <div className="rounded border border-cyan-700/30 bg-black/35 px-2 py-1.5">
+                <div className="font-mono text-[9px] tracking-[0.16em] text-cyan-500">YEAR</div>
+                <div className="mt-0.5 font-mono text-[1.05rem] font-semibold leading-none text-cyan-200">
+                  {learningOverview.yearCheckInDays}day
+                </div>
+                <div className="font-mono text-[9px] text-cyan-500/80">qualified</div>
+              </div>
             </div>
 
-            <div className="min-h-0 flex-1 rounded border border-cyan-700/30 bg-black/35 px-2.5 py-2">
-              <div className="mb-2 flex items-center justify-between">
+            <div
+              className="flex min-h-0 flex-1 flex-col rounded border border-cyan-700/30 bg-black/35"
+              style={{
+                paddingInline: 'clamp(0.55rem, 0.72vw, 0.76rem)',
+                paddingBlock: 'clamp(0.62rem, 0.9vh, 0.8rem)',
+              }}
+            >
+              <div className="mb-1.5 flex items-center justify-between">
                 <div className="font-mono text-[10px] tracking-[0.16em] text-cyan-400">CONTRIBUTIONS</div>
-                <div className="font-mono text-[9px] text-cyan-500">LEVEL 0-4</div>
+                <div className="font-mono text-[9px] text-cyan-500">RECENT 12W</div>
               </div>
               {learningHeatmapColumns.length === 0 ? (
-                <div className="flex h-[116px] items-center justify-center font-mono text-[10px] text-cyan-600/70">
-                  NO STUDY DATA YET
+                <div className="relative min-h-0 flex-1 overflow-hidden rounded border border-cyan-900/35 bg-slate-950/35">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-cyan-300/10 via-cyan-400/5 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-4 bottom-0 h-8 bg-gradient-to-t from-cyan-300/10 via-cyan-400/5 to-transparent" />
+                  <div className="flex h-full min-h-[88px] items-center justify-center font-mono text-[10px] text-cyan-600/70">
+                    NO STUDY DATA YET
+                  </div>
                 </div>
               ) : (
-                <div className="min-h-0 overflow-hidden rounded border border-cyan-900/35 bg-slate-950/35 px-2 py-2 shadow-[inset_0_0_0_1px_rgba(8,145,178,0.05)]">
-                  <div className="flex items-start gap-2.5">
-                    <div className="flex flex-col gap-1">
-                      {Array.from({ length: 7 }).map((_, rowIndex) => (
+                <div
+                  className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-cyan-900/35 bg-slate-950/35 shadow-[inset_0_0_0_1px_rgba(8,145,178,0.05)]"
+                  style={{
+                    paddingInline: 'clamp(0.38rem, 0.55vw, 0.54rem)',
+                    paddingBlock: 'clamp(0.48rem, 0.72vh, 0.66rem)',
+                  }}
+                >
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-cyan-300/10 via-cyan-400/5 to-transparent" />
+                  <div className="pointer-events-none absolute inset-x-6 bottom-0 h-6 bg-gradient-to-t from-cyan-300/10 via-cyan-400/5 to-transparent" />
+                  <div
+                    ref={heatmapViewportRef}
+                    className="cockpit-heatmap-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+                    style={{
+                      padding: `${HEATMAP_EDGE_SAFE_PADDING_PX}px`,
+                    }}
+                  >
+                    <div
+                      className="relative w-full"
+                      style={
+                        {
+                          height: `${Math.max(scaledHeatmapHeight + heatmapStaticYOffset, heatmapViewportHeight - (HEATMAP_EDGE_SAFE_PADDING_PX * 2))}px`,
+                        }
+                      }
+                    >
+                      <div
+                        className="absolute left-0"
+                        style={{
+                          top: `${heatmapStaticYOffset}px`,
+                          width: `${heatmapBaseWidth * heatmapScale}px`,
+                          height: `${scaledHeatmapHeight}px`,
+                        }}
+                      >
                         <div
-                          key={`heatmap-week-label-${rowIndex}`}
-                          className="flex h-3.5 w-8 items-center justify-center"
+                          className="relative flex items-start"
+                          style={{
+                          width: `${heatmapBaseWidth}px`,
+                          height: `${heatmapBaseHeight}px`,
+                          gap: `${HEATMAP_LABEL_GRID_GAP_PX}px`,
+                          transform: `scale(${heatmapScale})`,
+                          transformOrigin: 'top left',
+                        }}
                         >
-                          {learningHeatmapWeekRowLabels.has(rowIndex) ? (
-                            <span className="rounded-full border border-cyan-800/55 bg-cyan-950/55 px-1.5 py-[1px] font-mono text-[7px] font-semibold tracking-[0.18em] text-cyan-300/85 shadow-[inset_0_0_6px_rgba(34,211,238,0.08)]">
-                              {learningHeatmapWeekRowLabels.get(rowIndex)}
-                            </span>
-                          ) : (
-                            <span className="h-[1px] w-3 rounded-full bg-cyan-950/60" />
-                          )}
+                          <div className="flex shrink-0 flex-col" style={{ width: `${HEATMAP_LABEL_COLUMN_WIDTH_PX}px`, gap: `${HEATMAP_CELL_GAP_PX}px` }}>
+                            {Array.from({ length: 7 }).map((_, rowIndex) => (
+                              <div
+                                key={`heatmap-week-label-${rowIndex}`}
+                                className="flex items-center justify-center"
+                                style={{ height: `${HEATMAP_CELL_SIZE_PX}px` }}
+                              >
+                                {learningHeatmapWeekRowLabels.has(rowIndex) ? (
+                                  <span className="rounded-full border border-cyan-800/55 bg-cyan-950/55 px-1 py-[1px] font-mono text-[7px] font-semibold tracking-[0.12em] text-cyan-300/85 shadow-[inset_0_0_6px_rgba(34,211,238,0.08)]">
+                                    {learningHeatmapWeekRowLabels.get(rowIndex)}
+                                  </span>
+                                ) : (
+                                  <span className="h-[1px] w-2 rounded-full bg-cyan-950/60" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="grid grid-flow-col auto-cols-max" style={{ columnGap: `${HEATMAP_CELL_GAP_PX}px` }}>
+                            {learningHeatmapColumns.map((column, columnIndex) => (
+                              <div
+                                key={`heatmap-col-${columnIndex}`}
+                                className="relative flex flex-col"
+                                style={{ rowGap: `${HEATMAP_CELL_GAP_PX}px` }}
+                              >
+                              {column.map((day) => {
+                                const isQualifiedDay = day.seconds >= learningOverview.streakThresholdSeconds
+
+                                return (
+                                  <div
+                                    key={day.dateKey}
+                                    onMouseEnter={(event) => {
+                                      setHeatmapTooltip({
+                                        day,
+                                        x: event.clientX,
+                                        y: event.clientY,
+                                      })
+                                    }}
+                                    onMouseMove={(event) => {
+                                      setHeatmapTooltip({
+                                        day,
+                                        x: event.clientX,
+                                        y: event.clientY,
+                                      })
+                                    }}
+                                    onMouseLeave={() => {
+                                      setHeatmapTooltip(null)
+                                    }}
+                                    className={`cursor-default rounded-[4px] border ${HEATMAP_LEVEL_CLASS[day.level]} ${isQualifiedDay ? 'cockpit-heatmap-day-qualified' : ''} ${day.dateKey === learningTodayDateKey ? 'ring-1 ring-cyan-200/80 ring-offset-1 ring-offset-slate-950/80' : ''} transition-all duration-150 hover:-translate-y-[1px] hover:scale-[1.08] hover:border-cyan-100/80`}
+                                    style={{
+                                      width: `${HEATMAP_CELL_SIZE_PX}px`,
+                                      height: `${HEATMAP_CELL_SIZE_PX}px`,
+                                    }}
+                                  />
+                                )
+                              })}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex h-[116px] items-start gap-1">
-                      {learningHeatmapColumns.map((column, columnIndex) => (
-                        <div key={`heatmap-col-${columnIndex}`} className="relative flex flex-col gap-1">
-                          {column.map((day) => (
-                            <div
-                              key={day.dateKey}
-                              onMouseEnter={(event) => {
-                                setHeatmapTooltip({
-                                  day,
-                                  x: event.clientX,
-                                  y: event.clientY,
-                                })
-                              }}
-                              onMouseMove={(event) => {
-                                setHeatmapTooltip({
-                                  day,
-                                  x: event.clientX,
-                                  y: event.clientY,
-                                })
-                              }}
-                              onMouseLeave={() => {
-                                setHeatmapTooltip(null)
-                              }}
-                              className={`h-3.5 w-3.5 cursor-default rounded-[4px] border ${HEATMAP_LEVEL_CLASS[day.level]} transition-all duration-150 hover:-translate-y-[1px] hover:scale-[1.08] hover:border-cyan-100/80`}
-                            />
-                          ))}
-                        </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>

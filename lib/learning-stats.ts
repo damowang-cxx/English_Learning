@@ -1,5 +1,6 @@
 export const DEFAULT_LEARNING_USER_ID = 'default'
 export const DEFAULT_HEATMAP_DAYS = 365
+export const HOME_HEATMAP_DAYS = 84
 export const MIN_HEATMAP_DAYS = 30
 export const MAX_HEATMAP_DAYS = 730
 export const STREAK_THRESHOLD_SECONDS = 20 * 60
@@ -15,6 +16,7 @@ export interface LearningHeatmapDay {
 export interface LearningStatsOverview {
   todayStudySeconds: number
   currentStreakDays: number
+  yearCheckInDays: number
   streakThresholdSeconds: number
   heatmapDays: LearningHeatmapDay[]
 }
@@ -94,4 +96,9 @@ export function formatDurationToClock(totalSeconds: number): string {
   const hours = Math.floor(safeSeconds / 3600)
   const minutes = Math.floor((safeSeconds % 3600) / 60)
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
+export function getYearStartDateKey(dateKey: string): string {
+  const [year] = dateKey.split('-')
+  return `${year}-01-01`
 }

@@ -121,6 +121,10 @@ const VOCABULARY_POS_OPTIONS = [
 ] as const
 
 const PLAYER_VISUALIZER_BARS = [28, 46, 34, 58, 42, 66, 38, 62, 36, 54, 30, 48]
+const LEARNING_HEARTBEAT_INTERVAL_MS = 10000
+const DICTATION_ACTIVITY_WINDOW_MS = 8000
+const REVIEW_ACTIVITY_WINDOW_MS = 30000
+const CONTINUOUS_STUDY_ACTIVITY_THROTTLE_MS = 1500
 
 function createEmptyDictationRevealModes(model: DictationSentenceModel): DictationRevealMode[] {
   return model.words.map(() => 'hidden')
@@ -311,6 +315,9 @@ export default function TrainingDetailPage() {
   const isPlayingRef = useRef(false)
   const isDictationModeRef = useRef(false)
   const lastDictationInputAtRef = useRef(0)
+  const lastStudyActivityAtRef = useRef(0)
+  const lastContinuousStudyActivityAtRef = useRef(0)
+  const windowFocusedRef = useRef(typeof document !== 'undefined' ? document.hasFocus() : true)
 
   useEffect(() => {
     fetchTrainingItem()
@@ -389,8 +396,29 @@ export default function TrainingDetailPage() {
     isDictationModeRef.current = isDictationMode
   }, [isDictationMode])
 
+  const markStudyActivity = useEffectEvent((mode: 'instant' | 'continuous' = 'instant') => {
+    if (!item || isEditing || document.hidden || !windowFocusedRef.current) {
+      return
+    }
+
+    const now = Date.now()
+
+    if (
+      mode === 'continuous'
+      && now - lastContinuousStudyActivityAtRef.current < CONTINUOUS_STUDY_ACTIVITY_THROTTLE_MS
+    ) {
+      return
+    }
+
+    if (mode === 'continuous') {
+      lastContinuousStudyActivityAtRef.current = now
+    }
+
+    lastStudyActivityAtRef.current = now
+  })
+
   const pushLearningHeartbeat = useEffectEvent(async () => {
-    if (!item || heartbeatInFlightRef.current) {
+    if (!item || isEditing || heartbeatInFlightRef.current) {
       return
     }
 
@@ -399,16 +427,18 @@ export default function TrainingDetailPage() {
     const elapsedSeconds = Math.floor((now - lastTickAt) / 1000)
     heartbeatLastTickAtRef.current = now
 
-    if (elapsedSeconds <= 0 || document.hidden) {
+    if (elapsedSeconds <= 0 || document.hidden || !windowFocusedRef.current) {
       return
     }
 
     const isAudioActive = isPlayingRef.current
     const isDictationActive =
       isDictationModeRef.current
-      && (now - lastDictationInputAtRef.current) <= 8000
+      && (now - lastDictationInputAtRef.current) <= DICTATION_ACTIVITY_WINDOW_MS
+    const isReviewActive =
+      (now - lastStudyActivityAtRef.current) <= REVIEW_ACTIVITY_WINDOW_MS
 
-    if (!isAudioActive && !isDictationActive) {
+    if (!isAudioActive && !isDictationActive && !isReviewActive) {
       return
     }
 
@@ -438,26 +468,81 @@ export default function TrainingDetailPage() {
       return
     }
 
-    heartbeatLastTickAtRef.current = Date.now()
+    const initializeActivityWindow = () => {
+      const now = Date.now()
+      heartbeatLastTickAtRef.current = now
+      lastStudyActivityAtRef.current = now
+      lastContinuousStudyActivityAtRef.current = now
+    }
+
+    initializeActivityWindow()
+    windowFocusedRef.current = document.hasFocus()
 
     const timer = window.setInterval(() => {
       void pushLearningHeartbeat()
-    }, 10000)
+    }, LEARNING_HEARTBEAT_INTERVAL_MS)
 
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        heartbeatLastTickAtRef.current = Date.now()
+      heartbeatLastTickAtRef.current = Date.now()
+
+      if (!document.hidden && document.hasFocus()) {
+        windowFocusedRef.current = true
+        lastStudyActivityAtRef.current = heartbeatLastTickAtRef.current
       }
     }
 
+    const handleWindowFocus = () => {
+      windowFocusedRef.current = true
+      initializeActivityWindow()
+    }
+
+    const handleWindowBlur = () => {
+      windowFocusedRef.current = false
+      heartbeatLastTickAtRef.current = Date.now()
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleWindowFocus)
+    window.addEventListener('blur', handleWindowBlur)
 
     return () => {
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleWindowFocus)
+      window.removeEventListener('blur', handleWindowBlur)
       heartbeatLastTickAtRef.current = null
+      lastStudyActivityAtRef.current = 0
+      lastContinuousStudyActivityAtRef.current = 0
     }
-  }, [item?.id])
+  }, [item, isEditing])
+
+  useEffect(() => {
+    if (!item || isEditing) {
+      return
+    }
+
+    const handleContinuousActivity = () => {
+      markStudyActivity('continuous')
+    }
+
+    const handleInstantActivity = () => {
+      markStudyActivity('instant')
+    }
+
+    window.addEventListener('pointermove', handleContinuousActivity, { passive: true })
+    window.addEventListener('wheel', handleContinuousActivity, { passive: true })
+    window.addEventListener('touchstart', handleInstantActivity, { passive: true })
+    window.addEventListener('click', handleInstantActivity, true)
+    window.addEventListener('keydown', handleInstantActivity, true)
+
+    return () => {
+      window.removeEventListener('pointermove', handleContinuousActivity)
+      window.removeEventListener('wheel', handleContinuousActivity)
+      window.removeEventListener('touchstart', handleInstantActivity)
+      window.removeEventListener('click', handleInstantActivity, true)
+      window.removeEventListener('keydown', handleInstantActivity, true)
+    }
+  }, [item, isEditing])
 
   useEffect(() => (
     () => {

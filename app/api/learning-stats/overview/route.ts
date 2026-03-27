@@ -6,6 +6,7 @@ import {
   DEFAULT_HEATMAP_DAYS,
   DEFAULT_LEARNING_USER_ID,
   getHeatmapLevel,
+  getYearStartDateKey,
   isValidDateKey,
   shiftDateKey,
   STREAK_THRESHOLD_SECONDS,
@@ -52,8 +53,9 @@ export async function GET(request: NextRequest) {
     const todayDateKey = providedTodayDateKey && isValidDateKey(providedTodayDateKey)
       ? providedTodayDateKey
       : toLocalDateKey()
+    const yearStartDateKey = getYearStartDateKey(todayDateKey)
 
-    const [heatmapStats, streakStats] = await Promise.all([
+    const [heatmapStats, streakStats, yearStats] = await Promise.all([
       prisma.learningDailyStat.findMany({
         where: {
           userId,
@@ -79,6 +81,18 @@ export async function GET(request: NextRequest) {
           studySeconds: true,
         },
       }),
+      prisma.learningDailyStat.findMany({
+        where: {
+          userId,
+          dateKey: {
+            gte: yearStartDateKey,
+            lte: todayDateKey,
+          },
+        },
+        select: {
+          studySeconds: true,
+        },
+      }),
     ])
 
     const heatmapMap = new Map<string, number>()
@@ -100,9 +114,18 @@ export async function GET(request: NextRequest) {
       streakMap.set(stat.dateKey, stat.studySeconds)
     }
 
+    const yearCheckInDays = yearStats.reduce((count, stat) => {
+      if (stat.studySeconds >= STREAK_THRESHOLD_SECONDS) {
+        return count + 1
+      }
+
+      return count
+    }, 0)
+
     const overview: LearningStatsOverview = {
       todayStudySeconds: streakMap.get(todayDateKey) || 0,
       currentStreakDays: calculateCurrentStreak(streakMap, todayDateKey),
+      yearCheckInDays,
       streakThresholdSeconds: STREAK_THRESHOLD_SECONDS,
       heatmapDays,
     }

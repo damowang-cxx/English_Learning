@@ -102,6 +102,102 @@ body::-webkit-scrollbar {
   pointer-events: none;
 }
 
+.cockpit-heatmap-scroll {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.cockpit-heatmap-scroll::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent !important;
+}
+
+@keyframes cockpit-heatmap-core-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(125, 211, 252, 0.26),
+      0 0 10px rgba(56, 189, 248, 0.3),
+      0 0 20px rgba(59, 130, 246, 0.22),
+      0 0 34px rgba(14, 165, 233, 0.14);
+    filter: saturate(1.18) brightness(1.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(224, 242, 254, 0.42),
+      0 0 14px rgba(103, 232, 249, 0.42),
+      0 0 28px rgba(56, 189, 248, 0.34),
+      0 0 42px rgba(59, 130, 246, 0.28),
+      0 0 60px rgba(14, 165, 233, 0.18);
+    filter: saturate(1.34) brightness(1.22);
+  }
+}
+
+@keyframes cockpit-heatmap-current-flicker {
+  0%, 100% {
+    opacity: 0.58;
+    box-shadow:
+      0 0 5px rgba(96, 165, 250, 0.28),
+      0 0 12px rgba(56, 189, 248, 0.18);
+  }
+  47% {
+    opacity: 0.82;
+    box-shadow:
+      0 0 8px rgba(186, 230, 253, 0.42),
+      0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    opacity: 0.34;
+    box-shadow:
+      0 0 3px rgba(96, 165, 250, 0.16),
+      0 0 8px rgba(37, 99, 235, 0.12);
+  }
+  54% {
+    opacity: 0.96;
+    box-shadow:
+      0 0 10px rgba(191, 219, 254, 0.5),
+      0 0 22px rgba(56, 189, 248, 0.34);
+  }
+}
+
+.cockpit-heatmap-day-qualified {
+  position: relative;
+  overflow: visible;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.72) 0%, rgba(224, 242, 254, 0.48) 14%, rgba(125, 211, 252, 0.28) 28%, rgba(125, 211, 252, 0) 54%),
+    linear-gradient(180deg, rgba(239, 246, 255, 0.26) 0%, rgba(239, 246, 255, 0.05) 24%, transparent 56%),
+    linear-gradient(135deg, rgba(56, 189, 248, 1) 0%, rgba(14, 165, 233, 0.98) 52%, rgba(34, 211, 238, 0.94) 100%) !important;
+  border-color: rgba(239, 246, 255, 0.96) !important;
+  animation: cockpit-heatmap-core-glow 4.4s ease-in-out infinite;
+  box-shadow:
+    inset 0 0 18px rgba(239, 246, 255, 0.24),
+    inset 0 0 28px rgba(125, 211, 252, 0.12);
+}
+
+.cockpit-heatmap-day-qualified::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 6px;
+  border: 1px solid rgba(191, 219, 254, 0.34);
+  opacity: 0.72;
+  pointer-events: none;
+  animation: cockpit-heatmap-current-flicker 5.8s ease-in-out infinite;
+}
+
+.cockpit-heatmap-day-qualified::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 44%, transparent 78%),
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.34) 0%, rgba(224, 242, 254, 0.12) 16%, rgba(224, 242, 254, 0) 36%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
 /* 赛博朋克风格的滚动条 */
 ::-webkit-scrollbar {
   width: 8px;
