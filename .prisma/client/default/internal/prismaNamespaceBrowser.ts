@@ -54,6 +54,10 @@ export const ModelName = {
   TrainingItem: 'TrainingItem',
   Sentence: 'Sentence',
   UserNote: 'UserNote',
+  VideoTrainingItem: 'VideoTrainingItem',
+  VideoCaption: 'VideoCaption',
+  VideoCharacter: 'VideoCharacter',
+  VideoPhraseNote: 'VideoPhraseNote',
   LearningDailyStat: 'LearningDailyStat'
 } as const
 
@@ -105,6 +109,62 @@ export const UserNoteScalarFieldEnum = {
 } as const
 
 export type UserNoteScalarFieldEnum = (typeof UserNoteScalarFieldEnum)[keyof typeof UserNoteScalarFieldEnum]
+
+
+export const VideoTrainingItemScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  sourceTitle: 'sourceTitle',
+  plotSummary: 'plotSummary',
+  tag: 'tag',
+  mediaType: 'mediaType',
+  mediaUrl: 'mediaUrl',
+  coverUrl: 'coverUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VideoTrainingItemScalarFieldEnum = (typeof VideoTrainingItemScalarFieldEnum)[keyof typeof VideoTrainingItemScalarFieldEnum]
+
+
+export const VideoCaptionScalarFieldEnum = {
+  id: 'id',
+  videoTrainingItemId: 'videoTrainingItemId',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  enText: 'enText',
+  zhText: 'zhText',
+  speaker: 'speaker',
+  isKeySentence: 'isKeySentence',
+  order: 'order'
+} as const
+
+export type VideoCaptionScalarFieldEnum = (typeof VideoCaptionScalarFieldEnum)[keyof typeof VideoCaptionScalarFieldEnum]
+
+
+export const VideoCharacterScalarFieldEnum = {
+  id: 'id',
+  videoTrainingItemId: 'videoTrainingItemId',
+  name: 'name',
+  avatarUrl: 'avatarUrl',
+  order: 'order'
+} as const
+
+export type VideoCharacterScalarFieldEnum = (typeof VideoCharacterScalarFieldEnum)[keyof typeof VideoCharacterScalarFieldEnum]
+
+
+export const VideoPhraseNoteScalarFieldEnum = {
+  id: 'id',
+  videoTrainingItemId: 'videoTrainingItemId',
+  captionId: 'captionId',
+  phrase: 'phrase',
+  note: 'note',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VideoPhraseNoteScalarFieldEnum = (typeof VideoPhraseNoteScalarFieldEnum)[keyof typeof VideoPhraseNoteScalarFieldEnum]
 
 
 export const LearningDailyStatScalarFieldEnum = {

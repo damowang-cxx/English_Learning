@@ -23,7 +23,9 @@ interface TrainingItem {
   id: string
   title: string
   createdAt: string
-  sentences: Array<{ id: string }>
+  sentences?: Array<{ id: string }>
+  captionsCount?: number
+  tag?: string
 }
 
 interface LearningHeatmapDay {
@@ -232,8 +234,9 @@ export default function CockpitPanel() {
   const [uptimeHours, setUptimeHours] = useState(24)
   const [uptimeMinutes, setUptimeMinutes] = useState(15)
   
+  const isVideoDomain = appPathname === '/video' || appPathname.startsWith('/video/')
   // 判断是否在首页
-  const isHomePage = appPathname === '/'
+  const isHomePage = appPathname === '/' || appPathname === '/video'
   // 判断是否在训练页面
   const isTrainingPage = appPathname.startsWith('/training')
   
@@ -632,7 +635,7 @@ export default function CockpitPanel() {
 
   // 处理WARP按钮点击 - 跳转到上传页面
   const handleWarp = () => {
-    router.push('/upload')
+    router.push(isVideoDomain ? '/video/upload' : '/upload')
   }
 
   // 处理MENU按钮点击 - 显示/隐藏列表菜单
@@ -646,7 +649,7 @@ export default function CockpitPanel() {
 
   // 处理HOME按钮点击 - 返回首页
   const handleHome = () => {
-    router.push('/')
+    router.push(isVideoDomain ? '/video' : '/')
   }
 
   // 处理TRANSLATIONS按钮点击 - 切换翻译显示
@@ -669,10 +672,14 @@ export default function CockpitPanel() {
   const fetchTrainingItems = async () => {
     setLoadingItems(true)
     try {
-      const response = await fetch(withBasePath('/api/training-items'))
+      const response = await fetch(withBasePath(isVideoDomain ? '/api/video-training-items' : '/api/training-items'))
       if (response.ok) {
         const data = await response.json()
-        setTrainingItems(data)
+        setTrainingItems(
+          isVideoDomain
+            ? data.map((item: TrainingItem) => ({ ...item, sentences: [] }))
+            : data
+        )
       }
     } catch (error) {
       console.error('Error fetching training items:', error)
@@ -2029,7 +2036,9 @@ export default function CockpitPanel() {
           <div className="relative w-[90%] max-w-2xl max-h-[80vh] bg-black/95 backdrop-blur-md border-2 border-cyan-500/50 rounded-lg shadow-[0_0_30px_rgba(0,243,255,0.3)] overflow-hidden">
             {/* 标题栏 */}
             <div className="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-transparent">
-              <h2 className="text-cyan-400 font-mono text-lg tracking-wider">TRAINING ITEMS LIST</h2>
+              <h2 className="text-cyan-400 font-mono text-lg tracking-wider">
+                {isVideoDomain ? 'VIDEO TRAINING LIST' : 'TRAINING ITEMS LIST'}
+              </h2>
               <button
                 onClick={() => setShowMenu(false)}
                 className="text-cyan-400 hover:text-cyan-300 transition-colors p-1"
@@ -2054,7 +2063,7 @@ export default function CockpitPanel() {
                   {trainingItems.map((item, index) => (
                     <Link
                       key={item.id}
-                      href={`/training/${item.id}`}
+                      href={isVideoDomain ? `/video/${item.id}` : `/training/${item.id}`}
                       onClick={() => setShowMenu(false)}
                       className="block p-4 bg-gray-900/50 border border-cyan-500/20 rounded hover:bg-cyan-900/20 hover:border-cyan-500/50 transition-all group"
                     >
@@ -2067,7 +2076,12 @@ export default function CockpitPanel() {
                             </h3>
                           </div>
                           <div className="flex items-center gap-4 text-xs text-gray-400 font-mono">
-                            <span>[ 句子: {item.sentences.length} ]</span>
+                            <span>
+                              {isVideoDomain
+                                ? `[ CAPTIONS: ${item.captionsCount || 0} ]`
+                                : `[ 句子: ${item.sentences?.length || 0} ]`}
+                            </span>
+                            {isVideoDomain && item.tag ? <span>[ {item.tag} ]</span> : null}
                             <span>{new Date(item.createdAt).toLocaleDateString('zh-CN')}</span>
                           </div>
                         </div>
@@ -2086,7 +2100,7 @@ export default function CockpitPanel() {
               <button
                 onClick={() => {
                   setShowMenu(false)
-                  router.push('/')
+                  router.push(isVideoDomain ? '/video' : '/')
                 }}
                 className="px-4 py-2 bg-cyan-900/30 border border-cyan-500/50 text-cyan-400 font-mono text-sm hover:bg-cyan-500/20 transition-colors"
               >

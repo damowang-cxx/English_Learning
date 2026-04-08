@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../.prisma/client/default"
@@ -10,37 +7,34 @@ datasource db {
   provider = "sqlite"
 }
 
-// 训练条目
 model TrainingItem {
   id        String     @id @default(cuid())
-  title     String     // 标题
-  audioUrl  String     // 音频文件路径（相对于public目录）
+  title     String
+  audioUrl  String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  sentences Sentence[] // 关联的句子
+  sentences Sentence[]
 }
 
-// 句子分段
 model Sentence {
-  id            String     @id @default(cuid())
+  id             String       @id @default(cuid())
   trainingItemId String
-  trainingItem  TrainingItem @relation(fields: [trainingItemId], references: [id], onDelete: Cascade)
-  text          String     // 英语句子文本
-  translation   String?    // 中文翻译
-  startTime     Float      // 开始时间（秒）
-  endTime       Float      // 结束时间（秒）
-  order         Int        // 顺序
-  userNotes     UserNote[] // 用户笔记
+  trainingItem   TrainingItem @relation(fields: [trainingItemId], references: [id], onDelete: Cascade)
+  text           String
+  translation    String?
+  startTime      Float
+  endTime        Float
+  order          Int
+  userNotes      UserNote[]
 }
 
-// 用户笔记（生词和注释）
 model UserNote {
   id         String   @id @default(cuid())
   sentenceId String
   sentence   Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
-  words      String   @default("") // 生词（JSON格式存储）
-  notes      String   @default("") // 注释（JSON格式存储）
-  userId     String   @default("default") // 用户ID（可以后续扩展为多用户）
+  words      String   @default("")
+  notes      String   @default("")
+  userId     String   @default("default")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -49,16 +43,81 @@ model UserNote {
   @@index([userId])
 }
 
-// 学习日统计
+model VideoTrainingItem {
+  id          String            @id @default(cuid())
+  title       String
+  sourceTitle String            @default("")
+  plotSummary String            @default("")
+  tag         String
+  mediaType   String            @default("video")
+  mediaUrl    String
+  coverUrl    String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  captions    VideoCaption[]
+  characters  VideoCharacter[]
+  phraseNotes VideoPhraseNote[]
+
+  @@index([createdAt])
+  @@index([tag])
+}
+
+model VideoCaption {
+  id                  String            @id @default(cuid())
+  videoTrainingItemId String
+  videoTrainingItem   VideoTrainingItem @relation(fields: [videoTrainingItemId], references: [id], onDelete: Cascade)
+  startTime           Float
+  endTime             Float
+  enText              String
+  zhText              String?
+  speaker             String?
+  isKeySentence       Boolean           @default(false)
+  order               Int
+  phraseNotes         VideoPhraseNote[]
+
+  @@index([videoTrainingItemId])
+  @@index([videoTrainingItemId, order])
+  @@index([speaker])
+}
+
+model VideoCharacter {
+  id                  String            @id @default(cuid())
+  videoTrainingItemId String
+  videoTrainingItem   VideoTrainingItem @relation(fields: [videoTrainingItemId], references: [id], onDelete: Cascade)
+  name                String
+  avatarUrl           String?
+  order               Int
+
+  @@unique([videoTrainingItemId, name])
+  @@index([videoTrainingItemId])
+}
+
+model VideoPhraseNote {
+  id                  String            @id @default(cuid())
+  videoTrainingItemId String
+  videoTrainingItem   VideoTrainingItem @relation(fields: [videoTrainingItemId], references: [id], onDelete: Cascade)
+  captionId           String?
+  caption             VideoCaption?     @relation(fields: [captionId], references: [id], onDelete: SetNull)
+  phrase              String
+  note                String            @default("")
+  userId              String            @default("default")
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([videoTrainingItemId])
+  @@index([captionId])
+  @@index([userId])
+}
+
 model LearningDailyStat {
-  id              String   @id @default(cuid())
-  userId          String   @default("default")
-  dateKey         String   // YYYY-MM-DD
-  studySeconds    Int      @default(0)
-  audioSeconds    Int      @default(0)
-  dictationSeconds Int     @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  userId           String   @default("default")
+  dateKey          String
+  studySeconds     Int      @default(0)
+  audioSeconds     Int      @default(0)
+  dictationSeconds Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@unique([userId, dateKey])
   @@index([userId])

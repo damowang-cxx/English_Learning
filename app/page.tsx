@@ -1,7 +1,10 @@
 import { unstable_noStore as noStore } from 'next/cache'
-import Link from 'next/link'
+import HomeModeShell from '@/components/HomeModeShell'
 import HomeTrainingGrid, { type HomeTrainingCardItem } from '@/components/HomeTrainingGrid'
 import { prisma } from '@/lib/prisma'
+import type { HomeEntry } from '@/lib/home-entries'
+
+type ListeningHomeEntry = Extract<HomeEntry, { kind: 'listening' }>
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -16,11 +19,21 @@ async function getTrainingItems() {
     },
   })
 
-  return items.map((item) => ({
+  const entries = items.map((item) => ({
+    kind: 'listening',
     id: item.id,
     title: item.title,
-    createdAt: item.createdAt.toISOString(),
-    sentencesCount: item.sentences.length,
+    meta: {
+      createdAt: item.createdAt.toISOString(),
+      sentencesCount: item.sentences.length,
+    },
+  })) satisfies ListeningHomeEntry[]
+
+  return entries.map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    createdAt: entry.meta.createdAt,
+    sentencesCount: entry.meta.sentencesCount,
   })) satisfies HomeTrainingCardItem[]
 }
 
@@ -29,39 +42,9 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen relative">
-      <div
-        className="container mx-auto py-8 cockpit-viewport"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          paddingTop: '8vh',
-          paddingBottom: '45vh',
-          paddingLeft: '2rem',
-          paddingRight: '2rem',
-          maxHeight: '65vh',
-          overflowY: 'auto',
-          overflowX: 'visible',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          width: '75%',
-          maxWidth: '1000px',
-        }}
-      >
-        <div className="mb-4 flex items-center justify-end">
-          <Link
-            href="/vocabulary"
-            className="home-global-vocab-button group inline-flex items-center gap-2 rounded-md px-3 py-2"
-            title="Open global vocabulary library"
-            aria-label="Open global vocabulary library"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400/70 transition-colors group-hover:bg-cyan-300"></span>
-            <span className="font-mono text-[11px] tracking-[0.24em] text-cyan-300/78 transition-colors group-hover:text-cyan-200">
-              GLOBAL VOCAB
-            </span>
-          </Link>
-        </div>
+      <HomeModeShell mode="listening">
         <HomeTrainingGrid items={items} />
-      </div>
+      </HomeModeShell>
     </div>
   )
 }

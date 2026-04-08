@@ -67,3 +67,31 @@ export function getAudioSrc(audioUrl: string) {
 
   return withBasePath(audioUrl);
 }
+
+export function getVideoMediaSrc(mediaUrl: string) {
+  if (!mediaUrl) {
+    return withBasePath("/api/video-media");
+  }
+
+  if (isExternalUrl(mediaUrl)) {
+    return mediaUrl;
+  }
+
+  if (mediaUrl.startsWith("/video/")) {
+    return withBasePath(`/api/video-media/${mediaUrl.slice("/video/".length)}`);
+  }
+
+  return withBasePath(mediaUrl);
+}
+
+export function getVideoCoverSrc(coverUrl?: string | null) {
+  if (!coverUrl) {
+    return withBasePath("/Learnico.png");
+  }
+
+  if (isExternalUrl(coverUrl)) {
+    return coverUrl;
+  }
+
+  return withBasePath(coverUrl);
+}
