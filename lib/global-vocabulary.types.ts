@@ -1,8 +1,10 @@
 import type { VocabularySense } from '@/lib/vocabulary'
 
 export type GlobalVocabularySort = 'frequency' | 'alphabet' | 'recent'
+export type GlobalVocabularySourceKind = 'listening' | 'video'
 
 export interface GlobalVocabularySentenceRef {
+  kind: GlobalVocabularySourceKind
   trainingItemId: string
   trainingTitle: string
   sentenceId: string

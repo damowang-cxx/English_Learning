@@ -64,7 +64,11 @@ function filterItems(items: GlobalVocabularyItem[], query: string) {
     if (item.senses.some((sense) => `${sense.pos}${sense.meaning}`.toLowerCase().includes(normalizedQuery))) {
       return true
     }
-    return item.sentences.some((sentence) => sentence.trainingTitle.toLowerCase().includes(normalizedQuery))
+    return item.sentences.some((sentence) =>
+      sentence.kind.toLowerCase().includes(normalizedQuery)
+      || sentence.trainingTitle.toLowerCase().includes(normalizedQuery)
+      || sentence.sentenceText.toLowerCase().includes(normalizedQuery)
+    )
   })
 }
 
@@ -209,16 +213,16 @@ export default function GlobalVocabularyView({ generatedAt, summary, items }: Gl
 
                 {isExpanded && (
                   <div className="mt-3 rounded-md border border-cyan-500/18 bg-black/32 p-3">
-                    <div className="mb-2 font-mono text-[11px] text-cyan-300/75">SOURCE SENTENCES</div>
+                    <div className="mb-2 font-mono text-[11px] text-cyan-300/75">SOURCES</div>
                     <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
                       {item.sentences.map((source) => (
                         <Link
-                          key={`${item.headwordKey}-${source.sentenceId}`}
-                          href={`/training/${source.trainingItemId}`}
+                          key={`${item.headwordKey}-${source.kind}-${source.sentenceId}`}
+                          href={source.kind === 'video' ? `/video/${source.trainingItemId}` : `/training/${source.trainingItemId}`}
                           className="block rounded border border-cyan-500/16 bg-cyan-500/[0.03] px-3 py-2 transition-colors hover:border-cyan-400/38"
                         >
                           <div className="font-mono text-xs text-cyan-200/90">
-                            {source.trainingTitle} | S{source.sentenceOrder}
+                            {source.kind === 'video' ? 'VIDEO' : 'LISTENING'} | {source.trainingTitle} | S{source.sentenceOrder}
                           </div>
                           <div className="mt-1 font-mono text-xs text-cyan-100/72">{source.sentenceText}</div>
                         </Link>

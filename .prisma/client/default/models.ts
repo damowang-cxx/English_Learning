@@ -8,6 +8,7 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/User'
 export type * from './models/TrainingItem'
 export type * from './models/Sentence'
 export type * from './models/UserNote'
@@ -15,5 +16,6 @@ export type * from './models/VideoTrainingItem'
 export type * from './models/VideoCaption'
 export type * from './models/VideoCharacter'
 export type * from './models/VideoPhraseNote'
+export type * from './models/VideoCaptionNote'
 export type * from './models/LearningDailyStat'
 export type * from './commonInputTypes'

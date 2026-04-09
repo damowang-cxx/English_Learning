@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireApiAdmin } from '@/lib/authz'
 
 export async function POST(request: NextRequest) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { captions } = await request.json()
     const captionCount = Array.isArray(captions) ? captions.length : 0

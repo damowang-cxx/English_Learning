@@ -4,6 +4,7 @@ import {
   getGlobalVocabulary,
   sortGlobalVocabularyItems,
 } from '@/lib/global-vocabulary'
+import { requireApiUser } from '@/lib/authz'
 import type { GlobalVocabularySort } from '@/lib/global-vocabulary.types'
 
 const SUPPORTED_SORTS: GlobalVocabularySort[] = ['frequency', 'alphabet', 'recent']
@@ -29,8 +30,13 @@ function normalizeSort(value: string | null): GlobalVocabularySort {
 }
 
 export async function GET(request: NextRequest) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
-    const userId = request.nextUrl.searchParams.get('userId') || 'default'
+    const userId = guard.user.id
     const query = request.nextUrl.searchParams.get('q') || ''
     const sort = normalizeSort(request.nextUrl.searchParams.get('sort'))
 

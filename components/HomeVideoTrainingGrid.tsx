@@ -16,6 +16,7 @@ export interface HomeVideoTrainingCardItem {
 
 interface HomeVideoTrainingGridProps {
   items: HomeVideoTrainingCardItem[]
+  isAdmin?: boolean
 }
 
 function formatCreatedDate(value: string) {
@@ -26,7 +27,7 @@ function formatCreatedDate(value: string) {
   })
 }
 
-export default function HomeVideoTrainingGrid({ items: initialItems }: HomeVideoTrainingGridProps) {
+export default function HomeVideoTrainingGrid({ items: initialItems, isAdmin = false }: HomeVideoTrainingGridProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [items, setItems] = useState(initialItems)
@@ -38,7 +39,7 @@ export default function HomeVideoTrainingGrid({ items: initialItems }: HomeVideo
   }, [initialItems])
 
   const handleDelete = async (item: HomeVideoTrainingCardItem) => {
-    if (deletingId) {
+    if (!isAdmin || deletingId) {
       return
     }
 
@@ -93,20 +94,22 @@ export default function HomeVideoTrainingGrid({ items: initialItems }: HomeVideo
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" style={{ padding: '16px', overflow: 'visible' }}>
         {items.map((item, index) => (
           <div key={item.id} className="group relative">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault()
-                event.stopPropagation()
-                void handleDelete(item)
-              }}
-              className="absolute right-3 top-3 z-30 rounded-md border border-red-500/35 bg-black/65 px-2 py-1 font-mono text-[10px] text-red-300 opacity-80 transition-colors hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
-              disabled={deletingId === item.id}
-              aria-label={`Delete video training "${item.title}"`}
-              title={`Delete video training "${item.title}"`}
-            >
-              {deletingId === item.id ? '...' : 'DEL'}
-            </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  void handleDelete(item)
+                }}
+                className="absolute right-3 top-3 z-30 rounded-md border border-red-500/35 bg-black/65 px-2 py-1 font-mono text-[10px] text-red-300 opacity-80 transition-colors hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                disabled={deletingId === item.id}
+                aria-label={`Delete video training "${item.title}"`}
+                title={`Delete video training "${item.title}"`}
+              >
+                {deletingId === item.id ? '...' : 'DEL'}
+              </button>
+            ) : null}
 
             <Link
               href={`/video/${item.id}`}

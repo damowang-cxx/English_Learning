@@ -2,10 +2,17 @@
 
 import { type ReactNode, useEffect, useEffectEvent, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
 import { useFocusMode } from '@/contexts/FocusModeContext'
+import { isAdminRole } from '@/lib/auth-types'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
+import {
+  SelectableEnglishText,
+  WordLookupPopover,
+  type WordLookupRequest,
+} from '@/components/WordLookup'
 import { toLocalDateKey } from '@/lib/learning-stats'
 import {
   buildDictationSentenceModel,
@@ -261,6 +268,7 @@ function scrollSentenceWithinContainer(
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session, status: authStatus } = useSession()
   const [item, setItem] = useState<TrainingItem | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
@@ -276,6 +284,7 @@ export default function TrainingDetailPage() {
   const [sentenceDictation, setSentenceDictation] = useState<Record<string, SentenceDictationState>>({})
   const [isVocabularyBookExpanded, setIsVocabularyBookExpanded] = useState(false)
   const [activeVocabularyModalSentenceId, setActiveVocabularyModalSentenceId] = useState<string | null>(null)
+  const [wordLookup, setWordLookup] = useState<WordLookupRequest | null>(null)
   const [selectedSentenceFontId, setSelectedSentenceFontId] = useState<TrainingSentenceFontId>(
     DEFAULT_TRAINING_SENTENCE_FONT_ID
   )
@@ -318,25 +327,37 @@ export default function TrainingDetailPage() {
   const lastStudyActivityAtRef = useRef(0)
   const lastContinuousStudyActivityAtRef = useRef(0)
   const windowFocusedRef = useRef(typeof document !== 'undefined' ? document.hasFocus() : true)
+  const isAuthenticated = authStatus === 'authenticated'
+  const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
   useEffect(() => {
-    fetchTrainingItem()
-  }, [params.id])
+    if (authStatus === 'loading') {
+      return
+    }
+
+    if (!session?.user?.id) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(`/training/${params.id}`)}`)
+      return
+    }
+
+    void fetchTrainingItem()
+  }, [authStatus, params.id, router, session?.user?.id])
 
   useEffect(() => {
     setIsFocusMode(false)
   }, [params.id, setIsFocusMode])
 
   useEffect(() => {
-    if (item) {
+    if (item && isAuthenticated) {
       fetchUserNotes()
     }
-  }, [item])
+  }, [isAuthenticated, item])
 
   useEffect(() => {
     setExpandedTranslations(new Set())
     setCollapsedGlobalTranslations(new Set())
     setActiveVocabularyModalSentenceId(null)
+    setWordLookup(null)
   }, [item?.id])
 
   useEffect(() => {
@@ -418,7 +439,7 @@ export default function TrainingDetailPage() {
   })
 
   const pushLearningHeartbeat = useEffectEvent(async () => {
-    if (!item || isEditing || heartbeatInFlightRef.current) {
+    if (!item || !isAuthenticated || isEditing || heartbeatInFlightRef.current) {
       return
     }
 
@@ -748,6 +769,10 @@ export default function TrainingDetailPage() {
   }, [notification])
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return
+    }
+
     const flushPendingVocabularySaves = () => {
       for (const [sentenceId, items] of Object.entries(pendingVocabularySaveRef.current)) {
         const timer = vocabularySaveTimersRef.current[sentenceId]
@@ -760,7 +785,6 @@ export default function TrainingDetailPage() {
           sentenceId,
           words: serializeVocabularyWords(items),
           notes: '',
-          userId: 'default',
         })
 
         if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
@@ -795,7 +819,7 @@ export default function TrainingDetailPage() {
       Object.values(vocabularySaveTimersRef.current).forEach((timer) => clearTimeout(timer))
       Object.values(vocabularySaveResetTimersRef.current).forEach((timer) => clearTimeout(timer))
     }
-  }, [])
+  }, [isAuthenticated])
 
   const fetchTrainingItem = async () => {
     try {
@@ -812,7 +836,7 @@ export default function TrainingDetailPage() {
   }
 
   const handleEditClick = () => {
-    if (!item) return
+    if (!isAdmin || !item) return
     setEditTitle(item.title)
     setEditSentences(item.sentences.map(s => ({
       text: s.text,
@@ -908,6 +932,11 @@ export default function TrainingDetailPage() {
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isAdmin) {
+      setNotification({ type: 'error', message: 'Admin access required.' })
+      return
+    }
     
     const hasUnsaved = editCurrentSentence.text.trim() && 
                        editCurrentSentence.startTime >= 0 && 
@@ -980,7 +1009,7 @@ export default function TrainingDetailPage() {
   }
 
   const handleDeleteTrainingItem = async () => {
-    if (!item || isDeleting) {
+    if (!isAdmin || !item || isDeleting) {
       return
     }
 
@@ -1084,7 +1113,6 @@ export default function TrainingDetailPage() {
           sentenceId,
           words: serializedItems,
           notes: '',
-          userId: 'default',
         }),
         keepalive: true,
       })
@@ -1153,9 +1181,7 @@ export default function TrainingDetailPage() {
     const vocabularyEntries = await Promise.all(
       item.sentences.map(async (sentence) => {
         try {
-          const response = await fetch(
-            withBasePath(`/api/user-notes?sentenceId=${sentence.id}&userId=default`)
-          )
+          const response = await fetch(withBasePath(`/api/user-notes?sentenceId=${sentence.id}`))
 
           if (!response.ok) {
             throw new Error(`Failed to fetch vocabulary for sentence ${sentence.id}`)
@@ -1412,6 +1438,16 @@ export default function TrainingDetailPage() {
     if (didChange) {
       queueVocabularySave(sentenceId, mergedItems, { immediate: options?.immediate })
     }
+  }
+
+  const handleSaveLookupVocabulary = async (entry: VocabularyEntry) => {
+    if (!wordLookup) {
+      return
+    }
+
+    addVocabularyItemsToSentence(wordLookup.contextId, [entry], {
+      immediate: true,
+    })
   }
 
   const updateVocabularyFormState = (
@@ -1854,18 +1890,6 @@ export default function TrainingDetailPage() {
     setIsFullscreen(!isFullscreen)
   }
 
-  const handleSentenceClick = (sentence: Sentence) => {
-    if (!item) {
-      return
-    }
-
-    const sentenceIndex = item.sentences.findIndex((candidate) => candidate.id === sentence.id)
-
-    if (sentenceIndex !== -1) {
-      jumpToSentenceByIndex(sentenceIndex)
-    }
-  }
-
   const handleSpeedChange = (rate: number) => {
     setPlaybackRate(rate)
   }
@@ -1882,6 +1906,11 @@ export default function TrainingDetailPage() {
   const vocabularyBook = item
     ? buildVocabularyBook(item.sentences, sentenceVocabulary)
     : []
+  const wordLookupSavedKeys = new Set(
+    wordLookup
+      ? (sentenceVocabulary[wordLookup.contextId]?.items || []).map(getVocabularyEntryKey)
+      : []
+  )
   const totalVocabularyEntries = item
     ? item.sentences.reduce(
         (total, sentence) => (
@@ -2316,42 +2345,46 @@ export default function TrainingDetailPage() {
                       </svg>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleEditClick}
-                    className={`${toolbarButtonClassName} group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 hover:text-slate-50' : 'text-green-400/70 hover:text-green-300'} transition-all`}
-                    style={{ zIndex: 100 }}
-                  >
-                    <div className={`absolute inset-0 rounded opacity-0 transition-opacity group-hover/btn:opacity-100 ${
-                      isModernFocusLayout
-                        ? 'bg-gradient-to-r from-transparent via-slate-300/8 to-transparent'
-                        : 'bg-gradient-to-r from-transparent via-green-500/6 to-transparent'
-                    }`}></div>
-                    <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span className="relative z-10 cyber-button-text">EDIT</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDeleteTrainingItem}
-                    disabled={isDeleting}
-                    className={`${toolbarButtonClassName} group/btn relative flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
-                      isDeleting
-                        ? 'cursor-not-allowed text-red-300/45'
-                        : isModernFocusLayout
-                          ? 'cursor-pointer text-red-300/78 hover:text-red-200'
-                          : 'cursor-pointer text-red-300/70 hover:text-red-200'
-                    }`}
-                    style={{ zIndex: 100 }}
-                    title={isDeleting ? 'Deleting training...' : 'Delete this training article'}
-                  >
-                    <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-red-500/8 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
-                    <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
-                    </svg>
-                    <span className="relative z-10 cyber-button-text">{isDeleting ? 'DELETING' : 'DELETE'}</span>
-                  </button>
+                  {isAdmin ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleEditClick}
+                        className={`${toolbarButtonClassName} group/btn relative flex cursor-pointer items-center gap-2 px-3 py-1.5 text-xs ${isModernFocusLayout ? 'text-slate-300/85 hover:text-slate-50' : 'text-green-400/70 hover:text-green-300'} transition-all`}
+                        style={{ zIndex: 100 }}
+                      >
+                        <div className={`absolute inset-0 rounded opacity-0 transition-opacity group-hover/btn:opacity-100 ${
+                          isModernFocusLayout
+                            ? 'bg-gradient-to-r from-transparent via-slate-300/8 to-transparent'
+                            : 'bg-gradient-to-r from-transparent via-green-500/6 to-transparent'
+                        }`}></div>
+                        <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span className="relative z-10 cyber-button-text">EDIT</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeleteTrainingItem}
+                        disabled={isDeleting}
+                        className={`${toolbarButtonClassName} group/btn relative flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
+                          isDeleting
+                            ? 'cursor-not-allowed text-red-300/45'
+                            : isModernFocusLayout
+                              ? 'cursor-pointer text-red-300/78 hover:text-red-200'
+                              : 'cursor-pointer text-red-300/70 hover:text-red-200'
+                        }`}
+                        style={{ zIndex: 100 }}
+                        title={isDeleting ? 'Deleting training...' : 'Delete this training article'}
+                      >
+                        <div className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-red-500/8 to-transparent opacity-0 transition-opacity group-hover/btn:opacity-100"></div>
+                        <svg className="relative z-10 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                        </svg>
+                        <span className="relative z-10 cyber-button-text">{isDeleting ? 'DELETING' : 'DELETE'}</span>
+                      </button>
+                    </>
+                  ) : null}
                   <button
                     type="button"
                     onClick={toggleFullscreen}
@@ -2759,7 +2792,7 @@ export default function TrainingDetailPage() {
                           ref={(el) => {
                             sentenceRefs.current[index] = el
                           }}
-                          className={`${sentenceCardClassName}${isActive ? ' is-active' : ''}`}
+                          className={`${sentenceCardClassName} group/sentence${isActive ? ' is-active' : ''}`}
                         >
                           {!isModernFocusLayout && <div className={`${sentenceGlowClassName} absolute inset-0`}></div>}
                           {isActive && (
@@ -2784,6 +2817,21 @@ export default function TrainingDetailPage() {
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => jumpToSentenceByIndex(index)}
+                                  className={`flex items-center justify-center rounded-md border px-2 py-1.5 text-xs transition-all opacity-0 pointer-events-none group-hover/sentence:pointer-events-auto group-hover/sentence:opacity-100 group-focus-within/sentence:pointer-events-auto group-focus-within/sentence:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 ${
+                                    isModernFocusLayout
+                                      ? 'border-slate-700/70 bg-slate-900/45 text-slate-300/90 hover:border-slate-500/75 hover:bg-slate-800/55 hover:text-slate-100'
+                                      : 'border-green-500/[0.16] bg-black/[0.16] text-green-300/90 hover:border-green-500/[0.28] hover:bg-green-500/[0.05] hover:text-green-200'
+                                  }`}
+                                  title={`Play sentence ${sentence.order + 1}`}
+                                  aria-label={`Play sentence ${sentence.order + 1}`}
+                                >
+                                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    <path d="M8 5.14v13.72a1 1 0 001.53.85l10.98-6.86a1 1 0 000-1.7L9.53 4.29A1 1 0 008 5.14z" />
+                                  </svg>
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => canToggleSentenceTranslation && toggleSentenceTranslation(sentence.id)}
@@ -2847,7 +2895,6 @@ export default function TrainingDetailPage() {
                             {isDictationMode ? (
                               <div className={`mt-3.5 border-t pt-3 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-amber-400/[0.08]'}`}>
                                 <div
-                                  onClick={() => handleSentenceClick(sentence)}
                                   className={`${dictationSurfaceClassName} rounded-xl px-4 py-4 transition-all ${
                                     isActive
                                       ? 'is-active'
@@ -3042,9 +3089,10 @@ export default function TrainingDetailPage() {
                               </div>
                             ) : (
                               <>
-                            <div
-                              onClick={() => handleSentenceClick(sentence)}
-                              className={`${readingSurfaceClassName} mt-3.5 cursor-pointer px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
+                            <SelectableEnglishText
+                              contextId={sentence.id}
+                              onLookup={setWordLookup}
+                              className={`${readingSurfaceClassName} mt-3.5 px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
                                   isActive
                                     ? isModernFocusLayout ? 'text-slate-50' : 'text-green-100'
                                     : isModernFocusLayout ? 'text-slate-200 hover:text-slate-50' : 'text-gray-100 hover:text-green-100'
@@ -3053,7 +3101,7 @@ export default function TrainingDetailPage() {
                               <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className} ${isModernFocusLayout ? 'tracking-[0.01em]' : ''}`}>
                                 {highlightedSentenceText}
                               </p>
-                            </div>
+                            </SelectableEnglishText>
 
                             <div className={`mt-3.5 border-t pt-2.5 ${isModernFocusLayout ? 'border-slate-700/70' : 'border-green-500/[0.08]'}`}>
                               <button
@@ -3404,6 +3452,14 @@ export default function TrainingDetailPage() {
   </div>
 
       {/* 缂栬緫妯℃€佹 */}
+      <WordLookupPopover
+        request={wordLookup}
+        savedEntryKeys={wordLookupSavedKeys}
+        theme={isModernFocusLayout ? 'slate' : 'green'}
+        onSave={handleSaveLookupVocabulary}
+        onClose={() => setWordLookup(null)}
+      />
+
       {activeVocabularyModalSentence && activeVocabularyModalState && (
         <div
           className="fixed inset-0 z-[210] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm"
@@ -3678,7 +3734,7 @@ export default function TrainingDetailPage() {
         </div>
       )}
 
-      {isEditing && (
+      {isAdmin && isEditing && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setIsEditing(false)}>
           <div className="w-[95%] max-w-5xl mx-auto relative bg-black/90 border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             {/* 椤堕儴瑁呴グ鏍?*/}

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiUser } from '@/lib/authz'
 import {
   buildDateKeyRange,
   clampHeatmapDays,
   DEFAULT_HEATMAP_DAYS,
-  DEFAULT_LEARNING_USER_ID,
   getHeatmapLevel,
   getYearStartDateKey,
   isValidDateKey,
@@ -45,9 +45,14 @@ function calculateCurrentStreak(
 }
 
 export async function GET(request: NextRequest) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId') || DEFAULT_LEARNING_USER_ID
+    const userId = guard.user.id
     const days = parseDays(searchParams.get('days'))
     const providedTodayDateKey = searchParams.get('todayDateKey')
     const todayDateKey = providedTodayDateKey && isValidDateKey(providedTodayDateKey)

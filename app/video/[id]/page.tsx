@@ -1,9 +1,24 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import {
+  SelectableEnglishText,
+  WordLookupPopover,
+  type WordLookupRequest,
+} from '@/components/WordLookup'
+import { isAdminRole } from '@/lib/auth-types'
 import { getVideoCoverSrc, getVideoMediaSrc, withBasePath } from '@/lib/base-path'
 import { formatVideoTime, type VideoCaptionMode } from '@/lib/video-training'
+import {
+  areVocabularyListsEqual,
+  getVocabularyEntryKey,
+  mergeVocabularyWords,
+  parseVocabularyWords,
+  serializeVocabularyWords,
+  type VocabularyEntry,
+} from '@/lib/vocabulary'
 
 interface VideoCaption {
   id: string
@@ -14,6 +29,16 @@ interface VideoCaption {
   speaker: string | null
   isKeySentence: boolean
   order: number
+  captionNotes?: VideoCaptionNote[]
+}
+
+interface VideoCaptionNote {
+  id: string
+  videoCaptionId: string
+  words: string
+  notes: string
+  createdAt: string
+  updatedAt: string
 }
 
 interface VideoCharacter {
@@ -49,12 +74,44 @@ function getActiveCaption(captions: VideoCaption[], currentTime: number) {
   return captions.find((caption) => currentTime >= caption.startTime && currentTime <= caption.endTime) || null
 }
 
+function setVideoImmersiveChromeHidden(isHidden: boolean) {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  const cockpitPanels = document.querySelectorAll<HTMLElement>('.cockpit-panel')
+
+  if (isHidden) {
+    document.body.dataset.videoImmersiveMode = 'true'
+    cockpitPanels.forEach((panel) => {
+      panel.dataset.videoImmersiveMode = 'true'
+    })
+    return
+  }
+
+  delete document.body.dataset.videoImmersiveMode
+  cockpitPanels.forEach((panel) => {
+    delete panel.dataset.videoImmersiveMode
+  })
+}
+
+function blurActiveElement() {
+  const activeElement = document.activeElement
+
+  if (activeElement instanceof HTMLElement) {
+    activeElement.blur()
+  }
+}
+
 export default function VideoTrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { data: session, status: authStatus } = useSession()
   const videoRef = useRef<HTMLVideoElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const [item, setItem] = useState<VideoTrainingItem | null>(null)
+  const [captionVocabulary, setCaptionVocabulary] = useState<Record<string, VocabularyEntry[]>>({})
+  const [wordLookup, setWordLookup] = useState<WordLookupRequest | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -64,15 +121,26 @@ export default function VideoTrainingDetailPage() {
   const [repeatCaptionId, setRepeatCaptionId] = useState<string | null>(null)
   const [selectedSpeaker, setSelectedSpeaker] = useState('All')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isWindowFullscreen, setIsWindowFullscreen] = useState(false)
+  const [isDisplayFullscreen, setIsDisplayFullscreen] = useState(false)
   const [phraseDraft, setPhraseDraft] = useState('')
   const [noteDraft, setNoteDraft] = useState('')
   const [selectedNoteCaptionId, setSelectedNoteCaptionId] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
   useEffect(() => {
+    if (authStatus === 'loading') {
+      return
+    }
+
+    if (!session?.user?.id) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(`/video/${params.id}`)}`)
+      return
+    }
+
     const fetchVideoTrainingItem = async () => {
       setLoading(true)
       try {
@@ -86,6 +154,15 @@ export default function VideoTrainingDetailPage() {
 
         const data = await response.json()
         setItem(data)
+        setCaptionVocabulary(
+          Object.fromEntries(
+            (data.captions || []).map((caption: VideoCaption) => [
+              caption.id,
+              parseVocabularyWords(caption.captionNotes?.[0]?.words || ''),
+            ])
+          )
+        )
+        setWordLookup(null)
       } catch (error) {
         setStatus(error instanceof Error ? error.message : 'Failed to load video training item.')
       } finally {
@@ -94,7 +171,7 @@ export default function VideoTrainingDetailPage() {
     }
 
     void fetchVideoTrainingItem()
-  }, [params.id])
+  }, [authStatus, params.id, router, session?.user?.id])
 
   useEffect(() => {
     if (videoRef.current) {
@@ -104,12 +181,20 @@ export default function VideoTrainingDetailPage() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
+      setIsDisplayFullscreen(document.fullscreenElement === frameRef.current)
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
+
+  useEffect(() => {
+    setVideoImmersiveChromeHidden(isWindowFullscreen || isDisplayFullscreen)
+
+    return () => {
+      setVideoImmersiveChromeHidden(false)
+    }
+  }, [isDisplayFullscreen, isWindowFullscreen])
 
   const speakerOptions = useMemo(() => {
     const names = new Set(item?.characters.map((character) => character.name) || [])
@@ -138,7 +223,11 @@ export default function VideoTrainingDetailPage() {
   const activeCaption = getActiveCaption(filteredCaptions, currentTime)
   const repeatCaption = item?.captions.find((caption) => caption.id === repeatCaptionId) || null
 
-  const jumpToCaption = (caption: VideoCaption, shouldPlay = true) => {
+  useEffect(() => {
+    setWordLookup(null)
+  }, [activeCaption?.id])
+
+  const jumpToCaption = useCallback((caption: VideoCaption, shouldPlay = true) => {
     if (!videoRef.current) {
       return
     }
@@ -150,7 +239,7 @@ export default function VideoTrainingDetailPage() {
       void videoRef.current.play()
       setIsPlaying(true)
     }
-  }
+  }, [])
 
   const handleTimeUpdate = () => {
     if (!videoRef.current) {
@@ -185,7 +274,7 @@ export default function VideoTrainingDetailPage() {
     }
   }
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (!videoRef.current) {
       return
     }
@@ -202,7 +291,39 @@ export default function VideoTrainingDetailPage() {
 
     void videoRef.current.play()
     setIsPlaying(true)
-  }
+  }, [currentTime, filteredCaptions, isPlaying, jumpToCaption, selectedSpeaker])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isWindowFullscreen) {
+        setIsWindowFullscreen(false)
+        return
+      }
+
+      if (event.code !== 'Space' && event.key !== ' ') {
+        return
+      }
+
+      const target = event.target as HTMLElement | null
+      const tagName = target?.tagName.toLowerCase()
+
+      if (
+        target?.isContentEditable
+        || tagName === 'input'
+        || tagName === 'textarea'
+        || tagName === 'select'
+        || tagName === 'button'
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      handlePlayPause()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handlePlayPause, isWindowFullscreen])
 
   const handleSeek = (value: number) => {
     if (!videoRef.current) {
@@ -226,7 +347,23 @@ export default function VideoTrainingDetailPage() {
     }
   }
 
-  const handleFullscreen = async () => {
+  const handleWindowFullscreen = async () => {
+    blurActiveElement()
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+    }
+
+    setIsWindowFullscreen((value) => {
+      const nextValue = !value
+      setVideoImmersiveChromeHidden(nextValue || isDisplayFullscreen)
+      return nextValue
+    })
+  }
+
+  const handleDisplayFullscreen = async () => {
+    blurActiveElement()
+
     if (!frameRef.current) {
       return
     }
@@ -236,7 +373,13 @@ export default function VideoTrainingDetailPage() {
       return
     }
 
-    await frameRef.current.requestFullscreen()
+    setIsWindowFullscreen(false)
+
+    try {
+      await frameRef.current.requestFullscreen()
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Display fullscreen is unavailable.')
+    }
   }
 
   const handleSavePhraseNote = async () => {
@@ -274,6 +417,70 @@ export default function VideoTrainingDetailPage() {
     }
   }
 
+  const handleSaveVideoLookupVocabulary = async (entry: VocabularyEntry) => {
+    if (!item || !wordLookup) {
+      return
+    }
+
+    const captionId = wordLookup.contextId
+    const currentEntries = captionVocabulary[captionId] || []
+    const mergedEntries = mergeVocabularyWords(currentEntries, [entry])
+
+    if (areVocabularyListsEqual(currentEntries, mergedEntries)) {
+      return
+    }
+
+    setCaptionVocabulary((prev) => ({
+      ...prev,
+      [captionId]: mergedEntries,
+    }))
+
+    try {
+      const existingNote = item.captions.find((caption) => caption.id === captionId)?.captionNotes?.[0]
+      const response = await fetch(withBasePath('/api/video-caption-notes'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          captionId,
+          words: serializeVocabularyWords(mergedEntries),
+          notes: existingNote?.notes || '',
+        }),
+      })
+      const payload = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(payload?.error || `Save video vocabulary failed: ${response.status}`)
+      }
+
+      setItem((prev) => {
+        if (!prev) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          captions: prev.captions.map((caption) => {
+            if (caption.id !== captionId) {
+              return caption
+            }
+
+            return {
+              ...caption,
+              captionNotes: [payload],
+            }
+          }),
+        }
+      })
+    } catch (error) {
+      setCaptionVocabulary((prev) => ({
+        ...prev,
+        [captionId]: currentEntries,
+      }))
+      setStatus(error instanceof Error ? error.message : 'Save video vocabulary failed.')
+      throw error
+    }
+  }
+
   const handleDeletePhraseNote = async (noteId: string) => {
     if (!item) {
       return
@@ -301,7 +508,7 @@ export default function VideoTrainingDetailPage() {
   }
 
   const handleDeleteVideoTraining = async () => {
-    if (!item || isDeleting || !window.confirm(`Delete video training "${item.title}"?`)) {
+    if (!isAdmin || !item || isDeleting || !window.confirm(`Delete video training "${item.title}"?`)) {
       return
     }
 
@@ -339,14 +546,34 @@ export default function VideoTrainingDetailPage() {
     )
   }
 
+  const isImmersive = isWindowFullscreen || isDisplayFullscreen
+  const wordLookupSavedKeys = new Set(
+    wordLookup ? (captionVocabulary[wordLookup.contextId] || []).map(getVocabularyEntryKey) : []
+  )
+
   return (
     <div
-      ref={frameRef}
-      className={`min-h-screen relative flex items-center justify-center ${isFullscreen ? 'bg-black' : ''}`}
-      style={{ paddingBottom: isFullscreen ? 0 : '18vh', paddingTop: isFullscreen ? 0 : '7vh', zIndex: 45 }}
+      className={isImmersive ? 'fixed inset-0 z-[120] bg-black' : 'min-h-screen relative flex items-center justify-center'}
+      style={isImmersive ? undefined : { paddingBottom: '6vh', paddingTop: '6vh', zIndex: 45 }}
     >
-      <div className={`mx-auto grid w-[96%] gap-4 ${isSidebarCollapsed ? 'max-w-6xl grid-cols-1' : 'max-w-7xl lg:grid-cols-[minmax(0,1fr)_360px]'}`}>
-        <main className="overflow-hidden rounded-lg border border-cyan-500/35 bg-black/78 shadow-[0_0_35px_rgba(34,211,238,0.16)]">
+      <div
+        className={`relative mx-auto grid gap-4 ${
+          isImmersive
+            ? 'h-full w-full max-w-none grid-cols-1 p-0'
+            : isSidebarCollapsed
+              ? 'h-[calc(100vh-12vh)] w-[96%] max-w-7xl grid-cols-1'
+              : 'h-[calc(100vh-12vh)] w-[96%] max-w-7xl grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px]'
+        }`}
+      >
+        <main
+          ref={frameRef}
+          className={`relative flex min-h-0 flex-col overflow-hidden bg-black/78 ${
+            isImmersive
+              ? 'h-full rounded-none border-0 shadow-none'
+              : 'h-full rounded-lg border border-cyan-500/35 shadow-[0_0_35px_rgba(34,211,238,0.16)]'
+          }`}
+        >
+          {!isImmersive ? (
           <div className="border-b border-cyan-500/25 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
@@ -363,38 +590,156 @@ export default function VideoTrainingDetailPage() {
                 >
                   BACK
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteVideoTraining}
-                  disabled={isDeleting}
-                  className="rounded-md border border-red-500/35 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200 disabled:opacity-40"
-                >
-                  {isDeleting ? 'DELETING...' : 'DELETE'}
-                </button>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteVideoTraining}
+                    disabled={isDeleting}
+                    className="rounded-md border border-red-500/35 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200 disabled:opacity-40"
+                  >
+                    {isDeleting ? 'DELETING...' : 'DELETE'}
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
+          ) : null}
 
-          <div className="bg-black">
+          <div className="relative min-h-0 flex-1 bg-black">
             <video
               ref={videoRef}
               src={getVideoMediaSrc(item.mediaUrl)}
               poster={getVideoCoverSrc(item.coverUrl)}
-              className="aspect-video w-full bg-black object-contain"
+              className="h-full w-full bg-black object-contain"
               onTimeUpdate={handleTimeUpdate}
               onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
               onPlay={() => setIsPlaying(true)}
               onPause={() => setIsPlaying(false)}
             />
+            {isSidebarCollapsed && !isImmersive ? (
+              <button
+                type="button"
+                aria-label="Open side panel"
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="absolute right-0 top-1/2 z-30 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-l-md border border-r-0 border-cyan-500/25 bg-cyan-950/35 text-sm text-cyan-300/35 opacity-35 shadow-[inset_8px_0_16px_rgba(34,211,238,0.06)] transition-all hover:border-cyan-300/70 hover:bg-cyan-900/80 hover:text-cyan-100 hover:opacity-100 hover:shadow-[inset_8px_0_16px_rgba(34,211,238,0.12),0_0_14px_rgba(34,211,238,0.12)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300/70"
+              >
+                &lt;
+              </button>
+            ) : null}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/75 to-transparent p-3 pt-12">
+              <div className="pointer-events-auto rounded-lg border border-cyan-500/25 bg-black/70 p-3 shadow-[0_0_22px_rgba(34,211,238,0.14)] backdrop-blur-sm">
+                <input
+                  type="range"
+                  min="0"
+                  max={duration || 0}
+                  step="0.01"
+                  value={Math.min(currentTime, duration || 0)}
+                  onChange={(event) => handleSeek(Number(event.target.value))}
+                  className="w-full accent-cyan-300"
+                />
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handlePlayPause}
+                      className="rounded-md border border-cyan-500/45 bg-cyan-500/[0.12] px-4 py-2 text-xs text-cyan-100 transition-colors hover:border-cyan-300/70"
+                    >
+                      {isPlaying ? 'PAUSE' : 'PLAY'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRepeatCaptionId(activeCaption ? (repeatCaptionId === activeCaption.id ? null : activeCaption.id) : null)}
+                      disabled={!activeCaption}
+                      className={`rounded-md border px-3 py-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                        repeatCaptionId
+                          ? 'border-yellow-400/65 bg-yellow-500/[0.14] text-yellow-100'
+                          : 'border-yellow-500/35 bg-yellow-500/[0.08] text-yellow-200'
+                      }`}
+                    >
+                      LOOP
+                    </button>
+                    {[0.75, 1, 1.25, 1.5].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => setPlaybackRate(rate)}
+                        className={`rounded-md border px-2.5 py-2 text-xs ${
+                          playbackRate === rate
+                            ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100'
+                            : 'border-cyan-500/25 text-cyan-300/70'
+                        }`}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                    {(['english', 'bilingual', 'hidden'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setCaptionMode(mode)}
+                        className={`rounded-md border px-2.5 py-2 text-xs uppercase ${
+                          captionMode === mode
+                            ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100'
+                            : 'border-cyan-500/25 text-cyan-300/70'
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs text-cyan-200/75">
+                      {formatVideoTime(currentTime)} / {formatVideoTime(duration)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void handleWindowFullscreen()}
+                      onKeyDown={(event) => {
+                        if (event.code === 'Space' || event.key === ' ') {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          handlePlayPause()
+                        }
+                      }}
+                      className="rounded-md border border-cyan-500/35 px-3 py-2 text-xs text-cyan-300 transition-colors hover:border-cyan-400/60 hover:text-cyan-200"
+                    >
+                      {isWindowFullscreen ? 'EXIT WINDOW' : 'WINDOW'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDisplayFullscreen()}
+                      onKeyDown={(event) => {
+                        if (event.code === 'Space' || event.key === ' ') {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          handlePlayPause()
+                        }
+                      }}
+                      className="rounded-md border border-cyan-500/35 px-3 py-2 text-xs text-cyan-300 transition-colors hover:border-cyan-400/60 hover:text-cyan-200"
+                    >
+                      {isDisplayFullscreen ? 'EXIT DISPLAY' : 'DISPLAY'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4 p-4">
-            <div className="rounded-lg border border-cyan-500/20 bg-black/45 p-4 text-center">
+          <div className={`${isImmersive ? 'border-t border-cyan-500/20 p-4' : 'space-y-4 p-4'}`}>
+            <div className={`rounded-lg border border-cyan-500/20 bg-black/45 p-4 text-center ${isImmersive ? 'min-h-[92px]' : ''}`}>
               {captionMode === 'hidden' ? (
                 <div className="text-sm text-cyan-300/45">SUBTITLES HIDDEN</div>
               ) : activeCaption ? (
                 <div className="space-y-2">
-                  <div className="text-lg font-semibold leading-8 text-cyan-50">{activeCaption.enText}</div>
+                  <SelectableEnglishText
+                    contextId={activeCaption.id}
+                    onLookup={setWordLookup}
+                    className="text-lg font-semibold leading-8 text-cyan-50"
+                  >
+                    {activeCaption.enText}
+                  </SelectableEnglishText>
                   {captionMode === 'bilingual' && activeCaption.zhText ? (
                     <div className="text-base leading-7 text-cyan-200/75">{activeCaption.zhText}</div>
                   ) : null}
@@ -407,93 +752,7 @@ export default function VideoTrainingDetailPage() {
               )}
             </div>
 
-            <div className="rounded-lg border border-cyan-500/20 bg-black/45 p-4">
-              <input
-                type="range"
-                min="0"
-                max={duration || 0}
-                step="0.01"
-                value={Math.min(currentTime, duration || 0)}
-                onChange={(event) => handleSeek(Number(event.target.value))}
-                className="w-full accent-cyan-300"
-              />
-
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePlayPause}
-                    className="rounded-md border border-cyan-500/45 bg-cyan-500/[0.1] px-4 py-2 text-xs text-cyan-200 transition-colors hover:border-cyan-300/70"
-                  >
-                    {isPlaying ? 'PAUSE' : 'PLAY'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRepeatCaptionId(activeCaption ? (repeatCaptionId === activeCaption.id ? null : activeCaption.id) : null)}
-                    disabled={!activeCaption}
-                    className={`rounded-md border px-4 py-2 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                      repeatCaptionId
-                        ? 'border-yellow-400/65 bg-yellow-500/[0.14] text-yellow-100'
-                        : 'border-yellow-500/35 bg-yellow-500/[0.08] text-yellow-200'
-                    }`}
-                  >
-                    LOOP SENTENCE
-                  </button>
-                  {[0.75, 1, 1.25, 1.5].map((rate) => (
-                    <button
-                      key={rate}
-                      type="button"
-                      onClick={() => setPlaybackRate(rate)}
-                      className={`rounded-md border px-3 py-2 text-xs ${
-                        playbackRate === rate
-                          ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100'
-                          : 'border-cyan-500/25 text-cyan-300/70'
-                      }`}
-                    >
-                      {rate}x
-                    </button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs text-cyan-200/75">
-                    {formatVideoTime(currentTime)} / {formatVideoTime(duration)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleFullscreen}
-                    className="rounded-md border border-cyan-500/35 px-3 py-2 text-xs text-cyan-300 transition-colors hover:border-cyan-400/60 hover:text-cyan-200"
-                  >
-                    FULLSCREEN
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSidebarCollapsed((value) => !value)}
-                    className="rounded-md border border-cyan-500/35 px-3 py-2 text-xs text-cyan-300 transition-colors hover:border-cyan-400/60 hover:text-cyan-200"
-                  >
-                    {isSidebarCollapsed ? 'OPEN PANEL' : 'CLOSE PANEL'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 rounded-lg border border-cyan-500/20 bg-black/45 p-4">
-              {(['english', 'bilingual', 'hidden'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setCaptionMode(mode)}
-                  className={`rounded-md border px-3 py-2 text-xs uppercase ${
-                    captionMode === mode
-                      ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100'
-                      : 'border-cyan-500/25 text-cyan-300/70'
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-
-            {status ? (
+            {status && !isImmersive ? (
               <div className="rounded-md border border-yellow-500/40 bg-yellow-500/[0.08] px-4 py-3 text-sm text-yellow-200">
                 {status}
               </div>
@@ -501,8 +760,16 @@ export default function VideoTrainingDetailPage() {
           </div>
         </main>
 
-        {!isSidebarCollapsed ? (
-          <aside className="grid max-h-[calc(100vh-10rem)] grid-rows-[1fr_2fr_1fr] overflow-hidden rounded-lg border border-cyan-500/35 bg-black/82 shadow-[0_0_28px_rgba(34,211,238,0.12)]">
+        {!isSidebarCollapsed && !isImmersive ? (
+          <aside className="relative grid h-full min-h-0 grid-rows-[1fr_2fr_1fr] overflow-hidden rounded-lg border border-cyan-500/35 bg-black/82 shadow-[0_0_28px_rgba(34,211,238,0.12)]">
+              <button
+                type="button"
+                aria-label="Close side panel"
+                onClick={() => setIsSidebarCollapsed(true)}
+              className="absolute -left-px top-1/2 z-20 flex h-24 w-6 -translate-y-1/2 items-center justify-center rounded-r-md border border-l-0 border-cyan-500/25 bg-cyan-950/35 text-sm text-cyan-300/35 opacity-35 shadow-[inset_-8px_0_16px_rgba(34,211,238,0.06)] transition-all hover:border-cyan-300/70 hover:bg-cyan-900/80 hover:text-cyan-100 hover:opacity-100 hover:shadow-[inset_-8px_0_16px_rgba(34,211,238,0.12),0_0_14px_rgba(34,211,238,0.12)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-300/70"
+            >
+              &gt;
+            </button>
             <section className="overflow-y-auto border-b border-cyan-500/25 p-4">
               <div className="mb-3 h-28 rounded-md border border-cyan-500/20 bg-cover bg-center opacity-85" style={{ backgroundImage: `url("${getVideoCoverSrc(item.coverUrl)}")` }} />
               <div className="text-xs cyber-label text-cyan-400/70">{item.tag}</div>
@@ -625,6 +892,14 @@ export default function VideoTrainingDetailPage() {
           </aside>
         ) : null}
       </div>
+
+      <WordLookupPopover
+        request={wordLookup}
+        savedEntryKeys={wordLookupSavedKeys}
+        theme="cyan"
+        onSave={handleSaveVideoLookupVocabulary}
+        onClose={() => setWordLookup(null)}
+      />
     </div>
   )
 }

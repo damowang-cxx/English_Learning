@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getGlobalVocabulary, toMyqwertyExportWords } from '@/lib/global-vocabulary'
+import { requireApiUser } from '@/lib/authz'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +15,14 @@ export function OPTIONS() {
   })
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
-    const userId = request.nextUrl.searchParams.get('userId') || 'default'
+    const userId = guard.user.id
     const result = await getGlobalVocabulary({ userId })
     const words = toMyqwertyExportWords(result.items)
 

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "node scripts/fix-prisma-path.js",
+    "seed:admin": "node scripts/seed-admin.mjs",
     "sync:ecdict": "node scripts/sync-ecdict.mjs"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
     "framer-motion": "^12.30.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.30",
     "prisma": "^7.3.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"

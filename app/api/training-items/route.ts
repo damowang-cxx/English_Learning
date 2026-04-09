@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiAdmin } from '@/lib/authz'
 import fs from 'fs'
 import path from 'path'
 
@@ -33,6 +34,11 @@ export async function GET() {
 
 // 创建新的训练条目
 export async function POST(request: NextRequest) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const formData = await request.formData()
     const title = formData.get('title') as string

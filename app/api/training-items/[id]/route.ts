@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiAdmin, requireApiUser } from '@/lib/authz'
 import fs from 'fs'
 import path from 'path'
 
@@ -15,6 +16,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
     const item = await prisma.trainingItem.findUnique({
@@ -23,7 +29,11 @@ export async function GET(
         sentences: {
           orderBy: { order: 'asc' },
           include: {
-            userNotes: true
+            userNotes: {
+              where: {
+                userId: guard.user.id,
+              },
+            }
           }
         }
       }
@@ -51,6 +61,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
     const formData = await request.formData()
@@ -151,6 +166,11 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
 

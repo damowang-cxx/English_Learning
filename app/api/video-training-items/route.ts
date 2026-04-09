@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiAdmin } from '@/lib/authz'
 import {
   isVideoTrainingTag,
   type VideoCaptionInput,
@@ -127,6 +128,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   const savedFiles: string[] = []
 
   try {

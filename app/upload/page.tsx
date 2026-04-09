@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { isAdminRole } from '@/lib/auth-types'
 import { withBasePath } from '@/lib/base-path'
 
 interface Sentence {
@@ -119,6 +121,7 @@ const analyzeTimeOverlaps = (items: Sentence[]): OverlapAnalysis => {
 
 export default function UploadPage() {
   const router = useRouter()
+  const { data: session, status: authStatus } = useSession()
   const [title, setTitle] = useState('')
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [sentences, setSentences] = useState<Sentence[]>([])
@@ -135,10 +138,25 @@ export default function UploadPage() {
   const englishTextRef = useRef<HTMLTextAreaElement>(null)
   const startTimeRef = useRef<HTMLInputElement>(null)
   const jsonFileInputRef = useRef<HTMLInputElement>(null)
+  const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
   useEffect(() => {
+    if (authStatus === 'loading') {
+      return
+    }
+
+    if (!session?.user?.id) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent('/upload')}`)
+      return
+    }
+
+    if (!isAdmin) {
+      router.replace('/403')
+      return
+    }
+
     titleInputRef.current?.focus()
-  }, [])
+  }, [authStatus, isAdmin, router, session?.user?.id])
 
   const nextDraftTime = useMemo(() => getNextDraftTime(sentences), [sentences])
 
@@ -448,6 +466,14 @@ export default function UploadPage() {
       [field]: Math.max(0, Number((prev[field] + delta).toFixed(2)))
     }))
     setValidationErrors((prev) => ({ ...prev, [field]: '' }))
+  }
+
+  if (authStatus === 'loading' || !session?.user?.id || !isAdmin) {
+    return (
+      <div className="min-h-screen relative flex items-center justify-center text-red-300" style={{ zIndex: 50 }}>
+        {authStatus === 'loading' ? 'CHECKING ACCESS...' : 'ADMIN ACCESS REQUIRED'}
+      </div>
+    )
   }
 
   return (

@@ -258,6 +258,7 @@ export type VideoCaptionWhereInput = {
   order?: Prisma.IntFilter<"VideoCaption"> | number
   videoTrainingItem?: Prisma.XOR<Prisma.VideoTrainingItemScalarRelationFilter, Prisma.VideoTrainingItemWhereInput>
   phraseNotes?: Prisma.VideoPhraseNoteListRelationFilter
+  captionNotes?: Prisma.VideoCaptionNoteListRelationFilter
 }
 
 export type VideoCaptionOrderByWithRelationInput = {
@@ -272,6 +273,7 @@ export type VideoCaptionOrderByWithRelationInput = {
   order?: Prisma.SortOrder
   videoTrainingItem?: Prisma.VideoTrainingItemOrderByWithRelationInput
   phraseNotes?: Prisma.VideoPhraseNoteOrderByRelationAggregateInput
+  captionNotes?: Prisma.VideoCaptionNoteOrderByRelationAggregateInput
 }
 
 export type VideoCaptionWhereUniqueInput = Prisma.AtLeast<{
@@ -289,6 +291,7 @@ export type VideoCaptionWhereUniqueInput = Prisma.AtLeast<{
   order?: Prisma.IntFilter<"VideoCaption"> | number
   videoTrainingItem?: Prisma.XOR<Prisma.VideoTrainingItemScalarRelationFilter, Prisma.VideoTrainingItemWhereInput>
   phraseNotes?: Prisma.VideoPhraseNoteListRelationFilter
+  captionNotes?: Prisma.VideoCaptionNoteListRelationFilter
 }, "id">
 
 export type VideoCaptionOrderByWithAggregationInput = {
@@ -334,6 +337,7 @@ export type VideoCaptionCreateInput = {
   order: number
   videoTrainingItem: Prisma.VideoTrainingItemCreateNestedOneWithoutCaptionsInput
   phraseNotes?: Prisma.VideoPhraseNoteCreateNestedManyWithoutCaptionInput
+  captionNotes?: Prisma.VideoCaptionNoteCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionUncheckedCreateInput = {
@@ -347,6 +351,7 @@ export type VideoCaptionUncheckedCreateInput = {
   isKeySentence?: boolean
   order: number
   phraseNotes?: Prisma.VideoPhraseNoteUncheckedCreateNestedManyWithoutCaptionInput
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionUpdateInput = {
@@ -360,6 +365,7 @@ export type VideoCaptionUpdateInput = {
   order?: Prisma.IntFieldUpdateOperationsInput | number
   videoTrainingItem?: Prisma.VideoTrainingItemUpdateOneRequiredWithoutCaptionsNestedInput
   phraseNotes?: Prisma.VideoPhraseNoteUpdateManyWithoutCaptionNestedInput
+  captionNotes?: Prisma.VideoCaptionNoteUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionUncheckedUpdateInput = {
@@ -373,6 +379,7 @@ export type VideoCaptionUncheckedUpdateInput = {
   isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
   order?: Prisma.IntFieldUpdateOperationsInput | number
   phraseNotes?: Prisma.VideoPhraseNoteUncheckedUpdateManyWithoutCaptionNestedInput
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionCreateManyInput = {
@@ -473,6 +480,11 @@ export type VideoCaptionNullableScalarRelationFilter = {
   isNot?: Prisma.VideoCaptionWhereInput | null
 }
 
+export type VideoCaptionScalarRelationFilter = {
+  is?: Prisma.VideoCaptionWhereInput
+  isNot?: Prisma.VideoCaptionWhereInput
+}
+
 export type VideoCaptionCreateNestedManyWithoutVideoTrainingItemInput = {
   create?: Prisma.XOR<Prisma.VideoCaptionCreateWithoutVideoTrainingItemInput, Prisma.VideoCaptionUncheckedCreateWithoutVideoTrainingItemInput> | Prisma.VideoCaptionCreateWithoutVideoTrainingItemInput[] | Prisma.VideoCaptionUncheckedCreateWithoutVideoTrainingItemInput[]
   connectOrCreate?: Prisma.VideoCaptionCreateOrConnectWithoutVideoTrainingItemInput | Prisma.VideoCaptionCreateOrConnectWithoutVideoTrainingItemInput[]
@@ -515,10 +527,6 @@ export type VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemNestedInput =
   deleteMany?: Prisma.VideoCaptionScalarWhereInput | Prisma.VideoCaptionScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type VideoCaptionCreateNestedOneWithoutPhraseNotesInput = {
   create?: Prisma.XOR<Prisma.VideoCaptionCreateWithoutPhraseNotesInput, Prisma.VideoCaptionUncheckedCreateWithoutPhraseNotesInput>
   connectOrCreate?: Prisma.VideoCaptionCreateOrConnectWithoutPhraseNotesInput
@@ -535,6 +543,20 @@ export type VideoCaptionUpdateOneWithoutPhraseNotesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.VideoCaptionUpdateToOneWithWhereWithoutPhraseNotesInput, Prisma.VideoCaptionUpdateWithoutPhraseNotesInput>, Prisma.VideoCaptionUncheckedUpdateWithoutPhraseNotesInput>
 }
 
+export type VideoCaptionCreateNestedOneWithoutCaptionNotesInput = {
+  create?: Prisma.XOR<Prisma.VideoCaptionCreateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedCreateWithoutCaptionNotesInput>
+  connectOrCreate?: Prisma.VideoCaptionCreateOrConnectWithoutCaptionNotesInput
+  connect?: Prisma.VideoCaptionWhereUniqueInput
+}
+
+export type VideoCaptionUpdateOneRequiredWithoutCaptionNotesNestedInput = {
+  create?: Prisma.XOR<Prisma.VideoCaptionCreateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedCreateWithoutCaptionNotesInput>
+  connectOrCreate?: Prisma.VideoCaptionCreateOrConnectWithoutCaptionNotesInput
+  upsert?: Prisma.VideoCaptionUpsertWithoutCaptionNotesInput
+  connect?: Prisma.VideoCaptionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.VideoCaptionUpdateToOneWithWhereWithoutCaptionNotesInput, Prisma.VideoCaptionUpdateWithoutCaptionNotesInput>, Prisma.VideoCaptionUncheckedUpdateWithoutCaptionNotesInput>
+}
+
 export type VideoCaptionCreateWithoutVideoTrainingItemInput = {
   id?: string
   startTime: number
@@ -545,6 +567,7 @@ export type VideoCaptionCreateWithoutVideoTrainingItemInput = {
   isKeySentence?: boolean
   order: number
   phraseNotes?: Prisma.VideoPhraseNoteCreateNestedManyWithoutCaptionInput
+  captionNotes?: Prisma.VideoCaptionNoteCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionUncheckedCreateWithoutVideoTrainingItemInput = {
@@ -557,6 +580,7 @@ export type VideoCaptionUncheckedCreateWithoutVideoTrainingItemInput = {
   isKeySentence?: boolean
   order: number
   phraseNotes?: Prisma.VideoPhraseNoteUncheckedCreateNestedManyWithoutCaptionInput
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionCreateOrConnectWithoutVideoTrainingItemInput = {
@@ -609,6 +633,7 @@ export type VideoCaptionCreateWithoutPhraseNotesInput = {
   isKeySentence?: boolean
   order: number
   videoTrainingItem: Prisma.VideoTrainingItemCreateNestedOneWithoutCaptionsInput
+  captionNotes?: Prisma.VideoCaptionNoteCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionUncheckedCreateWithoutPhraseNotesInput = {
@@ -621,6 +646,7 @@ export type VideoCaptionUncheckedCreateWithoutPhraseNotesInput = {
   speaker?: string | null
   isKeySentence?: boolean
   order: number
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedCreateNestedManyWithoutCaptionInput
 }
 
 export type VideoCaptionCreateOrConnectWithoutPhraseNotesInput = {
@@ -649,6 +675,7 @@ export type VideoCaptionUpdateWithoutPhraseNotesInput = {
   isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
   order?: Prisma.IntFieldUpdateOperationsInput | number
   videoTrainingItem?: Prisma.VideoTrainingItemUpdateOneRequiredWithoutCaptionsNestedInput
+  captionNotes?: Prisma.VideoCaptionNoteUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionUncheckedUpdateWithoutPhraseNotesInput = {
@@ -661,6 +688,75 @@ export type VideoCaptionUncheckedUpdateWithoutPhraseNotesInput = {
   speaker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
   order?: Prisma.IntFieldUpdateOperationsInput | number
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedUpdateManyWithoutCaptionNestedInput
+}
+
+export type VideoCaptionCreateWithoutCaptionNotesInput = {
+  id?: string
+  startTime: number
+  endTime: number
+  enText: string
+  zhText?: string | null
+  speaker?: string | null
+  isKeySentence?: boolean
+  order: number
+  videoTrainingItem: Prisma.VideoTrainingItemCreateNestedOneWithoutCaptionsInput
+  phraseNotes?: Prisma.VideoPhraseNoteCreateNestedManyWithoutCaptionInput
+}
+
+export type VideoCaptionUncheckedCreateWithoutCaptionNotesInput = {
+  id?: string
+  videoTrainingItemId: string
+  startTime: number
+  endTime: number
+  enText: string
+  zhText?: string | null
+  speaker?: string | null
+  isKeySentence?: boolean
+  order: number
+  phraseNotes?: Prisma.VideoPhraseNoteUncheckedCreateNestedManyWithoutCaptionInput
+}
+
+export type VideoCaptionCreateOrConnectWithoutCaptionNotesInput = {
+  where: Prisma.VideoCaptionWhereUniqueInput
+  create: Prisma.XOR<Prisma.VideoCaptionCreateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedCreateWithoutCaptionNotesInput>
+}
+
+export type VideoCaptionUpsertWithoutCaptionNotesInput = {
+  update: Prisma.XOR<Prisma.VideoCaptionUpdateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedUpdateWithoutCaptionNotesInput>
+  create: Prisma.XOR<Prisma.VideoCaptionCreateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedCreateWithoutCaptionNotesInput>
+  where?: Prisma.VideoCaptionWhereInput
+}
+
+export type VideoCaptionUpdateToOneWithWhereWithoutCaptionNotesInput = {
+  where?: Prisma.VideoCaptionWhereInput
+  data: Prisma.XOR<Prisma.VideoCaptionUpdateWithoutCaptionNotesInput, Prisma.VideoCaptionUncheckedUpdateWithoutCaptionNotesInput>
+}
+
+export type VideoCaptionUpdateWithoutCaptionNotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  startTime?: Prisma.FloatFieldUpdateOperationsInput | number
+  endTime?: Prisma.FloatFieldUpdateOperationsInput | number
+  enText?: Prisma.StringFieldUpdateOperationsInput | string
+  zhText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  speaker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  videoTrainingItem?: Prisma.VideoTrainingItemUpdateOneRequiredWithoutCaptionsNestedInput
+  phraseNotes?: Prisma.VideoPhraseNoteUpdateManyWithoutCaptionNestedInput
+}
+
+export type VideoCaptionUncheckedUpdateWithoutCaptionNotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  videoTrainingItemId?: Prisma.StringFieldUpdateOperationsInput | string
+  startTime?: Prisma.FloatFieldUpdateOperationsInput | number
+  endTime?: Prisma.FloatFieldUpdateOperationsInput | number
+  enText?: Prisma.StringFieldUpdateOperationsInput | string
+  zhText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  speaker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  phraseNotes?: Prisma.VideoPhraseNoteUncheckedUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionCreateManyVideoTrainingItemInput = {
@@ -684,6 +780,7 @@ export type VideoCaptionUpdateWithoutVideoTrainingItemInput = {
   isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
   order?: Prisma.IntFieldUpdateOperationsInput | number
   phraseNotes?: Prisma.VideoPhraseNoteUpdateManyWithoutCaptionNestedInput
+  captionNotes?: Prisma.VideoCaptionNoteUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionUncheckedUpdateWithoutVideoTrainingItemInput = {
@@ -696,6 +793,7 @@ export type VideoCaptionUncheckedUpdateWithoutVideoTrainingItemInput = {
   isKeySentence?: Prisma.BoolFieldUpdateOperationsInput | boolean
   order?: Prisma.IntFieldUpdateOperationsInput | number
   phraseNotes?: Prisma.VideoPhraseNoteUncheckedUpdateManyWithoutCaptionNestedInput
+  captionNotes?: Prisma.VideoCaptionNoteUncheckedUpdateManyWithoutCaptionNestedInput
 }
 
 export type VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemInput = {
@@ -716,10 +814,12 @@ export type VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemInput = {
 
 export type VideoCaptionCountOutputType = {
   phraseNotes: number
+  captionNotes: number
 }
 
 export type VideoCaptionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   phraseNotes?: boolean | VideoCaptionCountOutputTypeCountPhraseNotesArgs
+  captionNotes?: boolean | VideoCaptionCountOutputTypeCountCaptionNotesArgs
 }
 
 /**
@@ -739,6 +839,13 @@ export type VideoCaptionCountOutputTypeCountPhraseNotesArgs<ExtArgs extends runt
   where?: Prisma.VideoPhraseNoteWhereInput
 }
 
+/**
+ * VideoCaptionCountOutputType without action
+ */
+export type VideoCaptionCountOutputTypeCountCaptionNotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VideoCaptionNoteWhereInput
+}
+
 
 export type VideoCaptionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -752,6 +859,7 @@ export type VideoCaptionSelect<ExtArgs extends runtime.Types.Extensions.Internal
   order?: boolean
   videoTrainingItem?: boolean | Prisma.VideoTrainingItemDefaultArgs<ExtArgs>
   phraseNotes?: boolean | Prisma.VideoCaption$phraseNotesArgs<ExtArgs>
+  captionNotes?: boolean | Prisma.VideoCaption$captionNotesArgs<ExtArgs>
   _count?: boolean | Prisma.VideoCaptionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["videoCaption"]>
 
@@ -797,6 +905,7 @@ export type VideoCaptionOmit<ExtArgs extends runtime.Types.Extensions.InternalAr
 export type VideoCaptionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   videoTrainingItem?: boolean | Prisma.VideoTrainingItemDefaultArgs<ExtArgs>
   phraseNotes?: boolean | Prisma.VideoCaption$phraseNotesArgs<ExtArgs>
+  captionNotes?: boolean | Prisma.VideoCaption$captionNotesArgs<ExtArgs>
   _count?: boolean | Prisma.VideoCaptionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type VideoCaptionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -811,6 +920,7 @@ export type $VideoCaptionPayload<ExtArgs extends runtime.Types.Extensions.Intern
   objects: {
     videoTrainingItem: Prisma.$VideoTrainingItemPayload<ExtArgs>
     phraseNotes: Prisma.$VideoPhraseNotePayload<ExtArgs>[]
+    captionNotes: Prisma.$VideoCaptionNotePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1218,6 +1328,7 @@ export interface Prisma__VideoCaptionClient<T, Null = never, ExtArgs extends run
   readonly [Symbol.toStringTag]: "PrismaPromise"
   videoTrainingItem<T extends Prisma.VideoTrainingItemDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VideoTrainingItemDefaultArgs<ExtArgs>>): Prisma.Prisma__VideoTrainingItemClient<runtime.Types.Result.GetResult<Prisma.$VideoTrainingItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   phraseNotes<T extends Prisma.VideoCaption$phraseNotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VideoCaption$phraseNotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VideoPhraseNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  captionNotes<T extends Prisma.VideoCaption$captionNotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.VideoCaption$captionNotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VideoCaptionNotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1671,6 +1782,30 @@ export type VideoCaption$phraseNotesArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.VideoPhraseNoteScalarFieldEnum | Prisma.VideoPhraseNoteScalarFieldEnum[]
+}
+
+/**
+ * VideoCaption.captionNotes
+ */
+export type VideoCaption$captionNotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VideoCaptionNote
+   */
+  select?: Prisma.VideoCaptionNoteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VideoCaptionNote
+   */
+  omit?: Prisma.VideoCaptionNoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VideoCaptionNoteInclude<ExtArgs> | null
+  where?: Prisma.VideoCaptionNoteWhereInput
+  orderBy?: Prisma.VideoCaptionNoteOrderByWithRelationInput | Prisma.VideoCaptionNoteOrderByWithRelationInput[]
+  cursor?: Prisma.VideoCaptionNoteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VideoCaptionNoteScalarFieldEnum | Prisma.VideoCaptionNoteScalarFieldEnum[]
 }
 
 /**

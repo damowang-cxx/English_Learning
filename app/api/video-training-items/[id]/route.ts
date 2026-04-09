@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiAdmin, requireApiUser } from '@/lib/authz'
 import { deletePublicFile } from '@/lib/video-training-storage'
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
     const item = await prisma.videoTrainingItem.findUnique({
@@ -13,11 +19,21 @@ export async function GET(
       include: {
         captions: {
           orderBy: { order: 'asc' },
+          include: {
+            captionNotes: {
+              where: {
+                userId: guard.user.id,
+              },
+            },
+          },
         },
         characters: {
           orderBy: { order: 'asc' },
         },
         phraseNotes: {
+          where: {
+            userId: guard.user.id,
+          },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -38,6 +54,11 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
     const existingItem = await prisma.videoTrainingItem.findUnique({

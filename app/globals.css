@@ -1289,6 +1289,14 @@ body[data-training-focus-mode='true'] .cockpit-panel-chrome {
   display: none !important;
 }
 
+body[data-video-immersive-mode='true'] .star-background,
+body[data-video-immersive-mode='true'] .particle-background,
+body[data-video-immersive-mode='true'] .scan-line,
+body[data-video-immersive-mode='true'] .cockpit-panel,
+.cockpit-panel[data-video-immersive-mode='true'] {
+  display: none !important;
+}
+
 body[data-training-focus-mode='true'] [data-training-page] .animate-pulse,
 body[data-training-focus-mode='true'] [data-training-page] .animate-shimmer,
 body[data-training-focus-mode='true'] [data-training-page] .animate-scan-vertical,

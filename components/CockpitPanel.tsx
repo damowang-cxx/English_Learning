@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react'
 import { Rocket, Activity, Shield, Target, Menu, X, Home, Languages, Keyboard, MoonStar } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
 import { useFocusMode } from '@/contexts/FocusModeContext'
 import { stripBasePath, withBasePath } from '@/lib/base-path'
 import { HOME_HEATMAP_DAYS, formatDurationToClock, STREAK_THRESHOLD_SECONDS, toLocalDateKey } from '@/lib/learning-stats'
+import UploadPermissionDialog from '@/components/UploadPermissionDialog'
 
 const DEFAULT_DOCK_SCALE = 0.5
 const TRAINING_DOCK_SCALE = 0.62
@@ -206,6 +208,7 @@ const EnergyBar = ({ label, color, value }: { label: string; color: string; valu
 export default function CockpitPanel() {
   const router = useRouter()
   const pathname = usePathname()
+  const { data: session, status: authStatus } = useSession()
   const appPathname = stripBasePath(pathname || '/')
   const translationContext = useTranslation()
   const { isDictationMode, toggleDictationMode, setIsDictationMode } = useDictationMode()
@@ -221,6 +224,7 @@ export default function CockpitPanel() {
   const [heatmapScale, setHeatmapScale] = useState(1)
   const [heatmapViewportHeight, setHeatmapViewportHeight] = useState(0)
   const [heatmapVerticalOverflow, setHeatmapVerticalOverflow] = useState(0)
+  const [isUploadPermissionDialogOpen, setIsUploadPermissionDialogOpen] = useState(false)
   
   // 左侧仪表盘动态数值状态
   const [speed, setSpeed] = useState(2997)
@@ -234,6 +238,8 @@ export default function CockpitPanel() {
   const [uptimeHours, setUptimeHours] = useState(24)
   const [uptimeMinutes, setUptimeMinutes] = useState(15)
   
+  const isAuthenticated = authStatus === 'authenticated'
+  const isAdmin = (session?.user as { role?: unknown } | undefined)?.role === 'ADMIN'
   const isVideoDomain = appPathname === '/video' || appPathname.startsWith('/video/')
   // 判断是否在首页
   const isHomePage = appPathname === '/' || appPathname === '/video'
@@ -635,6 +641,11 @@ export default function CockpitPanel() {
 
   // 处理WARP按钮点击 - 跳转到上传页面
   const handleWarp = () => {
+    if (!isAdmin) {
+      setIsUploadPermissionDialogOpen(true)
+      return
+    }
+
     router.push(isVideoDomain ? '/video/upload' : '/upload')
   }
 
@@ -690,6 +701,11 @@ export default function CockpitPanel() {
 
   // 模拟数据波动
   const fetchLearningOverview = async () => {
+    if (!isAuthenticated) {
+      setLearningOverview(DEFAULT_LEARNING_OVERVIEW)
+      return
+    }
+
     try {
       const dateKey = toLocalDateKey(new Date())
       const response = await fetch(
@@ -715,7 +731,7 @@ export default function CockpitPanel() {
   }
 
   useEffect(() => {
-    if (!isHomePage) {
+    if (!isHomePage || authStatus === 'loading') {
       return
     }
 
@@ -727,7 +743,7 @@ export default function CockpitPanel() {
     return () => {
       window.clearInterval(timer)
     }
-  }, [isHomePage])
+  }, [authStatus, isAuthenticated, isHomePage])
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -2173,6 +2189,9 @@ export default function CockpitPanel() {
           100% { transform: translateY(calc(100vh + 20px)); opacity: 0; }
         }
       `}</style>
+      {isUploadPermissionDialogOpen ? (
+        <UploadPermissionDialog onClose={() => setIsUploadPermissionDialogOpen(false)} />
+      ) : null}
     </div>
   )
 }

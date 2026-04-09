@@ -15,6 +15,7 @@ export interface HomeTrainingCardItem {
 
 interface HomeTrainingGridProps {
   items: HomeTrainingCardItem[]
+  isAdmin?: boolean
 }
 
 const CARD_THEMES = [
@@ -33,7 +34,7 @@ function formatCreatedDate(value: string) {
   })
 }
 
-export default function HomeTrainingGrid({ items: initialItems }: HomeTrainingGridProps) {
+export default function HomeTrainingGrid({ items: initialItems, isAdmin = false }: HomeTrainingGridProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [items, setItems] = useState(initialItems)
@@ -71,7 +72,7 @@ export default function HomeTrainingGrid({ items: initialItems }: HomeTrainingGr
   const removingIdSet = useMemo(() => removingIds, [removingIds])
 
   const handleDeleteCard = async () => {
-    if (!pendingDeleteItem || deletingId) {
+    if (!isAdmin || !pendingDeleteItem || deletingId) {
       return
     }
 
@@ -260,39 +261,41 @@ export default function HomeTrainingGrid({ items: initialItems }: HomeTrainingGr
                 ['--card-glow' as string]: colorTheme.glow,
               } as CSSProperties}
             >
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  setDeleteError(null)
-                  setPendingDeleteItem(item)
-                }}
-                className={`home-card-delete-button absolute bottom-[0.65rem] right-[0.65rem] z-30 ${
-                  isRemoving || deletingId === item.id
-                    ? 'pointer-events-none opacity-0'
-                    : 'opacity-45 md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100'
-                }`}
-                title={`Delete training "${item.title}"`}
-                aria-label={`Delete training "${item.title}"`}
-              >
-                <span className="home-card-delete-button__scan" aria-hidden="true"></span>
-                <span className="home-card-delete-button__edge" aria-hidden="true"></span>
-                <svg
-                  className="home-card-delete-button__icon h-3.5 w-3.5 translate-y-[2px]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setDeleteError(null)
+                    setPendingDeleteItem(item)
+                  }}
+                  className={`home-card-delete-button absolute bottom-[0.65rem] right-[0.65rem] z-30 ${
+                    isRemoving || deletingId === item.id
+                      ? 'pointer-events-none opacity-0'
+                      : 'opacity-45 md:translate-y-1 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100'
+                  }`}
+                  title={`Delete training "${item.title}"`}
+                  aria-label={`Delete training "${item.title}"`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.8}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+                  <span className="home-card-delete-button__scan" aria-hidden="true"></span>
+                  <span className="home-card-delete-button__edge" aria-hidden="true"></span>
+                  <svg
+                    className="home-card-delete-button__icon h-3.5 w-3.5 translate-y-[2px]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.8}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              ) : null}
 
               <Link
                 href={`/training/${item.id}`}

@@ -317,14 +317,6 @@ export type TrainingItemScalarRelationFilter = {
   isNot?: Prisma.TrainingItemWhereInput
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type TrainingItemCreateNestedOneWithoutSentencesInput = {
   create?: Prisma.XOR<Prisma.TrainingItemCreateWithoutSentencesInput, Prisma.TrainingItemUncheckedCreateWithoutSentencesInput>
   connectOrCreate?: Prisma.TrainingItemCreateOrConnectWithoutSentencesInput

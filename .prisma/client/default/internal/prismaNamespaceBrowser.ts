@@ -51,6 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
+  User: 'User',
   TrainingItem: 'TrainingItem',
   Sentence: 'Sentence',
   UserNote: 'UserNote',
@@ -58,6 +59,7 @@ export const ModelName = {
   VideoCaption: 'VideoCaption',
   VideoCharacter: 'VideoCharacter',
   VideoPhraseNote: 'VideoPhraseNote',
+  VideoCaptionNote: 'VideoCaptionNote',
   LearningDailyStat: 'LearningDailyStat'
 } as const
 
@@ -72,6 +74,20 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 } as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
+
+
+export const UserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  role: 'role',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
 export const TrainingItemScalarFieldEnum = {
@@ -165,6 +181,19 @@ export const VideoPhraseNoteScalarFieldEnum = {
 } as const
 
 export type VideoPhraseNoteScalarFieldEnum = (typeof VideoPhraseNoteScalarFieldEnum)[keyof typeof VideoPhraseNoteScalarFieldEnum]
+
+
+export const VideoCaptionNoteScalarFieldEnum = {
+  id: 'id',
+  videoCaptionId: 'videoCaptionId',
+  words: 'words',
+  notes: 'notes',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type VideoCaptionNoteScalarFieldEnum = (typeof VideoCaptionNoteScalarFieldEnum)[keyof typeof VideoCaptionNoteScalarFieldEnum]
 
 
 export const LearningDailyStatScalarFieldEnum = {

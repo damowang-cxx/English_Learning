@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import GlobalVocabularyView from '@/components/GlobalVocabularyView'
+import { requirePageUser } from '@/lib/authz'
 import { getGlobalVocabulary } from '@/lib/global-vocabulary'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +8,8 @@ export const revalidate = 0
 
 export default async function VocabularyPage() {
   noStore()
-  const result = await getGlobalVocabulary({ userId: 'default' })
+  const user = await requirePageUser('/vocabulary')
+  const result = await getGlobalVocabulary({ userId: user.id })
 
   return (
     <div className="min-h-screen relative">

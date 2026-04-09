@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiUser } from '@/lib/authz'
 
 async function getValidCaptionId(videoTrainingItemId: string, captionId?: string | null) {
   if (!captionId) {
@@ -20,13 +21,17 @@ async function getValidCaptionId(videoTrainingItemId: string, captionId?: string
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId') || 'default'
+    const userId = guard.user.id
     const notes = await prisma.videoPhraseNote.findMany({
       where: {
         videoTrainingItemId: id,
@@ -46,9 +51,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
-    const { phrase, note = '', captionId = null, userId = 'default' } = await request.json()
+    const { phrase, note = '', captionId = null } = await request.json()
     const normalizedPhrase = typeof phrase === 'string' ? phrase.trim() : ''
 
     if (!normalizedPhrase) {
@@ -71,7 +81,7 @@ export async function POST(
         captionId: validCaptionId,
         phrase: normalizedPhrase,
         note: typeof note === 'string' ? note.trim() : '',
-        userId: typeof userId === 'string' && userId.trim() ? userId.trim() : 'default',
+        userId: guard.user.id,
       },
     })
 
@@ -86,12 +96,17 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
-    const { noteId, phrase, note = '', captionId = null, userId = 'default' } = await request.json()
+    const { noteId, phrase, note = '', captionId = null } = await request.json()
     const normalizedNoteId = typeof noteId === 'string' ? noteId.trim() : ''
     const normalizedPhrase = typeof phrase === 'string' ? phrase.trim() : ''
-    const normalizedUserId = typeof userId === 'string' && userId.trim() ? userId.trim() : 'default'
+    const normalizedUserId = guard.user.id
 
     if (!normalizedNoteId || !normalizedPhrase) {
       return NextResponse.json({ error: 'Note ID and phrase are required' }, { status: 400 })
@@ -130,11 +145,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const noteId = searchParams.get('noteId') || ''
-    const userId = searchParams.get('userId') || 'default'
+    const userId = guard.user.id
 
     if (!noteId) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })

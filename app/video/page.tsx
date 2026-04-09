@@ -1,6 +1,8 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import HomeModeShell from '@/components/HomeModeShell'
 import HomeVideoTrainingGrid, { type HomeVideoTrainingCardItem } from '@/components/HomeVideoTrainingGrid'
+import { isAdminRole } from '@/lib/auth-types'
+import { getCurrentUser } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import type { HomeEntry } from '@/lib/home-entries'
 
@@ -46,12 +48,13 @@ async function getVideoTrainingItems() {
 }
 
 export default async function VideoHomePage() {
-  const items = await getVideoTrainingItems()
+  const [items, user] = await Promise.all([getVideoTrainingItems(), getCurrentUser()])
+  const isAdmin = isAdminRole(user?.role)
 
   return (
     <div className="min-h-screen relative">
-      <HomeModeShell mode="video">
-        <HomeVideoTrainingGrid items={items} />
+      <HomeModeShell mode="video" isAdmin={isAdmin}>
+        <HomeVideoTrainingGrid items={items} isAdmin={isAdmin} />
       </HomeModeShell>
     </div>
   )

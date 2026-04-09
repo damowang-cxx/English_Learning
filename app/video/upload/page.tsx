@@ -1,7 +1,10 @@
 'use client'
 
-import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { createPortal } from 'react-dom'
+import { isAdminRole } from '@/lib/auth-types'
 import { withBasePath } from '@/lib/base-path'
 import { VIDEO_TRAINING_TAGS, formatVideoTime, type VideoTrainingTag } from '@/lib/video-training'
 
@@ -18,7 +21,6 @@ interface CaptionDraft {
   enText: string
   zhText: string
   speaker: string
-  isKeySentence: boolean
   needsReview: boolean
   translationStatus?: 'empty' | 'draft' | 'manual'
   translationNote?: string
@@ -51,7 +53,6 @@ interface ImportedJsonCaptionRecord {
   end?: number | string
   endTime?: number | string
   speaker?: string
-  isKeySentence?: boolean
 }
 
 interface TranslationDraftResult {
@@ -144,7 +145,6 @@ function mergeCaptionTracks(enCues: ParsedSubtitleCue[], zhCues: ParsedSubtitleC
       enText: cue.text,
       zhText: '',
       speaker: '',
-      isKeySentence: false,
       needsReview: false,
       translationStatus: 'empty',
     })) satisfies CaptionDraft[]
@@ -158,7 +158,6 @@ function mergeCaptionTracks(enCues: ParsedSubtitleCue[], zhCues: ParsedSubtitleC
       enText: cue.text,
       zhText: zhCues[index]?.text || '',
       speaker: '',
-      isKeySentence: false,
       needsReview: false,
       translationStatus: zhCues[index]?.text ? 'draft' : 'empty',
     })) satisfies CaptionDraft[]
@@ -186,7 +185,6 @@ function mergeCaptionTracks(enCues: ParsedSubtitleCue[], zhCues: ParsedSubtitleC
       enText: cue.text,
       zhText: bestCue?.cue.text || '',
       speaker: '',
-      isKeySentence: false,
       needsReview: !bestCue || bestCue.overlap === 0,
       translationStatus: bestCue?.cue.text ? 'draft' : 'empty',
       translationNeedsReview: !bestCue || bestCue.overlap === 0,
@@ -220,7 +218,6 @@ function normalizeJsonCaptionRecord(record: ImportedJsonCaptionRecord, fallbackI
     enText,
     zhText,
     speaker,
-    isKeySentence: Boolean(record.isKeySentence),
     needsReview: false,
     translationStatus: zhText ? 'draft' : 'empty',
   }
@@ -242,6 +239,7 @@ function parseJsonCaptions(rawText: string) {
 
 export default function VideoUploadPage() {
   const router = useRouter()
+  const { data: session, status: authStatus } = useSession()
   const [title, setTitle] = useState('')
   const [sourceTitle, setSourceTitle] = useState('')
   const [plotSummary, setPlotSummary] = useState('')
@@ -257,16 +255,46 @@ export default function VideoUploadPage() {
   const [isParsing, setIsParsing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [translationDraftQuality, setTranslationDraftQuality] = useState<TranslationDraftQuality | null>(null)
+  const [isCaptionEditorOpen, setIsCaptionEditorOpen] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const jsonFileInputRef = useRef<HTMLInputElement>(null)
+  const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
+
+  useEffect(() => {
+    if (authStatus === 'loading') {
+      return
+    }
+
+    if (!session?.user?.id) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent('/video/upload')}`)
+      return
+    }
+
+    if (!isAdmin) {
+      router.replace('/403')
+      return
+    }
+
+    titleInputRef.current?.focus()
+  }, [authStatus, isAdmin, router, session?.user?.id])
 
   const characterNames = useMemo(
     () => characters.map((character) => character.name.trim()).filter(Boolean),
     [characters]
   )
-  const hasReviewCaptions = captions.some((caption) => caption.needsReview)
+  const reviewCaptionCount = captions.filter((caption) => caption.needsReview || caption.translationNeedsReview).length
+  const translatedCaptionCount = captions.filter((caption) => caption.zhText.trim()).length
+  const manualCaptionCount = captions.filter((caption) => caption.translationStatus === 'manual').length
   const canSubmit = Boolean(title.trim() && mediaFile && captions.length > 0 && !isUploading)
   const isRequestingDraft = Boolean(translationDraftQuality)
+  const publishButtonLabel = isUploading ? '[ UPLOADING... ]' : '[ UPLOAD TRAINING DATA ]'
+  const submitReadinessText = !title.trim()
+    ? 'Need title'
+    : !mediaFile
+      ? 'Need video file'
+      : captions.length === 0
+        ? 'Need parsed captions'
+        : 'Ready to upload'
 
   const updateCaption = (localId: string, patch: Partial<CaptionDraft>) => {
     setCaptions((prev) =>
@@ -530,7 +558,7 @@ export default function VideoUploadPage() {
         enText: caption.enText.trim(),
         zhText: caption.zhText.trim() || null,
         speaker: tag === '影视' ? caption.speaker.trim() || null : null,
-        isKeySentence: caption.isKeySentence,
+        isKeySentence: false,
       }))))
       formData.append('characters', JSON.stringify(characterPayload.map((character) => ({
         name: character.name,
@@ -565,6 +593,14 @@ export default function VideoUploadPage() {
     }
   }
 
+  if (authStatus === 'loading' || !session?.user?.id || !isAdmin) {
+    return (
+      <div className="min-h-screen relative flex items-center justify-center text-cyan-300" style={{ zIndex: 50 }}>
+        {authStatus === 'loading' ? 'CHECKING ACCESS...' : 'ADMIN ACCESS REQUIRED'}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen relative flex items-center justify-center" style={{ paddingBottom: '45vh', paddingTop: '10vh' }}>
       <div className="w-[95%] max-w-6xl mx-auto relative" style={{ zIndex: 50 }}>
@@ -597,6 +633,22 @@ export default function VideoUploadPage() {
             }}
             className="relative z-10 space-y-8 p-6 md:p-8"
           >
+            <div className="sticky top-3 z-30 flex flex-col gap-3 rounded-lg border border-cyan-500/35 bg-black/90 p-3 shadow-[0_0_24px_rgba(34,211,238,0.18)] backdrop-blur-md md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs cyber-label text-cyan-300/70">UPLOAD STATUS</div>
+                <div className={`mt-1 text-sm ${canSubmit ? 'text-cyan-100' : 'text-yellow-200'}`}>
+                  {submitReadinessText}
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="rounded-md border-2 border-cyan-500/60 bg-cyan-500/[0.14] px-6 py-3 text-sm text-cyan-100 transition-colors hover:border-cyan-300/80 hover:bg-cyan-500/[0.2] disabled:cursor-not-allowed disabled:border-gray-600/50 disabled:bg-gray-900/50 disabled:text-gray-500"
+              >
+                {publishButtonLabel}
+              </button>
+            </div>
+
             <section className="grid gap-5 md:grid-cols-2">
               <div className="space-y-5">
                 <label className="block">
@@ -731,7 +783,7 @@ export default function VideoUploadPage() {
                   <div>
                     <h3 className="text-sm cyber-title text-cyan-300">JSON CAPTIONS</h3>
                     <p className="mt-1 text-xs text-cyan-300/60">
-                      Supports id, index, en/enText, zh/zhText, start/startTime, end/endTime, speaker, isKeySentence.
+                      Supports id, index, en/enText, zh/zhText, start/startTime, end/endTime, speaker.
                     </p>
                   </div>
                   <button
@@ -830,115 +882,195 @@ export default function VideoUploadPage() {
                 <div>
                   <h2 className="text-lg cyber-title text-cyan-300">CAPTION PREVIEW</h2>
                   <p className="mt-1 text-xs text-cyan-300/65">
-                    {captions.length} blocks{hasReviewCaptions ? ' · review highlighted matches' : ''}
+                    Caption blocks are edited in a dedicated modal so the upload form stays compact.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCaptionEditorOpen(true)}
+                  disabled={captions.length === 0}
+                  className="rounded-md border border-cyan-500/45 bg-cyan-500/[0.1] px-4 py-2 text-xs text-cyan-200 transition-colors hover:border-cyan-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  EDIT CAPTIONS
+                </button>
               </div>
 
               {captions.length === 0 ? (
                 <div className="rounded-md border border-cyan-500/20 bg-black/25 px-4 py-6 text-center text-sm text-cyan-200/65">
-                  Import English captions to edit the internal caption blocks.
+                  Import SRT / VTT / JSON captions before opening the caption editor.
                 </div>
               ) : (
-                <div className="max-h-[560px] space-y-3 overflow-y-auto pr-2">
-                  {captions.map((caption, index) => (
-                    <div
-                      key={caption.localId}
-                      className={`rounded-md border p-4 ${
-                        caption.needsReview
-                          ? 'border-yellow-400/50 bg-yellow-500/[0.08]'
-                          : 'border-cyan-500/20 bg-black/35'
-                      }`}
-                    >
-                      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-cyan-300/75">
-                        <span className="font-mono">#{index + 1}</span>
-                        <span>{formatVideoTime(caption.startTime)} → {formatVideoTime(caption.endTime)}</span>
-                        {caption.needsReview ? <span className="text-yellow-200">REVIEW</span> : null}
-                        {caption.translationStatus ? (
-                          <span className="rounded border border-cyan-500/25 px-2 py-0.5 text-cyan-200/70">
-                            {caption.translationStatus.toUpperCase()}
-                          </span>
-                        ) : null}
-                        {caption.translationNeedsReview ? <span className="text-yellow-200">TRANSLATION REVIEW</span> : null}
-                        <label className="ml-auto flex items-center gap-2 text-cyan-200/80">
-                          <input
-                            type="checkbox"
-                            checked={caption.isKeySentence}
-                            onChange={(event) => updateCaption(caption.localId, { isKeySentence: event.target.checked })}
-                          />
-                          KEY
-                        </label>
-                      </div>
-
-                      <div className="grid gap-3 md:grid-cols-[0.65fr_0.65fr_1fr_auto]">
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={caption.startTime}
-                          onChange={(event) => updateCaption(caption.localId, { startTime: Number(event.target.value) })}
-                          className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                          aria-label={`Caption ${index + 1} start time`}
-                        />
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={caption.endTime}
-                          onChange={(event) => updateCaption(caption.localId, { endTime: Number(event.target.value) })}
-                          className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                          aria-label={`Caption ${index + 1} end time`}
-                        />
-                        {tag === '影视' ? (
-                          <select
-                            value={caption.speaker}
-                            onChange={(event) => updateCaption(caption.localId, { speaker: event.target.value })}
-                            className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                            aria-label={`Caption ${index + 1} speaker`}
-                          >
-                            <option value="">No speaker</option>
-                            {characterNames.map((name) => (
-                              <option key={name} value={name}>{name}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <div className="rounded-md border border-cyan-500/15 bg-black/25 px-3 py-2 text-sm text-cyan-300/40">No speaker</div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setCaptions((prev) => prev.filter((entry) => entry.localId !== caption.localId))}
-                          className="rounded-md border border-red-500/30 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
-                        >
-                          DELETE
-                        </button>
-                      </div>
-
-                      <div className="mt-3 grid gap-3 md:grid-cols-2">
-                        <textarea
-                          value={caption.enText}
-                          onChange={(event) => updateCaption(caption.localId, { enText: event.target.value })}
-                          rows={3}
-                          className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                          placeholder="English"
-                        />
-                        <textarea
-                          value={caption.zhText}
-                          onChange={(event) => updateCaptionZhText(caption.localId, event.target.value)}
-                          rows={3}
-                          className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                          placeholder="Chinese translation"
-                        />
-                      </div>
-                      {caption.translationNote ? (
-                        <div className="mt-3 rounded-md border border-yellow-500/25 bg-yellow-500/[0.06] px-3 py-2 text-xs text-yellow-100/80">
-                          {caption.translationNote}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
+                <div className="grid gap-3 md:grid-cols-4">
+                  <div className="rounded-md border border-cyan-500/20 bg-black/35 p-4">
+                    <div className="text-xs cyber-label text-cyan-300/60">TOTAL</div>
+                    <div className="mt-2 text-2xl text-cyan-100">{captions.length}</div>
+                  </div>
+                  <div className="rounded-md border border-yellow-500/25 bg-yellow-500/[0.06] p-4">
+                    <div className="text-xs cyber-label text-yellow-200/70">REVIEW</div>
+                    <div className="mt-2 text-2xl text-yellow-100">{reviewCaptionCount}</div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-black/35 p-4">
+                    <div className="text-xs cyber-label text-cyan-300/60">CHINESE</div>
+                    <div className="mt-2 text-2xl text-cyan-100">{translatedCaptionCount}</div>
+                  </div>
+                  <div className="rounded-md border border-cyan-500/20 bg-black/35 p-4">
+                    <div className="text-xs cyber-label text-cyan-300/60">MANUAL</div>
+                    <div className="mt-2 text-2xl text-cyan-100">{manualCaptionCount}</div>
+                  </div>
                 </div>
               )}
             </section>
+
+            {isCaptionEditorOpen && typeof document !== 'undefined'
+              ? createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 md:p-6">
+                <button
+                  type="button"
+                  aria-label="Close caption editor"
+                  onClick={() => setIsCaptionEditorOpen(false)}
+                  className="absolute inset-0 cursor-default bg-black/80 backdrop-blur-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsCaptionEditorOpen(false)}
+                  className="fixed left-4 top-4 z-[10000] rounded-md border-2 border-cyan-300/70 bg-black/95 px-4 py-3 text-xs text-cyan-50 shadow-[0_0_20px_rgba(34,211,238,0.24)] transition-colors hover:border-cyan-100 hover:bg-cyan-500/[0.22]"
+                >
+                  BACK TO UPLOAD
+                </button>
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="caption-editor-title"
+                  className="relative z-10 flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-lg border-2 border-cyan-500/45 bg-black/95 shadow-[0_0_48px_rgba(34,211,238,0.25)]"
+                >
+                  <div className="flex flex-col gap-3 border-b border-cyan-500/30 bg-cyan-950/35 p-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h2 id="caption-editor-title" className="text-lg cyber-title text-cyan-300">CAPTION EDITOR</h2>
+                      <p className="mt-1 text-xs text-cyan-300/65">
+                        {captions.length} blocks · {reviewCaptionCount} need review
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCaptionEditorOpen(false)}
+                      className="rounded-md border-2 border-cyan-300/70 bg-cyan-500/[0.18] px-5 py-3 text-xs text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.18)] transition-colors hover:border-cyan-200 hover:bg-cyan-500/[0.25]"
+                    >
+                      CLOSE EDITOR
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 md:p-5">
+                    {captions.length === 0 ? (
+                      <div className="rounded-md border border-cyan-500/20 bg-black/25 px-4 py-6 text-center text-sm text-cyan-200/65">
+                        No captions remain. Close this editor and import SRT / VTT / JSON captions again.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {captions.map((caption, index) => (
+                          <div
+                            key={caption.localId}
+                            className={`rounded-md border p-4 ${
+                              caption.needsReview || caption.translationNeedsReview
+                                ? 'border-yellow-400/50 bg-yellow-500/[0.08]'
+                                : 'border-cyan-500/20 bg-black/35'
+                            }`}
+                          >
+                            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-cyan-300/75">
+                              <span className="font-mono">#{index + 1}</span>
+                              <span>{formatVideoTime(caption.startTime)} → {formatVideoTime(caption.endTime)}</span>
+                              {caption.needsReview ? <span className="text-yellow-200">REVIEW</span> : null}
+                              {caption.translationStatus ? (
+                                <span className="rounded border border-cyan-500/25 px-2 py-0.5 text-cyan-200/70">
+                                  {caption.translationStatus.toUpperCase()}
+                                </span>
+                              ) : null}
+                              {caption.translationNeedsReview ? <span className="text-yellow-200">TRANSLATION REVIEW</span> : null}
+                            </div>
+
+                            <div className="grid gap-3 md:grid-cols-[0.65fr_0.65fr_1fr_auto]">
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={caption.startTime}
+                                onChange={(event) => updateCaption(caption.localId, { startTime: Number(event.target.value) })}
+                                className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                                aria-label={`Caption ${index + 1} start time`}
+                              />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={caption.endTime}
+                                onChange={(event) => updateCaption(caption.localId, { endTime: Number(event.target.value) })}
+                                className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                                aria-label={`Caption ${index + 1} end time`}
+                              />
+                              {tag === '影视' ? (
+                                <select
+                                  value={caption.speaker}
+                                  onChange={(event) => updateCaption(caption.localId, { speaker: event.target.value })}
+                                  className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                                  aria-label={`Caption ${index + 1} speaker`}
+                                >
+                                  <option value="">No speaker</option>
+                                  {characterNames.map((name) => (
+                                    <option key={name} value={name}>{name}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <div className="rounded-md border border-cyan-500/15 bg-black/25 px-3 py-2 text-sm text-cyan-300/40">No speaker</div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setCaptions((prev) => prev.filter((entry) => entry.localId !== caption.localId))}
+                                className="rounded-md border border-red-500/30 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
+                              >
+                                DELETE
+                              </button>
+                            </div>
+
+                            <div className="mt-3 grid gap-3 md:grid-cols-2">
+                              <textarea
+                                value={caption.enText}
+                                onChange={(event) => updateCaption(caption.localId, { enText: event.target.value })}
+                                rows={3}
+                                className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                                placeholder="English"
+                              />
+                              <textarea
+                                value={caption.zhText}
+                                onChange={(event) => updateCaptionZhText(caption.localId, event.target.value)}
+                                rows={3}
+                                className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                                placeholder="Chinese translation"
+                              />
+                            </div>
+                            {caption.translationNote ? (
+                              <div className="mt-3 rounded-md border border-yellow-500/25 bg-yellow-500/[0.06] px-3 py-2 text-xs text-yellow-100/80">
+                                {caption.translationNote}
+                              </div>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t border-cyan-500/30 bg-black/90 p-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsCaptionEditorOpen(false)}
+                      className="w-full rounded-md border-2 border-cyan-400/60 bg-cyan-500/[0.16] px-5 py-3 text-sm text-cyan-50 transition-colors hover:border-cyan-200 hover:bg-cyan-500/[0.24]"
+                    >
+                      DONE / BACK TO UPLOAD
+                    </button>
+                  </div>
+                </div>
+                </div>,
+                document.body
+              )
+              : null}
 
             {status ? (
               <div
@@ -960,7 +1092,7 @@ export default function VideoUploadPage() {
                 disabled={!canSubmit}
                 className="flex-1 rounded-md border-2 border-cyan-500/55 bg-cyan-500/[0.12] px-8 py-4 text-sm text-cyan-200 transition-colors hover:border-cyan-300/80 hover:bg-cyan-500/[0.18] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isUploading ? '[ PUBLISHING... ]' : '[ PUBLISH VIDEO TRAINING ]'}
+                {publishButtonLabel}
               </button>
               <button
                 type="button"

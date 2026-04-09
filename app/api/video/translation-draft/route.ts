@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireApiAdmin } from '@/lib/authz'
 
 type TranslationDraftQuality = 'normal' | 'high'
 
@@ -157,6 +158,11 @@ function normalizeOutput(payload: TranslationDraftOutput, allowedIds: Set<string
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const apiKey = process.env.OPENAI_API_KEY
 

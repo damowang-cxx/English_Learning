@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiUser } from '@/lib/authz'
 
 // 获取或创建用户笔记
 export async function POST(request: NextRequest) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
-    const { sentenceId, words, notes, userId = 'default' } = await request.json()
+    const { sentenceId, words, notes } = await request.json()
+    const userId = guard.user.id
 
     if (!sentenceId) {
       return NextResponse.json(
@@ -45,10 +52,15 @@ export async function POST(request: NextRequest) {
 
 // 获取用户笔记
 export async function GET(request: NextRequest) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const sentenceId = searchParams.get('sentenceId')
-    const userId = searchParams.get('userId') || 'default'
+    const userId = guard.user.id
 
     if (!sentenceId) {
       return NextResponse.json(

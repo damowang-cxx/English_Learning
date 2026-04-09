@@ -7,6 +7,20 @@ datasource db {
   provider = "sqlite"
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String   @default("")
+  passwordHash String
+  role         String   @default("USER")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+}
+
 model TrainingItem {
   id        String     @id @default(cuid())
   title     String
@@ -74,6 +88,7 @@ model VideoCaption {
   isKeySentence       Boolean           @default(false)
   order               Int
   phraseNotes         VideoPhraseNote[]
+  captionNotes        VideoCaptionNote[]
 
   @@index([videoTrainingItemId])
   @@index([videoTrainingItemId, order])
@@ -106,6 +121,21 @@ model VideoPhraseNote {
 
   @@index([videoTrainingItemId])
   @@index([captionId])
+  @@index([userId])
+}
+
+model VideoCaptionNote {
+  id             String       @id @default(cuid())
+  videoCaptionId String
+  caption        VideoCaption @relation(fields: [videoCaptionId], references: [id], onDelete: Cascade)
+  words          String       @default("")
+  notes          String       @default("")
+  userId         String       @default("default")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([videoCaptionId, userId])
+  @@index([videoCaptionId])
   @@index([userId])
 }
 

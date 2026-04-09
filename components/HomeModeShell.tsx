@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import AuthStatusNav from '@/components/AuthStatusNav'
+import HomeUploadAction from '@/components/HomeUploadAction'
 
 type HomeMode = 'listening' | 'video'
 
 interface HomeModeShellProps {
   mode: HomeMode
+  isAdmin?: boolean
   children: ReactNode
 }
 
@@ -13,7 +16,7 @@ const MODE_LINKS = [
   { mode: 'video' as const, label: 'VIDEO', href: '/video' },
 ]
 
-export default function HomeModeShell({ mode, children }: HomeModeShellProps) {
+export default function HomeModeShell({ mode, isAdmin = false, children }: HomeModeShellProps) {
   const uploadHref = mode === 'video' ? '/video/upload' : '/upload'
   const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : 'UPLOAD LISTENING'
 
@@ -58,6 +61,7 @@ export default function HomeModeShell({ mode, children }: HomeModeShellProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
+          <AuthStatusNav />
           <Link
             href="/vocabulary"
             className="home-global-vocab-button group inline-flex items-center gap-2 rounded-md px-3 py-2"
@@ -69,12 +73,7 @@ export default function HomeModeShell({ mode, children }: HomeModeShellProps) {
               GLOBAL VOCAB
             </span>
           </Link>
-          <Link
-            href={uploadHref}
-            className="rounded-md border border-red-500/45 bg-red-500/[0.1] px-3 py-2 font-mono text-[11px] tracking-[0.2em] text-red-300 transition-colors hover:border-red-400/70 hover:bg-red-500/[0.16] hover:text-red-200"
-          >
-            {uploadLabel}
-          </Link>
+          <HomeUploadAction href={uploadHref} label={uploadLabel} isAdmin={isAdmin} />
         </div>
       </div>
 

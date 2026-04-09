@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireApiUser } from '@/lib/authz'
 import {
-  DEFAULT_LEARNING_USER_ID,
   isValidDateKey,
 } from '@/lib/learning-stats'
 
 interface LearningHeartbeatPayload {
   dateKey?: string
-  userId?: string
   studyDeltaSec?: number
   audioDeltaSec?: number
   dictationDeltaSec?: number
@@ -23,10 +22,15 @@ function sanitizeDelta(value: unknown): number {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await requireApiUser()
+  if (guard.response) {
+    return guard.response
+  }
+
   try {
     const payload = (await request.json()) as LearningHeartbeatPayload
     const dateKey = typeof payload.dateKey === 'string' ? payload.dateKey : ''
-    const userId = payload.userId || DEFAULT_LEARNING_USER_ID
+    const userId = guard.user.id
 
     if (!isValidDateKey(dateKey)) {
       return NextResponse.json(
