@@ -6,7 +6,12 @@ import {
   type VideoCaptionInput,
   type VideoCharacterInput,
 } from '@/lib/video-training'
-import { deletePublicFile, savePublicUploadFile } from '@/lib/video-training-storage'
+import {
+  deletePublicFile,
+  inferPublicVideoMediaType,
+  resolvePublicVideoMediaUrl,
+  savePublicUploadFile,
+} from '@/lib/video-training-storage'
 
 function parseJsonFormField<T>(formData: FormData, fieldName: string, fallback: T): T {
   const rawValue = formData.get(fieldName)
@@ -141,8 +146,7 @@ export async function POST(request: NextRequest) {
     const sourceTitle = String(formData.get('sourceTitle') || '').trim()
     const plotSummary = String(formData.get('plotSummary') || '').trim()
     const tag = String(formData.get('tag') || '').trim()
-    const mediaType = String(formData.get('mediaType') || 'video').trim() || 'video'
-    const mediaFile = getUploadFile(formData, 'media')
+    const mediaFileName = String(formData.get('mediaFileName') || '').trim()
     const coverFile = getUploadFile(formData, 'cover')
     const captions = normalizeCaptions(parseJsonFormField<VideoCaptionInput[]>(formData, 'captions', []))
     const characters =
@@ -158,12 +162,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid tag' }, { status: 400 })
     }
 
-    if (!mediaFile) {
-      return NextResponse.json({ error: 'Media file is required' }, { status: 400 })
+    let mediaUrl = ''
+
+    try {
+      mediaUrl = resolvePublicVideoMediaUrl(mediaFileName)
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid video file name' },
+        { status: 400 }
+      )
     }
 
-    const mediaUrl = await savePublicUploadFile(mediaFile, 'video')
-    savedFiles.push(mediaUrl)
+    const mediaType = inferPublicVideoMediaType(mediaUrl)
 
     const coverUrl = coverFile ? await savePublicUploadFile(coverFile, 'video-covers') : null
 

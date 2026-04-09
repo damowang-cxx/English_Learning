@@ -244,7 +244,7 @@ export default function VideoUploadPage() {
   const [sourceTitle, setSourceTitle] = useState('')
   const [plotSummary, setPlotSummary] = useState('')
   const [tag, setTag] = useState<VideoTrainingTag>('演讲')
-  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaFileName, setMediaFileName] = useState('')
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [enSubtitleFile, setEnSubtitleFile] = useState<File | null>(null)
   const [zhSubtitleFile, setZhSubtitleFile] = useState<File | null>(null)
@@ -285,16 +285,16 @@ export default function VideoUploadPage() {
   const reviewCaptionCount = captions.filter((caption) => caption.needsReview || caption.translationNeedsReview).length
   const translatedCaptionCount = captions.filter((caption) => caption.zhText.trim()).length
   const manualCaptionCount = captions.filter((caption) => caption.translationStatus === 'manual').length
-  const canSubmit = Boolean(title.trim() && mediaFile && captions.length > 0 && !isUploading)
+  const canSubmit = Boolean(title.trim() && mediaFileName.trim() && captions.length > 0 && !isUploading)
   const isRequestingDraft = Boolean(translationDraftQuality)
-  const publishButtonLabel = isUploading ? '[ UPLOADING... ]' : '[ UPLOAD TRAINING DATA ]'
+  const publishButtonLabel = isUploading ? '[ PUBLISHING... ]' : '[ PUBLISH TRAINING DATA ]'
   const submitReadinessText = !title.trim()
     ? 'Need title'
-    : !mediaFile
-      ? 'Need video file'
+    : !mediaFileName.trim()
+      ? 'Need public video file name'
       : captions.length === 0
         ? 'Need parsed captions'
-        : 'Ready to upload'
+        : 'Ready to publish'
 
   const updateCaption = (localId: string, patch: Partial<CaptionDraft>) => {
     setCaptions((prev) =>
@@ -503,8 +503,8 @@ export default function VideoUploadPage() {
       return
     }
 
-    if (!mediaFile) {
-      setStatus({ type: 'error', message: 'Choose a video file.' })
+    if (!mediaFileName.trim()) {
+      setStatus({ type: 'error', message: 'Enter the video file name already placed in public/video.' })
       return
     }
 
@@ -545,8 +545,7 @@ export default function VideoUploadPage() {
       formData.append('sourceTitle', sourceTitle.trim())
       formData.append('plotSummary', plotSummary.trim())
       formData.append('tag', tag)
-      formData.append('mediaType', mediaFile.type.startsWith('audio/') ? 'audio' : 'video')
-      formData.append('media', mediaFile)
+      formData.append('mediaFileName', mediaFileName.trim())
 
       if (coverFile) {
         formData.append('cover', coverFile)
@@ -703,14 +702,19 @@ export default function VideoUploadPage() {
                   </div>
                 </div>
                 <label className="block">
-                  <span className="mb-2 block text-xs text-cyan-300 cyber-label">VIDEO *</span>
+                  <span className="mb-2 block text-xs text-cyan-300 cyber-label">VIDEO FILE NAME *</span>
                   <input
-                    type="file"
-                    accept="video/*,audio/*"
-                    onChange={(event) => setMediaFile(event.target.files?.[0] || null)}
-                    className="w-full rounded-md border border-cyan-500/30 bg-black/45 px-4 py-3 text-gray-300 file:mr-4 file:border-0 file:bg-cyan-500/20 file:px-3 file:py-1 file:text-cyan-200"
+                    value={mediaFileName}
+                    onChange={(event) => setMediaFileName(event.target.value)}
+                    className="w-full rounded-md border border-cyan-500/30 bg-black/45 px-4 py-3 text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                    placeholder="clip.mp4"
                   />
-                  {mediaFile ? <span className="mt-2 block text-xs text-cyan-300/70">{mediaFile.name}</span> : null}
+                  <span className="mt-2 block text-xs leading-5 text-cyan-300/65">
+                    Put the media file in public/video first, then enter only the file name. Example: public/video/clip.mp4 -&gt; clip.mp4
+                  </span>
+                  {mediaFileName.trim() ? (
+                    <span className="mt-2 block text-xs text-cyan-300/70">Database media path: /video/{mediaFileName.trim()}</span>
+                  ) : null}
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-xs text-cyan-300 cyber-label">COVER</span>
