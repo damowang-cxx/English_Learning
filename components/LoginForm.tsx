@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { normalizeAppRedirectPath } from '@/lib/base-path'
+import { normalizeAppRedirectPath, normalizeAppRouterPath } from '@/lib/base-path'
 
 interface LoginFormProps {
   callbackUrl: string
@@ -35,7 +35,7 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
         return
       }
 
-      const targetUrl = normalizeAppRedirectPath(result?.url, normalizedCallbackUrl)
+      const targetUrl = normalizeAppRouterPath(result?.url, normalizedCallbackUrl)
 
       router.replace(targetUrl)
       router.refresh()

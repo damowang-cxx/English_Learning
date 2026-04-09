@@ -9,6 +9,19 @@ function isExternalUrl(path: string) {
   return /^(?:[a-z]+:)?\/\//i.test(path);
 }
 
+function hasBasePath(path: string) {
+  if (!BASE_PATH) {
+    return false;
+  }
+
+  return (
+    path === BASE_PATH ||
+    path.startsWith(`${BASE_PATH}/`) ||
+    path.startsWith(`${BASE_PATH}?`) ||
+    path.startsWith(`${BASE_PATH}#`)
+  );
+}
+
 export function normalizeAppRedirectPath(path: string | null | undefined, fallback = "/") {
   const fallbackPath = withBasePath(fallback || "/");
   const rawPath = (path || "").trim();
@@ -35,6 +48,10 @@ export function normalizeAppRedirectPath(path: string | null | undefined, fallba
   return withBasePath(candidatePath);
 }
 
+export function normalizeAppRouterPath(path: string | null | undefined, fallback = "/") {
+  return stripBasePath(normalizeAppRedirectPath(path, fallback));
+}
+
 export function withBasePath(path: string) {
   if (!path) {
     return BASE_PATH || "/";
@@ -50,10 +67,7 @@ export function withBasePath(path: string) {
     return normalizedPath;
   }
 
-  if (
-    normalizedPath === BASE_PATH ||
-    normalizedPath.startsWith(`${BASE_PATH}/`)
-  ) {
+  if (hasBasePath(normalizedPath)) {
     return normalizedPath;
   }
 
@@ -73,6 +87,13 @@ export function stripBasePath(pathname: string) {
 
   if (normalizedPathname.startsWith(`${BASE_PATH}/`)) {
     return normalizedPathname.slice(BASE_PATH.length);
+  }
+
+  if (
+    normalizedPathname.startsWith(`${BASE_PATH}?`) ||
+    normalizedPathname.startsWith(`${BASE_PATH}#`)
+  ) {
+    return `/${normalizedPathname.slice(BASE_PATH.length)}`;
   }
 
   return normalizedPathname;

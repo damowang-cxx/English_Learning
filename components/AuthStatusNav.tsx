@@ -2,12 +2,24 @@
 
 import Link from 'next/link'
 import { signOut, useSession } from 'next-auth/react'
-import { withBasePath } from '@/lib/base-path'
+import { useRouter } from 'next/navigation'
+import { normalizeAppRouterPath, withBasePath } from '@/lib/base-path'
 import { isAdminRole } from '@/lib/auth-types'
 
 export default function AuthStatusNav() {
+  const router = useRouter()
   const { data: session, status } = useSession()
   const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
+
+  const handleSignOut = async () => {
+    const result = await signOut({
+      redirect: false,
+      callbackUrl: withBasePath('/'),
+    })
+
+    router.replace(normalizeAppRouterPath(result?.url, '/'))
+    router.refresh()
+  }
 
   if (status === 'loading') {
     return (
@@ -40,7 +52,7 @@ export default function AuthStatusNav() {
       ) : null}
       <button
         type="button"
-        onClick={() => void signOut({ callbackUrl: withBasePath('/') })}
+        onClick={() => void handleSignOut()}
         className="rounded-md border border-cyan-500/24 bg-black/25 px-3 py-2 font-mono text-[11px] tracking-[0.18em] text-cyan-300/72 transition-colors hover:border-cyan-400/48 hover:text-cyan-100"
       >
         LOGOUT
