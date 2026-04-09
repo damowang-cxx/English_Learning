@@ -59,7 +59,7 @@ export function normalizeLookupText(value: string) {
     return ''
   }
 
-  return normalized.slice(0, 80)
+  return normalized.slice(0, 80).toLowerCase()
 }
 
 function getSelectionAnchorRect(container: HTMLElement) {

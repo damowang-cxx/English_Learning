@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import LoginForm from '@/components/LoginForm'
-import { withBasePath } from '@/lib/base-path'
+import { normalizeAppRedirectPath } from '@/lib/base-path'
 
 interface LoginPageProps {
   searchParams: Promise<{
@@ -12,7 +12,7 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth()
   const params = await searchParams
-  const callbackUrl = withBasePath(params.callbackUrl || '/')
+  const callbackUrl = normalizeAppRedirectPath(params.callbackUrl, '/')
 
   if (session?.user?.id) {
     redirect(callbackUrl)

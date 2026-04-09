@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
-import { withBasePath } from '@/lib/base-path'
+import { normalizeAppRedirectPath } from '@/lib/base-path'
 
 interface LoginFormProps {
   callbackUrl: string
@@ -20,7 +20,7 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
     event.preventDefault()
     setError('')
     setIsSubmitting(true)
-    const normalizedCallbackUrl = withBasePath(callbackUrl || '/')
+    const normalizedCallbackUrl = normalizeAppRedirectPath(callbackUrl, '/')
 
     try {
       const result = await signIn('credentials', {
@@ -35,14 +35,9 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
         return
       }
 
-      const targetUrl = result?.url || normalizedCallbackUrl
+      const targetUrl = normalizeAppRedirectPath(result?.url, normalizedCallbackUrl)
 
-      if (/^(?:[a-z]+:)?\/\//i.test(targetUrl)) {
-        window.location.assign(targetUrl)
-        return
-      }
-
-      router.push(targetUrl)
+      router.replace(targetUrl)
       router.refresh()
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'Login failed.')

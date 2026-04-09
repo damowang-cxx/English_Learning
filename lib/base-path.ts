@@ -9,6 +9,32 @@ function isExternalUrl(path: string) {
   return /^(?:[a-z]+:)?\/\//i.test(path);
 }
 
+export function normalizeAppRedirectPath(path: string | null | undefined, fallback = "/") {
+  const fallbackPath = withBasePath(fallback || "/");
+  const rawPath = (path || "").trim();
+
+  if (!rawPath) {
+    return fallbackPath;
+  }
+
+  let candidatePath = rawPath;
+
+  if (isExternalUrl(rawPath)) {
+    try {
+      const parsedUrl = new URL(rawPath);
+      candidatePath = `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+    } catch {
+      return fallbackPath;
+    }
+  }
+
+  if (!candidatePath.startsWith("/") || candidatePath.startsWith("//")) {
+    return fallbackPath;
+  }
+
+  return withBasePath(candidatePath);
+}
+
 export function withBasePath(path: string) {
   if (!path) {
     return BASE_PATH || "/";
