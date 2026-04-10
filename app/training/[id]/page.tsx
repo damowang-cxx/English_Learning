@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useEffect, useEffectEvent, useState, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useEffectEvent, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from '@/contexts/TranslationContext'
@@ -322,6 +322,8 @@ export default function TrainingDetailPage() {
   const heartbeatLastTickAtRef = useRef<number | null>(null)
   const heartbeatInFlightRef = useRef(false)
   const isPlayingRef = useRef(false)
+  const playbackSyncFrameRef = useRef<number | null>(null)
+  const playbackSyncSnapshotRef = useRef({ time: 0, sentenceIndex: -1 })
   const isDictationModeRef = useRef(false)
   const lastDictationInputAtRef = useRef(0)
   const lastStudyActivityAtRef = useRef(0)
@@ -738,6 +740,7 @@ export default function TrainingDetailPage() {
       audioRef.current.playbackRate = playbackRate
     }
   }, [playbackRate])
+
 
   // 鑷姩婊氬姩鍒板綋鍓嶆挱鏀剧殑鍙ュ瓙
   useEffect(() => {
@@ -1805,48 +1808,102 @@ export default function TrainingDetailPage() {
     }
   }
 
-  const handleTimeUpdate = () => {
-    if (!audioRef.current || !item) return
-    const time = audioRef.current.currentTime
+  const getSentenceIndexForTime = useCallback((time: number) => {
+    if (!item) {
+      return -1
+    }
+
+    return item.sentences.findIndex((sentence) => time >= sentence.startTime && time < sentence.endTime)
+  }, [item])
+
+  const syncPlaybackState = useCallback((time: number, options?: { force?: boolean }) => {
+    const force = options?.force ?? false
+    const sentenceIndex = getSentenceIndexForTime(time)
+    const snapshot = playbackSyncSnapshotRef.current
+
+    if (force || Math.abs(snapshot.time - time) >= 0.04) {
+      snapshot.time = time
+      setCurrentTime(time)
+    }
+
+    if (force || snapshot.sentenceIndex !== sentenceIndex) {
+      snapshot.sentenceIndex = sentenceIndex
+      setCurrentSentenceIndex(sentenceIndex)
+    }
+  }, [getSentenceIndexForTime])
+
+  const seekAudioToTime = useCallback((time: number, options?: { force?: boolean }) => {
+    const audio = audioRef.current
+    if (!audio) {
+      return
+    }
+
+    const targetTime = Math.max(0, time)
+    const mediaWithFastSeek = audio as HTMLAudioElement & { fastSeek?: (value: number) => void }
+
+    if (typeof mediaWithFastSeek.fastSeek === 'function') {
+      try {
+        mediaWithFastSeek.fastSeek(targetTime)
+      } catch {
+        audio.currentTime = targetTime
+      }
+    } else {
+      audio.currentTime = targetTime
+    }
+
+    syncPlaybackState(targetTime, { force: options?.force ?? true })
+  }, [syncPlaybackState])
+
+  const syncPlaybackFromAudio = useCallback((options?: { force?: boolean }) => {
+    if (!audioRef.current || !item) {
+      return
+    }
+
+    let time = audioRef.current.currentTime
 
     if (repeatMode !== null && item.sentences[repeatMode]) {
       const sentence = item.sentences[repeatMode]
+
       if (time >= sentence.endTime) {
-        audioRef.current.currentTime = sentence.startTime
+        seekAudioToTime(sentence.startTime, { force: true })
+        time = sentence.startTime
       }
     }
 
-    setCurrentTime(time)
+    syncPlaybackState(time, { force: options?.force })
+  }, [item, repeatMode, seekAudioToTime, syncPlaybackState])
 
-    const index = item.sentences.findIndex(
-      (s) => time >= s.startTime && time < s.endTime
-    )
-    setCurrentSentenceIndex(index)
+  const handleTimeUpdate = () => {
+    syncPlaybackFromAudio()
   }
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration)
+      syncPlaybackFromAudio({ force: true })
     }
   }
 
   const handlePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play()
-      }
-      setIsPlaying(!isPlaying)
+    if (!audioRef.current) {
+      return
+    }
+
+    if (audioRef.current.paused) {
+      const playPromise = audioRef.current.play()
+      syncPlaybackFromAudio({ force: true })
+      void playPromise?.catch((error) => {
+        console.error('Error playing audio:', error)
+      })
+    } else {
+      audioRef.current.pause()
+      syncPlaybackFromAudio({ force: true })
     }
   }
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (audioRef.current) {
-      const newTime = parseFloat(e.target.value)
-      audioRef.current.currentTime = newTime
-      setCurrentTime(newTime)
-    }
+    const newTime = parseFloat(e.target.value)
+    seekAudioToTime(newTime, { force: true })
   }
 
   const formatTime = (seconds: number) => {
@@ -1871,12 +1928,12 @@ export default function TrainingDetailPage() {
     }
 
     if (audioRef.current) {
-      audioRef.current.currentTime = sentence.startTime
-      audioRef.current.play()
-      setIsPlaying(true)
+      seekAudioToTime(sentence.startTime, { force: true })
+      const playPromise = audioRef.current.play()
+      void playPromise?.catch((error) => {
+        console.error('Error playing sentence audio:', error)
+      })
     }
-
-    setCurrentSentenceIndex(index)
 
     const sentenceElement = sentenceRefs.current[index]
     const container = contentRef.current
@@ -1885,6 +1942,30 @@ export default function TrainingDetailPage() {
       scrollSentenceWithinContainer(container, sentenceElement, options?.scrollBehavior || 'smooth')
     }
   }
+
+  useEffect(() => {
+    if (!isPlaying) {
+      if (playbackSyncFrameRef.current !== null) {
+        cancelAnimationFrame(playbackSyncFrameRef.current)
+        playbackSyncFrameRef.current = null
+      }
+      return
+    }
+
+    const syncFrame = () => {
+      syncPlaybackFromAudio()
+      playbackSyncFrameRef.current = requestAnimationFrame(syncFrame)
+    }
+
+    playbackSyncFrameRef.current = requestAnimationFrame(syncFrame)
+
+    return () => {
+      if (playbackSyncFrameRef.current !== null) {
+        cancelAnimationFrame(playbackSyncFrameRef.current)
+        playbackSyncFrameRef.current = null
+      }
+    }
+  }, [isPlaying, syncPlaybackFromAudio])
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen)
@@ -2461,9 +2542,20 @@ export default function TrainingDetailPage() {
                       onTimeUpdate={handleTimeUpdate}
                       onLoadedMetadata={handleLoadedMetadata}
                       onLoadedData={() => setAudioLoaded(true)}
-                      onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
-                      onEnded={() => setIsPlaying(false)}
+                      onSeeking={() => syncPlaybackFromAudio({ force: true })}
+                      onSeeked={() => syncPlaybackFromAudio({ force: true })}
+                      onPlay={() => {
+                        setIsPlaying(true)
+                        syncPlaybackFromAudio({ force: true })
+                      }}
+                      onPause={() => {
+                        setIsPlaying(false)
+                        syncPlaybackFromAudio({ force: true })
+                      }}
+                      onEnded={() => {
+                        setIsPlaying(false)
+                        syncPlaybackFromAudio({ force: true })
+                      }}
                       className="hidden"
                     />
 
