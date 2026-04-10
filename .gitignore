@@ -49,4 +49,6 @@ next-env.d.ts
 # *.db
 # *.db-journal
 public/video/*.mp4
-
+public/video/*.mp4
+public/video/*.mp4
+prisma/dev.db
