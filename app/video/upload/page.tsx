@@ -1,37 +1,31 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { createPortal } from 'react-dom'
+import ImageCropModal, { type ImageCropPreset } from '@/components/video/ImageCropModal'
+import VideoCaptionEditorModal from '@/components/video/VideoCaptionEditorModal'
 import { isAdminRole } from '@/lib/auth-types'
 import { withBasePath } from '@/lib/base-path'
-import { VIDEO_TRAINING_TAGS, formatVideoTime, type VideoTrainingTag } from '@/lib/video-training'
-
-interface ParsedSubtitleCue {
-  startTime: number
-  endTime: number
-  text: string
-}
-
-interface CaptionDraft {
-  localId: string
-  startTime: number
-  endTime: number
-  enText: string
-  zhText: string
-  speaker: string
-  needsReview: boolean
-  translationStatus?: 'empty' | 'draft' | 'manual'
-  translationNote?: string
-  translationNeedsReview?: boolean
-}
-
-interface CharacterDraft {
-  localId: string
-  name: string
-  avatarFile: File | null
-}
+import {
+  VIDEO_TRAINING_TAGS,
+  formatVideoTime,
+  isVideoTrainingDramaTag,
+  type VideoTrainingTag,
+} from '@/lib/video-training'
+import {
+  createEmptyVideoCaptionDraft,
+  createLocalId,
+  getVideoCharacterNames,
+  mergeCaptionTracks,
+  parseJsonCaptions,
+  parseSubtitleText,
+  type TranslationDraftResult,
+  type VideoCaptionDraft,
+  type VideoCharacterDraft,
+} from '@/lib/video-training-form'
 
 type UploadStatus = {
   type: 'info' | 'success' | 'error'
@@ -40,201 +34,13 @@ type UploadStatus = {
 
 type TranslationDraftQuality = 'normal' | 'high'
 type TranslationDraftFillMode = 'fill-empty' | 'overwrite-all'
-
-interface ImportedJsonCaptionRecord {
-  id?: string
-  index?: number | string
-  en?: string
-  enText?: string
-  zh?: string
-  zhText?: string
-  start?: number | string
-  startTime?: number | string
-  end?: number | string
-  endTime?: number | string
-  speaker?: string
-}
-
-interface TranslationDraftResult {
-  id: string
-  zhText?: string
-  needsReview?: boolean
-  note?: string
-}
-
-function createLocalId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
-function parseSubtitleTime(value: string) {
-  const normalized = value.trim().replace(',', '.')
-  const parts = normalized.split(':')
-
-  if (parts.length < 2 || parts.length > 3) {
-    return Number.NaN
-  }
-
-  const seconds = Number(parts[parts.length - 1])
-  const minutes = Number(parts[parts.length - 2])
-  const hours = parts.length === 3 ? Number(parts[0]) : 0
-
-  if (!Number.isFinite(seconds) || !Number.isFinite(minutes) || !Number.isFinite(hours)) {
-    return Number.NaN
-  }
-
-  return hours * 3600 + minutes * 60 + seconds
-}
-
-function cleanSubtitleText(value: string) {
-  return value
-    .replace(/<[^>]+>/g, '')
-    .replace(/\{\\[^}]+\}/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function parseSubtitleText(rawText: string) {
-  const blocks = rawText
-    .replace(/\r/g, '')
-    .replace(/^\uFEFF/, '')
-    .split(/\n{2,}/)
-  const cues: ParsedSubtitleCue[] = []
-
-  for (const block of blocks) {
-    const lines = block
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-
-    if (lines.length === 0 || lines[0].toUpperCase().startsWith('WEBVTT')) {
-      continue
-    }
-
-    const timeLineIndex = lines.findIndex((line) => line.includes('-->'))
-
-    if (timeLineIndex < 0) {
-      continue
-    }
-
-    const [rawStart, rawEndWithSettings] = lines[timeLineIndex].split('-->').map((part) => part.trim())
-    const rawEnd = rawEndWithSettings.split(/\s+/)[0]
-    const startTime = parseSubtitleTime(rawStart)
-    const endTime = parseSubtitleTime(rawEnd)
-    const text = cleanSubtitleText(lines.slice(timeLineIndex + 1).join(' '))
-
-    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime || !text) {
-      continue
-    }
-
-    cues.push({ startTime, endTime, text })
-  }
-
-  return cues
-}
-
-function getOverlapSeconds(left: ParsedSubtitleCue, right: ParsedSubtitleCue) {
-  return Math.max(0, Math.min(left.endTime, right.endTime) - Math.max(left.startTime, right.startTime))
-}
-
-function mergeCaptionTracks(enCues: ParsedSubtitleCue[], zhCues: ParsedSubtitleCue[]) {
-  if (zhCues.length === 0) {
-    return enCues.map((cue) => ({
-      localId: createLocalId(),
-      startTime: cue.startTime,
-      endTime: cue.endTime,
-      enText: cue.text,
-      zhText: '',
-      speaker: '',
-      needsReview: false,
-      translationStatus: 'empty',
-    })) satisfies CaptionDraft[]
-  }
-
-  if (enCues.length === zhCues.length) {
-    return enCues.map((cue, index) => ({
-      localId: createLocalId(),
-      startTime: cue.startTime,
-      endTime: cue.endTime,
-      enText: cue.text,
-      zhText: zhCues[index]?.text || '',
-      speaker: '',
-      needsReview: false,
-      translationStatus: zhCues[index]?.text ? 'draft' : 'empty',
-    })) satisfies CaptionDraft[]
-  }
-
-  return enCues.map((cue) => {
-    const bestCue = zhCues
-      .map((zhCue) => ({
-        cue: zhCue,
-        overlap: getOverlapSeconds(cue, zhCue),
-        distance: Math.abs(cue.startTime - zhCue.startTime),
-      }))
-      .sort((left, right) => {
-        if (right.overlap !== left.overlap) {
-          return right.overlap - left.overlap
-        }
-
-        return left.distance - right.distance
-      })[0]
-
-    return {
-      localId: createLocalId(),
-      startTime: cue.startTime,
-      endTime: cue.endTime,
-      enText: cue.text,
-      zhText: bestCue?.cue.text || '',
-      speaker: '',
-      needsReview: !bestCue || bestCue.overlap === 0,
-      translationStatus: bestCue?.cue.text ? 'draft' : 'empty',
-      translationNeedsReview: !bestCue || bestCue.overlap === 0,
-    }
-  }) satisfies CaptionDraft[]
-}
-
-function normalizeJsonCaptionRecord(record: ImportedJsonCaptionRecord, fallbackIndex: number): CaptionDraft {
-  const enText = typeof record.enText === 'string' ? record.enText.trim() : typeof record.en === 'string' ? record.en.trim() : ''
-  const zhText = typeof record.zhText === 'string' ? record.zhText.trim() : typeof record.zh === 'string' ? record.zh.trim() : ''
-  const startTime = Number(record.startTime ?? record.start)
-  const endTime = Number(record.endTime ?? record.end)
-  const speaker = typeof record.speaker === 'string' ? record.speaker.trim() : ''
-
-  if (!enText) {
-    throw new Error(`JSON caption #${fallbackIndex + 1} is missing enText/en.`)
-  }
-
-  if (!Number.isFinite(startTime) || startTime < 0) {
-    throw new Error(`JSON caption #${fallbackIndex + 1} has an invalid start/startTime.`)
-  }
-
-  if (!Number.isFinite(endTime) || endTime <= startTime) {
-    throw new Error(`JSON caption #${fallbackIndex + 1} must have end/endTime > start/startTime.`)
-  }
-
-  return {
-    localId: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : createLocalId(),
-    startTime,
-    endTime,
-    enText,
-    zhText,
-    speaker,
-    needsReview: false,
-    translationStatus: zhText ? 'draft' : 'empty',
-  }
-}
-
-function parseJsonCaptions(rawText: string) {
-  const parsed = JSON.parse(rawText)
-
-  if (!Array.isArray(parsed)) {
-    throw new Error('The JSON root must be an array.')
-  }
-
-  const orderedRecords = (parsed as ImportedJsonCaptionRecord[]).every((record) => record && record.index !== undefined)
-    ? [...parsed as ImportedJsonCaptionRecord[]].sort((left, right) => Number(left.index) - Number(right.index))
-    : parsed as ImportedJsonCaptionRecord[]
-
-  return orderedRecords.map((record, index) => normalizeJsonCaptionRecord(record, index))
+type PendingImageCrop = {
+  target: 'cover' | 'character'
+  localId?: string
+  file: File
+  preset: ImageCropPreset
+  title: string
+  description: string
 }
 
 export default function VideoUploadPage() {
@@ -243,19 +49,21 @@ export default function VideoUploadPage() {
   const [title, setTitle] = useState('')
   const [sourceTitle, setSourceTitle] = useState('')
   const [plotSummary, setPlotSummary] = useState('')
-  const [tag, setTag] = useState<VideoTrainingTag>('演讲')
+  const [tag, setTag] = useState<VideoTrainingTag>(VIDEO_TRAINING_TAGS[0])
   const [mediaFileName, setMediaFileName] = useState('')
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [enSubtitleFile, setEnSubtitleFile] = useState<File | null>(null)
   const [zhSubtitleFile, setZhSubtitleFile] = useState<File | null>(null)
   const [jsonImportText, setJsonImportText] = useState('')
-  const [captions, setCaptions] = useState<CaptionDraft[]>([])
-  const [characters, setCharacters] = useState<CharacterDraft[]>([])
+  const [captions, setCaptions] = useState<VideoCaptionDraft[]>([])
+  const [characters, setCharacters] = useState<VideoCharacterDraft[]>([])
   const [status, setStatus] = useState<UploadStatus | null>(null)
   const [isParsing, setIsParsing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [translationDraftQuality, setTranslationDraftQuality] = useState<TranslationDraftQuality | null>(null)
   const [isCaptionEditorOpen, setIsCaptionEditorOpen] = useState(false)
+  const [pendingImageCrop, setPendingImageCrop] = useState<PendingImageCrop | null>(null)
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const jsonFileInputRef = useRef<HTMLInputElement>(null)
   const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
@@ -278,10 +86,19 @@ export default function VideoUploadPage() {
     titleInputRef.current?.focus()
   }, [authStatus, isAdmin, router, session?.user?.id])
 
-  const characterNames = useMemo(
-    () => characters.map((character) => character.name.trim()).filter(Boolean),
-    [characters]
-  )
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverPreviewUrl(null)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(coverFile)
+    setCoverPreviewUrl(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [coverFile])
+
+  const characterNames = useMemo(() => getVideoCharacterNames(characters), [characters])
   const reviewCaptionCount = captions.filter((caption) => caption.needsReview || caption.translationNeedsReview).length
   const translatedCaptionCount = captions.filter((caption) => caption.zhText.trim()).length
   const manualCaptionCount = captions.filter((caption) => caption.translationStatus === 'manual').length
@@ -296,7 +113,7 @@ export default function VideoUploadPage() {
         ? 'Need parsed captions'
         : 'Ready to publish'
 
-  const updateCaption = (localId: string, patch: Partial<CaptionDraft>) => {
+  const updateCaption = (localId: string, patch: Partial<VideoCaptionDraft>) => {
     setCaptions((prev) =>
       prev.map((caption) =>
         caption.localId === localId ? { ...caption, ...patch, needsReview: false } : caption
@@ -311,6 +128,17 @@ export default function VideoUploadPage() {
       translationNeedsReview: false,
       translationNote: '',
     })
+  }
+
+  const handleAddCaptionRow = () => {
+    const previousEndTime = captions.length > 0 ? captions[captions.length - 1].endTime : 0
+    const nextCaption = createEmptyVideoCaptionDraft(previousEndTime)
+
+    setCaptions((prev) => (
+      isVideoTrainingDramaTag(tag)
+        ? [...prev, nextCaption]
+        : [...prev, { ...nextCaption, speaker: '' }]
+    ))
   }
 
   const handleParseSubtitles = async () => {
@@ -389,7 +217,48 @@ export default function VideoUploadPage() {
   }
 
   const handleAddCharacter = () => {
-    setCharacters((prev) => [...prev, { localId: createLocalId(), name: '', avatarFile: null }])
+    setCharacters((prev) => [...prev, {
+      localId: createLocalId(),
+      name: '',
+      avatarFile: null,
+      avatarAction: 'replace',
+      currentAvatarUrl: null,
+    }])
+  }
+
+  const beginImageCrop = (crop: PendingImageCrop) => {
+    setPendingImageCrop(crop)
+  }
+
+  const handleApplyImageCrop = async (croppedFile: File) => {
+    if (!pendingImageCrop) {
+      return
+    }
+
+    if (pendingImageCrop.target === 'cover') {
+      setCoverFile(croppedFile)
+      setStatus({ type: 'success', message: 'Cover image cropped and ready.' })
+      setPendingImageCrop(null)
+      return
+    }
+
+    const localId = pendingImageCrop.localId
+    if (!localId) {
+      setPendingImageCrop(null)
+      return
+    }
+
+    setCharacters((prev) =>
+      prev.map((entry) => entry.localId === localId
+        ? {
+            ...entry,
+            avatarFile: croppedFile,
+            avatarAction: 'replace',
+          }
+        : entry)
+    )
+    setStatus({ type: 'success', message: 'Character avatar cropped and ready.' })
+    setPendingImageCrop(null)
   }
 
   const handleRequestTranslationDraft = async (quality: TranslationDraftQuality) => {
@@ -531,10 +400,12 @@ export default function VideoUploadPage() {
 
     try {
       const formData = new FormData()
-      const characterPayload = tag === '影视'
+      const characterPayload = isVideoTrainingDramaTag(tag)
         ? characters
             .map((character, index) => ({
+              id: character.id,
               name: character.name.trim(),
+              avatarAction: character.avatarAction,
               avatarField: character.avatarFile ? `characterAvatar_${index}` : null,
               avatarFile: character.avatarFile,
             }))
@@ -556,11 +427,13 @@ export default function VideoUploadPage() {
         endTime: caption.endTime,
         enText: caption.enText.trim(),
         zhText: caption.zhText.trim() || null,
-        speaker: tag === '影视' ? caption.speaker.trim() || null : null,
+        speaker: isVideoTrainingDramaTag(tag) ? caption.speaker.trim() || null : null,
         isKeySentence: false,
       }))))
       formData.append('characters', JSON.stringify(characterPayload.map((character) => ({
+        ...(character.id ? { id: character.id } : {}),
         name: character.name,
+        avatarAction: character.avatarAction,
         avatarField: character.avatarField,
       }))))
 
@@ -721,10 +594,67 @@ export default function VideoUploadPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(event) => setCoverFile(event.target.files?.[0] || null)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null
+                      event.currentTarget.value = ''
+
+                      if (!file) {
+                        setCoverFile(null)
+                        return
+                      }
+
+                      beginImageCrop({
+                        target: 'cover',
+                        file,
+                        preset: 'cover',
+                        title: 'CROP COVER',
+                        description: 'Adjust the 16:9 cover before the upload form stores it.',
+                      })
+                    }}
                     className="w-full rounded-md border border-cyan-500/30 bg-black/45 px-4 py-3 text-gray-300 file:mr-4 file:border-0 file:bg-cyan-500/20 file:px-3 file:py-1 file:text-cyan-200"
                   />
-                  {coverFile ? <span className="mt-2 block text-xs text-cyan-300/70">{coverFile.name}</span> : null}
+                  {coverFile ? (
+                    <div className="mt-3 flex flex-col gap-3 rounded-md border border-cyan-500/20 bg-black/25 p-3 md:flex-row md:items-center">
+                      {coverPreviewUrl ? (
+                        <div className="h-24 w-full overflow-hidden rounded-md border border-cyan-500/20 bg-black/40 md:w-44">
+                          <Image
+                            src={coverPreviewUrl}
+                            alt="Cover preview"
+                            width={176}
+                            height={96}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <div className="flex-1 text-xs text-cyan-300/70">
+                        <div>{coverFile.name}</div>
+                        <div className="mt-1 text-cyan-300/55">The cropped cover file will be uploaded to `public/video-covers` on publish.</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => beginImageCrop({
+                              target: 'cover',
+                              file: coverFile,
+                              preset: 'cover',
+                              title: 'RE-CROP COVER',
+                              description: 'Adjust the 16:9 cover before the upload form stores it.',
+                            })}
+                            className="rounded-md border border-cyan-500/35 px-3 py-1.5 text-[11px] text-cyan-200 transition-colors hover:border-cyan-300/70"
+                          >
+                            RE-CROP
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCoverFile(null)}
+                            className="rounded-md border border-red-500/35 px-3 py-1.5 text-[11px] text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
+                          >
+                            CLEAR
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </label>
               </div>
             </section>
@@ -823,7 +753,7 @@ export default function VideoUploadPage() {
               </div>
             </section>
 
-            {tag === '影视' ? (
+            {isVideoTrainingDramaTag(tag) ? (
               <section className="rounded-lg border border-cyan-500/25 bg-black/30 p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
@@ -845,36 +775,92 @@ export default function VideoUploadPage() {
                     </div>
                   ) : null}
                   {characters.map((character) => (
-                    <div key={character.localId} className="grid gap-3 rounded-md border border-cyan-500/20 bg-black/35 p-3 md:grid-cols-[1fr_1fr_auto]">
-                      <input
-                        value={character.name}
-                        onChange={(event) => {
-                          const value = event.target.value
-                          setCharacters((prev) =>
-                            prev.map((entry) => entry.localId === character.localId ? { ...entry, name: value } : entry)
-                          )
-                        }}
-                        className="rounded-md border border-cyan-500/30 bg-black/45 px-3 py-2 text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                        placeholder="Character name"
-                      />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] || null
-                          setCharacters((prev) =>
-                            prev.map((entry) => entry.localId === character.localId ? { ...entry, avatarFile: file } : entry)
-                          )
-                        }}
-                        className="rounded-md border border-cyan-500/30 bg-black/45 px-3 py-2 text-gray-300 file:mr-3 file:border-0 file:bg-cyan-500/20 file:px-2 file:py-1 file:text-cyan-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCharacters((prev) => prev.filter((entry) => entry.localId !== character.localId))}
-                        className="rounded-md border border-red-500/35 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
-                      >
-                        REMOVE
-                      </button>
+                    <div key={character.localId} className="rounded-md border border-cyan-500/20 bg-black/35 p-3">
+                      <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                        <input
+                          value={character.name}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            setCharacters((prev) =>
+                              prev.map((entry) => entry.localId === character.localId ? { ...entry, name: value } : entry)
+                            )
+                          }}
+                          className="rounded-md border border-cyan-500/30 bg-black/45 px-3 py-2 text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                          placeholder="Character name"
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] || null
+                            event.currentTarget.value = ''
+
+                            if (!file) {
+                              setCharacters((prev) =>
+                                prev.map((entry) => entry.localId === character.localId ? {
+                                  ...entry,
+                                  avatarFile: null,
+                                } : entry)
+                              )
+                              return
+                            }
+
+                            beginImageCrop({
+                              target: 'character',
+                              localId: character.localId,
+                              file,
+                              preset: 'avatar',
+                              title: `CROP ${character.name.trim() || 'CHARACTER'} AVATAR`,
+                              description: 'Adjust the square avatar before it is attached to this character.',
+                            })
+                          }}
+                          className="rounded-md border border-cyan-500/30 bg-black/45 px-3 py-2 text-gray-300 file:mr-3 file:border-0 file:bg-cyan-500/20 file:px-2 file:py-1 file:text-cyan-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setCharacters((prev) => prev.filter((entry) => entry.localId !== character.localId))}
+                          className="rounded-md border border-red-500/35 px-3 py-2 text-xs text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
+                        >
+                          REMOVE
+                        </button>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-cyan-300/65">
+                        <span>
+                          {character.avatarFile ? `Avatar ready: ${character.avatarFile.name}` : 'No avatar selected'}
+                        </span>
+                        {character.avatarFile ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => beginImageCrop({
+                                target: 'character',
+                                localId: character.localId,
+                                file: character.avatarFile as File,
+                                preset: 'avatar',
+                                title: `RE-CROP ${character.name.trim() || 'CHARACTER'} AVATAR`,
+                                description: 'Adjust the square avatar before it is attached to this character.',
+                              })}
+                              className="rounded border border-cyan-500/30 px-2 py-1 text-[11px] text-cyan-200 transition-colors hover:border-cyan-300/70"
+                            >
+                              RE-CROP AVATAR
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCharacters((prev) =>
+                                prev.map((entry) => entry.localId === character.localId
+                                  ? {
+                                      ...entry,
+                                      avatarFile: null,
+                                    }
+                                  : entry)
+                              )}
+                              className="rounded border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition-colors hover:border-red-400/60 hover:text-red-200"
+                            >
+                              CLEAR AVATAR
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -925,7 +911,7 @@ export default function VideoUploadPage() {
               )}
             </section>
 
-            {isCaptionEditorOpen && typeof document !== 'undefined'
+            {false
               ? createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 md:p-6">
                 <button
@@ -1010,7 +996,7 @@ export default function VideoUploadPage() {
                                 className="rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
                                 aria-label={`Caption ${index + 1} end time`}
                               />
-                              {tag === '影视' ? (
+                              {isVideoTrainingDramaTag(tag) ? (
                                 <select
                                   value={caption.speaker}
                                   onChange={(event) => updateCaption(caption.localId, { speaker: event.target.value })}
@@ -1076,6 +1062,21 @@ export default function VideoUploadPage() {
               )
               : null}
 
+            <VideoCaptionEditorModal
+              isOpen={isCaptionEditorOpen}
+              title="CAPTION EDITOR"
+              topCloseLabel="BACK TO UPLOAD"
+              bottomCloseLabel="DONE / BACK TO UPLOAD"
+              captions={captions}
+              tag={tag}
+              characterNames={characterNames}
+              onClose={() => setIsCaptionEditorOpen(false)}
+              onAddCaption={handleAddCaptionRow}
+              onUpdateCaption={updateCaption}
+              onUpdateCaptionZhText={updateCaptionZhText}
+              onDeleteCaption={(localId) => setCaptions((prev) => prev.filter((entry) => entry.localId !== localId))}
+            />
+
             {status ? (
               <div
                 className={`rounded-md border px-4 py-3 text-sm ${
@@ -1109,6 +1110,16 @@ export default function VideoUploadPage() {
           </form>
         </div>
       </div>
+
+      <ImageCropModal
+        isOpen={Boolean(pendingImageCrop)}
+        file={pendingImageCrop?.file || null}
+        preset={pendingImageCrop?.preset || 'cover'}
+        title={pendingImageCrop?.title || 'CROP IMAGE'}
+        description={pendingImageCrop?.description}
+        onCancel={() => setPendingImageCrop(null)}
+        onConfirm={handleApplyImageCrop}
+      />
     </div>
   )
 }

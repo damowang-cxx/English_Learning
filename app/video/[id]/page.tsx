@@ -8,6 +8,7 @@ import {
   WordLookupPopover,
   type WordLookupRequest,
 } from '@/components/WordLookup'
+import VideoTrainingEditModal from '@/components/video/VideoTrainingEditModal'
 import { isAdminRole } from '@/lib/auth-types'
 import { getVideoCoverSrc, getVideoMediaSrc, withBasePath } from '@/lib/base-path'
 import { formatVideoTime, type VideoCaptionMode } from '@/lib/video-training'
@@ -129,6 +130,7 @@ export default function VideoTrainingDetailPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
   useEffect(() => {
@@ -295,6 +297,10 @@ export default function VideoTrainingDetailPage() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditModalOpen) {
+        return
+      }
+
       if (event.key === 'Escape' && isWindowFullscreen) {
         setIsWindowFullscreen(false)
         return
@@ -323,7 +329,7 @@ export default function VideoTrainingDetailPage() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handlePlayPause, isWindowFullscreen])
+  }, [handlePlayPause, isEditModalOpen, isWindowFullscreen])
 
   const handleSeek = (value: number) => {
     if (!videoRef.current) {
@@ -507,6 +513,31 @@ export default function VideoTrainingDetailPage() {
     setStatus(data?.error || (response.ok ? 'Dubbing assessment reserved.' : 'Dubbing assessment unavailable.'))
   }
 
+  const handleOpenEditModal = async () => {
+    if (!isAdmin || !item) {
+      return
+    }
+
+    setWordLookup(null)
+    setStatus(null)
+
+    if (videoRef.current) {
+      videoRef.current.pause()
+    }
+    setIsPlaying(false)
+    setIsWindowFullscreen(false)
+
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen()
+      } catch {
+        // Ignore fullscreen exit failures and still open the editor.
+      }
+    }
+
+    setIsEditModalOpen(true)
+  }
+
   const handleDeleteVideoTraining = async () => {
     if (!isAdmin || !item || isDeleting || !window.confirm(`Delete video training "${item.title}"?`)) {
       return
@@ -590,6 +621,15 @@ export default function VideoTrainingDetailPage() {
                 >
                   BACK
                 </button>
+                {isAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleOpenEditModal()}
+                    className="rounded-md border border-cyan-500/35 px-3 py-2 text-xs text-cyan-200 transition-colors hover:border-cyan-300/70 hover:text-cyan-100"
+                  >
+                    EDIT
+                  </button>
+                ) : null}
                 {isAdmin ? (
                   <button
                     type="button"
@@ -892,6 +932,28 @@ export default function VideoTrainingDetailPage() {
           </aside>
         ) : null}
       </div>
+
+      {isAdmin ? (
+        <VideoTrainingEditModal
+          isOpen={isEditModalOpen}
+          item={item}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={(updatedItem) => {
+            setItem(updatedItem)
+            setCaptionVocabulary(
+              Object.fromEntries(
+                (updatedItem.captions || []).map((caption) => [
+                  caption.id,
+                  parseVocabularyWords(caption.captionNotes?.[0]?.words || ''),
+                ])
+              )
+            )
+            setWordLookup(null)
+            setStatus('Video training updated.')
+            setIsEditModalOpen(false)
+          }}
+        />
+      ) : null}
 
       <WordLookupPopover
         request={wordLookup}

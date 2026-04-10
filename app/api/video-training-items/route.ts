@@ -2,97 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireApiAdmin } from '@/lib/authz'
 import {
+  isVideoTrainingDramaTag,
   isVideoTrainingTag,
   type VideoCaptionInput,
   type VideoCharacterInput,
 } from '@/lib/video-training'
+import {
+  getUploadFile,
+  normalizeCaptions,
+  normalizeCharacters,
+  parseJsonFormField,
+} from '@/lib/video-training-admin'
 import {
   deletePublicFile,
   inferPublicVideoMediaType,
   resolvePublicVideoMediaUrl,
   savePublicUploadFile,
 } from '@/lib/video-training-storage'
-
-function parseJsonFormField<T>(formData: FormData, fieldName: string, fallback: T): T {
-  const rawValue = formData.get(fieldName)
-
-  if (typeof rawValue !== 'string' || !rawValue.trim()) {
-    return fallback
-  }
-
-  return JSON.parse(rawValue) as T
-}
-
-function getUploadFile(formData: FormData, fieldName: string) {
-  const value = formData.get(fieldName)
-
-  if (value instanceof File && value.size > 0) {
-    return value
-  }
-
-  return null
-}
-
-function normalizeCaptions(value: VideoCaptionInput[]) {
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new Error('At least one caption is required.')
-  }
-
-  return value.map((caption, index) => {
-    const startTime = Number(caption.startTime)
-    const endTime = Number(caption.endTime)
-    const enText = typeof caption.enText === 'string' ? caption.enText.trim() : ''
-    const zhText = typeof caption.zhText === 'string' ? caption.zhText.trim() : ''
-    const speaker = typeof caption.speaker === 'string' ? caption.speaker.trim() : ''
-
-    if (!Number.isFinite(startTime) || startTime < 0) {
-      throw new Error(`Caption #${index + 1} has an invalid start time.`)
-    }
-
-    if (!Number.isFinite(endTime) || endTime <= startTime) {
-      throw new Error(`Caption #${index + 1} must have endTime > startTime.`)
-    }
-
-    if (!enText) {
-      throw new Error(`Caption #${index + 1} is missing English text.`)
-    }
-
-    return {
-      startTime,
-      endTime,
-      enText,
-      zhText: zhText || null,
-      speaker: speaker || null,
-      isKeySentence: Boolean(caption.isKeySentence),
-      order: index,
-    }
-  })
-}
-
-function normalizeCharacters(value: VideoCharacterInput[]) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  const seenNames = new Set<string>()
-  const characters: Array<{ name: string; avatarField: string | null }> = []
-
-  for (const character of value) {
-    const name = typeof character.name === 'string' ? character.name.trim() : ''
-
-    if (!name || seenNames.has(name.toLowerCase())) {
-      continue
-    }
-
-    seenNames.add(name.toLowerCase())
-    characters.push({
-      name,
-      avatarField: typeof character.avatarField === 'string' ? character.avatarField : null,
-    })
-  }
-
-  return characters
-}
 
 export async function GET() {
   try {
@@ -148,11 +74,6 @@ export async function POST(request: NextRequest) {
     const tag = String(formData.get('tag') || '').trim()
     const mediaFileName = String(formData.get('mediaFileName') || '').trim()
     const coverFile = getUploadFile(formData, 'cover')
-    const captions = normalizeCaptions(parseJsonFormField<VideoCaptionInput[]>(formData, 'captions', []))
-    const characters =
-      tag === '影视'
-        ? normalizeCharacters(parseJsonFormField<VideoCharacterInput[]>(formData, 'characters', []))
-        : []
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -160,6 +81,21 @@ export async function POST(request: NextRequest) {
 
     if (!isVideoTrainingTag(tag)) {
       return NextResponse.json({ error: 'Invalid tag' }, { status: 400 })
+    }
+
+    let captions: ReturnType<typeof normalizeCaptions>
+    let characters: ReturnType<typeof normalizeCharacters>
+
+    try {
+      captions = normalizeCaptions(parseJsonFormField<VideoCaptionInput[]>(formData, 'captions', []), tag)
+      characters = isVideoTrainingDramaTag(tag)
+        ? normalizeCharacters(parseJsonFormField<VideoCharacterInput[]>(formData, 'characters', []))
+        : []
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid video training payload' },
+        { status: 400 }
+      )
     }
 
     let mediaUrl = ''

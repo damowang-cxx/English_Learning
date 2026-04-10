@@ -1,9 +1,13 @@
-export const VIDEO_TRAINING_TAGS = ['演讲', '影视'] as const
+export const VIDEO_TRAINING_TAGS = ['婕旇', '褰辫'] as const
+export const VIDEO_TRAINING_SPEECH_TAG = VIDEO_TRAINING_TAGS[0]
+export const VIDEO_TRAINING_DRAMA_TAG = VIDEO_TRAINING_TAGS[1]
 
 export type VideoTrainingTag = (typeof VIDEO_TRAINING_TAGS)[number]
 export type VideoCaptionMode = 'english' | 'bilingual' | 'hidden'
+export type VideoAssetAction = 'keep' | 'replace' | 'remove'
 
 export interface VideoCaptionInput {
+  id?: string
   startTime: number
   endTime: number
   enText: string
@@ -13,12 +17,18 @@ export interface VideoCaptionInput {
 }
 
 export interface VideoCharacterInput {
+  id?: string
   name: string
   avatarField?: string | null
+  avatarAction?: VideoAssetAction
 }
 
 export function isVideoTrainingTag(value: string): value is VideoTrainingTag {
   return VIDEO_TRAINING_TAGS.includes(value as VideoTrainingTag)
+}
+
+export function isVideoTrainingDramaTag(value: string) {
+  return value === VIDEO_TRAINING_DRAMA_TAG
 }
 
 export function formatVideoTime(seconds: number) {
