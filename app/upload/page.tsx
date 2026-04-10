@@ -180,6 +180,15 @@ export default function UploadPage() {
 
   const overlapAnalysis = useMemo(() => analyzeTimeOverlaps(sentences), [sentences])
   const overlapIndexSet = useMemo(() => new Set(overlapAnalysis.indexes), [overlapAnalysis.indexes])
+  const canSubmit = Boolean(title.trim() && audioFile && sentences.length > 0 && !isUploading)
+  const submitButtonLabel = isUploading ? '[ UPLOADING... ]' : '[ SUBMIT ]'
+  const submitReadinessText = !title.trim()
+    ? 'Need title'
+    : !audioFile
+      ? 'Need audio file'
+      : sentences.length === 0
+        ? 'Need saved segments'
+        : 'Ready to submit'
 
   const resetCurrentSentence = (nextSentences: Sentence[]) => {
     setCurrentSentence(createEmptySentence(getNextDraftTime(nextSentences)))
@@ -478,11 +487,14 @@ export default function UploadPage() {
 
   return (
     <div
-      className="min-h-screen relative flex items-center justify-center"
-      style={{ paddingBottom: '45vh', paddingTop: '10vh' }}
+      className="relative flex min-h-screen items-start justify-center"
+      style={{ minHeight: '100dvh', paddingBottom: '6vh', paddingTop: '6vh' }}
     >
-      <div className="w-[95%] max-w-5xl mx-auto relative" style={{ zIndex: 50 }}>
-        <div className="relative overflow-hidden rounded-lg border-2 border-red-500/50 bg-black/70 shadow-[0_0_40px_rgba(255,0,0,0.3),inset_0_0_30px_rgba(255,0,0,0.1)] backdrop-blur-md">
+      <div
+        className="relative mx-auto w-[95%] max-w-5xl"
+        style={{ zIndex: 50, height: 'calc(100dvh - 12vh)', maxHeight: 'calc(100dvh - 12vh)' }}
+      >
+        <div className="relative flex h-full flex-col overflow-hidden rounded-lg border-2 border-red-500/50 bg-black/70 shadow-[0_0_40px_rgba(255,0,0,0.3),inset_0_0_30px_rgba(255,0,0,0.1)] backdrop-blur-md">
           <div className="relative z-10 border-b-2 border-red-500/50 bg-gradient-to-r from-red-900/30 via-transparent to-transparent p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -508,7 +520,7 @@ export default function UploadPage() {
 
           <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(255,0,0,.05)_25%,rgba(255,0,0,.05)_26%,transparent_27%,transparent_74%,rgba(255,0,0,.05)_75%,rgba(255,0,0,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] opacity-30 pointer-events-none" />
 
-          <div className="relative p-8">
+          <div className="relative cockpit-viewport flex-1 overflow-y-auto p-8">
             <form
               onSubmit={(event) => {
                 event.preventDefault()
@@ -517,6 +529,31 @@ export default function UploadPage() {
               onKeyDown={handleKeyDown}
               className="space-y-8"
             >
+              <div className="sticky top-3 z-30 flex flex-col gap-3 rounded-lg border border-red-500/35 bg-black/90 p-3 shadow-[0_0_24px_rgba(255,0,0,0.18)] backdrop-blur-md md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="text-xs cyber-label text-red-400/70">UPLOAD STATUS</div>
+                  <div className={`mt-1 text-sm ${canSubmit ? 'text-red-200' : 'text-yellow-200'}`}>
+                    {submitReadinessText}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 md:flex-row">
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    className="rounded-md border-2 border-red-500/60 bg-red-500/20 px-6 py-3 text-sm text-red-300 transition-all hover:border-red-500/80 hover:bg-red-500/30 hover:text-red-200 disabled:cursor-not-allowed disabled:border-gray-600/50 disabled:bg-gray-900/50 disabled:text-gray-500"
+                  >
+                    {submitButtonLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/')}
+                    className="rounded-md border-2 border-gray-600/50 bg-black/40 px-6 py-3 text-sm text-gray-400 transition-all hover:border-gray-500/70 hover:bg-black/60 hover:text-gray-300"
+                  >
+                    [ CANCEL ]
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-6">
                 <div className="border-l-2 border-red-500/50 pl-4">
                   <label className="mb-3 flex items-center gap-2 text-red-400 cyber-label">
@@ -960,7 +997,7 @@ export default function UploadPage() {
                   disabled={isUploading}
                   className="flex-1 border-2 border-red-500/60 bg-red-500/20 px-8 py-4 text-sm text-red-400 transition-all hover:border-red-500/80 hover:bg-red-500/30 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {isUploading ? '[ UPLOADING... ]' : '[ SUBMIT ]'}
+                  {submitButtonLabel}
                 </button>
                 <button
                   type="button"
