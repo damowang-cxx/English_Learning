@@ -65,7 +65,7 @@ export default function VideoCaptionEditorModal({
           <div>
             <h2 id="caption-editor-title" className="text-lg cyber-title text-cyan-300">{title}</h2>
             <p className="mt-1 text-xs text-cyan-300/65">
-              {captions.length} blocks 路 {reviewCaptionCount} need review
+              {captions.length} blocks | {reviewCaptionCount} need review
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -106,7 +106,7 @@ export default function VideoCaptionEditorModal({
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-cyan-300/75">
                     <span className="font-mono">#{index + 1}</span>
-                    <span>{formatVideoTime(caption.startTime)} 鈫?{formatVideoTime(caption.endTime)}</span>
+                    <span>{formatVideoTime(caption.startTime)} -&gt; {formatVideoTime(caption.endTime)}</span>
                     {caption.needsReview ? <span className="text-yellow-200">REVIEW</span> : null}
                     {caption.translationStatus ? (
                       <span className="rounded border border-cyan-500/25 px-2 py-0.5 text-cyan-200/70">

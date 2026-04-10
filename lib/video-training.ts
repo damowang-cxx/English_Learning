@@ -1,4 +1,4 @@
-export const VIDEO_TRAINING_TAGS = ['婕旇', '褰辫'] as const
+export const VIDEO_TRAINING_TAGS = ['\u6f14\u8bb2', '\u5f71\u89c6'] as const
 export const VIDEO_TRAINING_SPEECH_TAG = VIDEO_TRAINING_TAGS[0]
 export const VIDEO_TRAINING_DRAMA_TAG = VIDEO_TRAINING_TAGS[1]
 
