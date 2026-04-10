@@ -18,17 +18,18 @@ export default async function VocabularyPage() {
         style={{
           position: 'relative',
           zIndex: 10,
-          paddingTop: '8vh',
-          paddingBottom: '45vh',
+          paddingTop: '6vh',
+          paddingBottom: '24vh',
           paddingLeft: '2rem',
           paddingRight: '2rem',
-          maxHeight: '65vh',
+          minHeight: '76vh',
+          maxHeight: '84vh',
           overflowY: 'auto',
           overflowX: 'visible',
           marginLeft: 'auto',
           marginRight: 'auto',
-          width: '82%',
-          maxWidth: '1200px',
+          width: '90%',
+          maxWidth: '1440px',
         }}
       >
         <GlobalVocabularyView

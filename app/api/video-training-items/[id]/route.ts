@@ -56,6 +56,16 @@ function buildErrorResponse(error: unknown, fallbackMessage: string, status = 50
   )
 }
 
+function clampCoverPosition(value: unknown) {
+  const numericValue = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isFinite(numericValue)) {
+    throw new Error('Cover position must be a number between 0 and 100.')
+  }
+
+  return Math.min(100, Math.max(0, Math.round(numericValue)))
+}
+
 function validateReferencedIds(
   itemName: string,
   submittedIds: string[],
@@ -406,5 +416,40 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting video training item:', error)
     return buildErrorResponse(error, 'Failed to delete video training item')
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const guard = await requireApiAdmin()
+  if (guard.response) {
+    return guard.response
+  }
+
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const coverPositionX = clampCoverPosition(body?.coverPositionX)
+    const coverPositionY = clampCoverPosition(body?.coverPositionY)
+
+    const updatedItem = await prisma.videoTrainingItem.update({
+      where: { id },
+      data: {
+        coverPositionX,
+        coverPositionY,
+      },
+      select: {
+        id: true,
+        coverPositionX: true,
+        coverPositionY: true,
+      },
+    })
+
+    return NextResponse.json(updatedItem)
+  } catch (error) {
+    console.error('Error updating video cover position:', error)
+    return buildErrorResponse(error, 'Failed to update video cover position', 400)
   }
 }

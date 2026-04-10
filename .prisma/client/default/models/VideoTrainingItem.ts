@@ -20,8 +20,20 @@ export type VideoTrainingItemModel = runtime.Types.Result.DefaultSelection<Prism
 
 export type AggregateVideoTrainingItem = {
   _count: VideoTrainingItemCountAggregateOutputType | null
+  _avg: VideoTrainingItemAvgAggregateOutputType | null
+  _sum: VideoTrainingItemSumAggregateOutputType | null
   _min: VideoTrainingItemMinAggregateOutputType | null
   _max: VideoTrainingItemMaxAggregateOutputType | null
+}
+
+export type VideoTrainingItemAvgAggregateOutputType = {
+  coverPositionX: number | null
+  coverPositionY: number | null
+}
+
+export type VideoTrainingItemSumAggregateOutputType = {
+  coverPositionX: number | null
+  coverPositionY: number | null
 }
 
 export type VideoTrainingItemMinAggregateOutputType = {
@@ -33,6 +45,8 @@ export type VideoTrainingItemMinAggregateOutputType = {
   mediaType: string | null
   mediaUrl: string | null
   coverUrl: string | null
+  coverPositionX: number | null
+  coverPositionY: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +60,8 @@ export type VideoTrainingItemMaxAggregateOutputType = {
   mediaType: string | null
   mediaUrl: string | null
   coverUrl: string | null
+  coverPositionX: number | null
+  coverPositionY: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -59,11 +75,23 @@ export type VideoTrainingItemCountAggregateOutputType = {
   mediaType: number
   mediaUrl: number
   coverUrl: number
+  coverPositionX: number
+  coverPositionY: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type VideoTrainingItemAvgAggregateInputType = {
+  coverPositionX?: true
+  coverPositionY?: true
+}
+
+export type VideoTrainingItemSumAggregateInputType = {
+  coverPositionX?: true
+  coverPositionY?: true
+}
 
 export type VideoTrainingItemMinAggregateInputType = {
   id?: true
@@ -74,6 +102,8 @@ export type VideoTrainingItemMinAggregateInputType = {
   mediaType?: true
   mediaUrl?: true
   coverUrl?: true
+  coverPositionX?: true
+  coverPositionY?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -87,6 +117,8 @@ export type VideoTrainingItemMaxAggregateInputType = {
   mediaType?: true
   mediaUrl?: true
   coverUrl?: true
+  coverPositionX?: true
+  coverPositionY?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -100,6 +132,8 @@ export type VideoTrainingItemCountAggregateInputType = {
   mediaType?: true
   mediaUrl?: true
   coverUrl?: true
+  coverPositionX?: true
+  coverPositionY?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -143,6 +177,18 @@ export type VideoTrainingItemAggregateArgs<ExtArgs extends runtime.Types.Extensi
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: VideoTrainingItemAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: VideoTrainingItemSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: VideoTrainingItemMinAggregateInputType
@@ -173,6 +219,8 @@ export type VideoTrainingItemGroupByArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   _count?: VideoTrainingItemCountAggregateInputType | true
+  _avg?: VideoTrainingItemAvgAggregateInputType
+  _sum?: VideoTrainingItemSumAggregateInputType
   _min?: VideoTrainingItemMinAggregateInputType
   _max?: VideoTrainingItemMaxAggregateInputType
 }
@@ -186,9 +234,13 @@ export type VideoTrainingItemGroupByOutputType = {
   mediaType: string
   mediaUrl: string
   coverUrl: string | null
+  coverPositionX: number
+  coverPositionY: number
   createdAt: Date
   updatedAt: Date
   _count: VideoTrainingItemCountAggregateOutputType | null
+  _avg: VideoTrainingItemAvgAggregateOutputType | null
+  _sum: VideoTrainingItemSumAggregateOutputType | null
   _min: VideoTrainingItemMinAggregateOutputType | null
   _max: VideoTrainingItemMaxAggregateOutputType | null
 }
@@ -220,6 +272,8 @@ export type VideoTrainingItemWhereInput = {
   mediaType?: Prisma.StringFilter<"VideoTrainingItem"> | string
   mediaUrl?: Prisma.StringFilter<"VideoTrainingItem"> | string
   coverUrl?: Prisma.StringNullableFilter<"VideoTrainingItem"> | string | null
+  coverPositionX?: Prisma.IntFilter<"VideoTrainingItem"> | number
+  coverPositionY?: Prisma.IntFilter<"VideoTrainingItem"> | number
   createdAt?: Prisma.DateTimeFilter<"VideoTrainingItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"VideoTrainingItem"> | Date | string
   captions?: Prisma.VideoCaptionListRelationFilter
@@ -236,6 +290,8 @@ export type VideoTrainingItemOrderByWithRelationInput = {
   mediaType?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   captions?: Prisma.VideoCaptionOrderByRelationAggregateInput
@@ -255,6 +311,8 @@ export type VideoTrainingItemWhereUniqueInput = Prisma.AtLeast<{
   mediaType?: Prisma.StringFilter<"VideoTrainingItem"> | string
   mediaUrl?: Prisma.StringFilter<"VideoTrainingItem"> | string
   coverUrl?: Prisma.StringNullableFilter<"VideoTrainingItem"> | string | null
+  coverPositionX?: Prisma.IntFilter<"VideoTrainingItem"> | number
+  coverPositionY?: Prisma.IntFilter<"VideoTrainingItem"> | number
   createdAt?: Prisma.DateTimeFilter<"VideoTrainingItem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"VideoTrainingItem"> | Date | string
   captions?: Prisma.VideoCaptionListRelationFilter
@@ -271,11 +329,15 @@ export type VideoTrainingItemOrderByWithAggregationInput = {
   mediaType?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.VideoTrainingItemCountOrderByAggregateInput
+  _avg?: Prisma.VideoTrainingItemAvgOrderByAggregateInput
   _max?: Prisma.VideoTrainingItemMaxOrderByAggregateInput
   _min?: Prisma.VideoTrainingItemMinOrderByAggregateInput
+  _sum?: Prisma.VideoTrainingItemSumOrderByAggregateInput
 }
 
 export type VideoTrainingItemScalarWhereWithAggregatesInput = {
@@ -290,6 +352,8 @@ export type VideoTrainingItemScalarWhereWithAggregatesInput = {
   mediaType?: Prisma.StringWithAggregatesFilter<"VideoTrainingItem"> | string
   mediaUrl?: Prisma.StringWithAggregatesFilter<"VideoTrainingItem"> | string
   coverUrl?: Prisma.StringNullableWithAggregatesFilter<"VideoTrainingItem"> | string | null
+  coverPositionX?: Prisma.IntWithAggregatesFilter<"VideoTrainingItem"> | number
+  coverPositionY?: Prisma.IntWithAggregatesFilter<"VideoTrainingItem"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"VideoTrainingItem"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"VideoTrainingItem"> | Date | string
 }
@@ -303,6 +367,8 @@ export type VideoTrainingItemCreateInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionCreateNestedManyWithoutVideoTrainingItemInput
@@ -319,6 +385,8 @@ export type VideoTrainingItemUncheckedCreateInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionUncheckedCreateNestedManyWithoutVideoTrainingItemInput
@@ -335,6 +403,8 @@ export type VideoTrainingItemUpdateInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUpdateManyWithoutVideoTrainingItemNestedInput
@@ -351,6 +421,8 @@ export type VideoTrainingItemUncheckedUpdateInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemNestedInput
@@ -367,6 +439,8 @@ export type VideoTrainingItemCreateManyInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -380,6 +454,8 @@ export type VideoTrainingItemUpdateManyMutationInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -393,6 +469,8 @@ export type VideoTrainingItemUncheckedUpdateManyInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -406,8 +484,15 @@ export type VideoTrainingItemCountOrderByAggregateInput = {
   mediaType?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type VideoTrainingItemAvgOrderByAggregateInput = {
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
 }
 
 export type VideoTrainingItemMaxOrderByAggregateInput = {
@@ -419,6 +504,8 @@ export type VideoTrainingItemMaxOrderByAggregateInput = {
   mediaType?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -432,8 +519,15 @@ export type VideoTrainingItemMinOrderByAggregateInput = {
   mediaType?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type VideoTrainingItemSumOrderByAggregateInput = {
+  coverPositionX?: Prisma.SortOrder
+  coverPositionY?: Prisma.SortOrder
 }
 
 export type VideoTrainingItemScalarRelationFilter = {
@@ -492,6 +586,8 @@ export type VideoTrainingItemCreateWithoutCaptionsInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   characters?: Prisma.VideoCharacterCreateNestedManyWithoutVideoTrainingItemInput
@@ -507,6 +603,8 @@ export type VideoTrainingItemUncheckedCreateWithoutCaptionsInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   characters?: Prisma.VideoCharacterUncheckedCreateNestedManyWithoutVideoTrainingItemInput
@@ -538,6 +636,8 @@ export type VideoTrainingItemUpdateWithoutCaptionsInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   characters?: Prisma.VideoCharacterUpdateManyWithoutVideoTrainingItemNestedInput
@@ -553,6 +653,8 @@ export type VideoTrainingItemUncheckedUpdateWithoutCaptionsInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   characters?: Prisma.VideoCharacterUncheckedUpdateManyWithoutVideoTrainingItemNestedInput
@@ -568,6 +670,8 @@ export type VideoTrainingItemCreateWithoutCharactersInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionCreateNestedManyWithoutVideoTrainingItemInput
@@ -583,6 +687,8 @@ export type VideoTrainingItemUncheckedCreateWithoutCharactersInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionUncheckedCreateNestedManyWithoutVideoTrainingItemInput
@@ -614,6 +720,8 @@ export type VideoTrainingItemUpdateWithoutCharactersInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUpdateManyWithoutVideoTrainingItemNestedInput
@@ -629,6 +737,8 @@ export type VideoTrainingItemUncheckedUpdateWithoutCharactersInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemNestedInput
@@ -644,6 +754,8 @@ export type VideoTrainingItemCreateWithoutPhraseNotesInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionCreateNestedManyWithoutVideoTrainingItemInput
@@ -659,6 +771,8 @@ export type VideoTrainingItemUncheckedCreateWithoutPhraseNotesInput = {
   mediaType?: string
   mediaUrl: string
   coverUrl?: string | null
+  coverPositionX?: number
+  coverPositionY?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   captions?: Prisma.VideoCaptionUncheckedCreateNestedManyWithoutVideoTrainingItemInput
@@ -690,6 +804,8 @@ export type VideoTrainingItemUpdateWithoutPhraseNotesInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUpdateManyWithoutVideoTrainingItemNestedInput
@@ -705,6 +821,8 @@ export type VideoTrainingItemUncheckedUpdateWithoutPhraseNotesInput = {
   mediaType?: Prisma.StringFieldUpdateOperationsInput | string
   mediaUrl?: Prisma.StringFieldUpdateOperationsInput | string
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverPositionX?: Prisma.IntFieldUpdateOperationsInput | number
+  coverPositionY?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   captions?: Prisma.VideoCaptionUncheckedUpdateManyWithoutVideoTrainingItemNestedInput
@@ -769,6 +887,8 @@ export type VideoTrainingItemSelect<ExtArgs extends runtime.Types.Extensions.Int
   mediaType?: boolean
   mediaUrl?: boolean
   coverUrl?: boolean
+  coverPositionX?: boolean
+  coverPositionY?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   captions?: boolean | Prisma.VideoTrainingItem$captionsArgs<ExtArgs>
@@ -786,6 +906,8 @@ export type VideoTrainingItemSelectCreateManyAndReturn<ExtArgs extends runtime.T
   mediaType?: boolean
   mediaUrl?: boolean
   coverUrl?: boolean
+  coverPositionX?: boolean
+  coverPositionY?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["videoTrainingItem"]>
@@ -799,6 +921,8 @@ export type VideoTrainingItemSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   mediaType?: boolean
   mediaUrl?: boolean
   coverUrl?: boolean
+  coverPositionX?: boolean
+  coverPositionY?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["videoTrainingItem"]>
@@ -812,11 +936,13 @@ export type VideoTrainingItemSelectScalar = {
   mediaType?: boolean
   mediaUrl?: boolean
   coverUrl?: boolean
+  coverPositionX?: boolean
+  coverPositionY?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type VideoTrainingItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "sourceTitle" | "plotSummary" | "tag" | "mediaType" | "mediaUrl" | "coverUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["videoTrainingItem"]>
+export type VideoTrainingItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "sourceTitle" | "plotSummary" | "tag" | "mediaType" | "mediaUrl" | "coverUrl" | "coverPositionX" | "coverPositionY" | "createdAt" | "updatedAt", ExtArgs["result"]["videoTrainingItem"]>
 export type VideoTrainingItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   captions?: boolean | Prisma.VideoTrainingItem$captionsArgs<ExtArgs>
   characters?: boolean | Prisma.VideoTrainingItem$charactersArgs<ExtArgs>
@@ -842,6 +968,8 @@ export type $VideoTrainingItemPayload<ExtArgs extends runtime.Types.Extensions.I
     mediaType: string
     mediaUrl: string
     coverUrl: string | null
+    coverPositionX: number
+    coverPositionY: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["videoTrainingItem"]>
@@ -1278,6 +1406,8 @@ export interface VideoTrainingItemFieldRefs {
   readonly mediaType: Prisma.FieldRef<"VideoTrainingItem", 'String'>
   readonly mediaUrl: Prisma.FieldRef<"VideoTrainingItem", 'String'>
   readonly coverUrl: Prisma.FieldRef<"VideoTrainingItem", 'String'>
+  readonly coverPositionX: Prisma.FieldRef<"VideoTrainingItem", 'Int'>
+  readonly coverPositionY: Prisma.FieldRef<"VideoTrainingItem", 'Int'>
   readonly createdAt: Prisma.FieldRef<"VideoTrainingItem", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"VideoTrainingItem", 'DateTime'>
 }

@@ -66,6 +66,8 @@ model VideoTrainingItem {
   mediaType   String            @default("video")
   mediaUrl    String
   coverUrl    String?
+  coverPositionX Int            @default(50)
+  coverPositionY Int            @default(50)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   captions    VideoCaption[]

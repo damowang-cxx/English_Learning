@@ -136,6 +136,8 @@ export const VideoTrainingItemScalarFieldEnum = {
   mediaType: 'mediaType',
   mediaUrl: 'mediaUrl',
   coverUrl: 'coverUrl',
+  coverPositionX: 'coverPositionX',
+  coverPositionY: 'coverPositionY',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

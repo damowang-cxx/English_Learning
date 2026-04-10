@@ -46,6 +46,8 @@ export async function GET() {
         mediaType: item.mediaType,
         mediaUrl: item.mediaUrl,
         coverUrl: item.coverUrl,
+        coverPositionX: item.coverPositionX,
+        coverPositionY: item.coverPositionY,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
         characters: item.characters,

@@ -30,6 +30,8 @@ async function getVideoTrainingItems() {
     id: item.id,
     title: item.title,
     coverUrl: item.coverUrl,
+    coverPositionX: item.coverPositionX,
+    coverPositionY: item.coverPositionY,
     meta: {
       createdAt: item.createdAt.toISOString(),
       captionsCount: item._count.captions,
@@ -41,6 +43,8 @@ async function getVideoTrainingItems() {
     id: entry.id,
     title: entry.title,
     coverUrl: entry.coverUrl,
+    coverPositionX: entry.coverPositionX,
+    coverPositionY: entry.coverPositionY,
     createdAt: entry.meta.createdAt,
     captionsCount: entry.meta.captionsCount,
     tag: entry.meta.tag,

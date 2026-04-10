@@ -13,6 +13,8 @@ export type HomeEntry =
       id: string
       title: string
       coverUrl: string | null
+      coverPositionX: number
+      coverPositionY: number
       meta: {
         createdAt: string
         captionsCount: number
