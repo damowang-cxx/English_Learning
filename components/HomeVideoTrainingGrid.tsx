@@ -20,6 +20,8 @@ export interface HomeVideoTrainingCardItem {
 interface HomeVideoTrainingGridProps {
   items: HomeVideoTrainingCardItem[]
   isAdmin?: boolean
+  availableTags?: string[]
+  selectedTag?: string | null
 }
 
 interface CoverNaturalSizeState {
@@ -88,7 +90,12 @@ function getPositionFromOffset(offset: number, viewportSize: number, scaledSize:
   return clampCoverPosition((offset / (viewportSize - scaledSize)) * 100)
 }
 
-export default function HomeVideoTrainingGrid({ items: initialItems, isAdmin = false }: HomeVideoTrainingGridProps) {
+export default function HomeVideoTrainingGrid({
+  items: initialItems,
+  isAdmin = false,
+  availableTags = [],
+  selectedTag = null,
+}: HomeVideoTrainingGridProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [items, setItems] = useState(initialItems)
@@ -358,6 +365,44 @@ export default function HomeVideoTrainingGrid({ items: initialItems, isAdmin = f
 
   return (
     <div className="space-y-4">
+      {availableTags.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/18 bg-black/32 px-4 py-3 shadow-[0_0_20px_rgba(34,211,238,0.08)]">
+          <span className="mr-2 font-mono text-[11px] tracking-[0.2em] text-cyan-400/72">TAG FILTER</span>
+          <Link
+            href="/video"
+            className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
+              !selectedTag
+                ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
+                : 'border-cyan-500/24 bg-black/20 text-cyan-300/72 hover:border-cyan-400/42 hover:text-cyan-100'
+            }`}
+          >
+            ALL
+          </Link>
+          {availableTags.map((tag) => (
+            <Link
+              key={tag}
+              href={`/video?tag=${encodeURIComponent(tag)}`}
+              className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
+                selectedTag === tag
+                  ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
+                  : 'border-cyan-500/24 bg-black/20 text-cyan-300/72 hover:border-cyan-400/42 hover:text-cyan-100'
+              }`}
+            >
+              {tag}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-cyan-500/14 bg-black/24 px-4 py-3">
+        <div className="font-mono text-[11px] tracking-[0.18em] text-cyan-300/72">
+          {selectedTag ? `FILTERED BY ${selectedTag}` : 'ALL VIDEO TRAINING ITEMS'}
+        </div>
+        <div className="font-mono text-[11px] text-cyan-100/78">
+          {items.length} ITEM{items.length === 1 ? '' : 'S'}
+        </div>
+      </div>
+
       {deleteError ? (
         <div className="rounded-md border border-red-500/35 bg-red-500/[0.08] px-4 py-3 text-sm text-red-200">
           {deleteError}

@@ -11,7 +11,7 @@ export function sanitizeUploadFileName(fileName: string) {
   return safeName || 'upload'
 }
 
-export async function savePublicUploadFile(file: File, publicSubdir: 'video' | 'video-covers') {
+export async function savePublicUploadFile(file: File, publicSubdir: 'video' | 'video-covers' | 'user-avatars') {
   const directory = path.join(process.cwd(), 'public', publicSubdir)
 
   if (!fs.existsSync(directory)) {

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useTranslation } from '@/contexts/TranslationContext'
 import { useDictationMode } from '@/contexts/DictationModeContext'
-import { useFocusMode } from '@/contexts/FocusModeContext'
+import { useFocusMode, type FocusTheme } from '@/contexts/FocusModeContext'
 import { isAdminRole } from '@/lib/auth-types'
 import { getAudioSrc, withBasePath } from '@/lib/base-path'
 import {
@@ -265,6 +265,12 @@ function scrollSentenceWithinContainer(
   })
 }
 
+const FOCUS_THEME_OPTIONS: Array<{ id: FocusTheme; label: string }> = [
+  { id: 'night', label: 'NIGHT' },
+  { id: 'warm', label: 'WARM' },
+  { id: 'pink', label: 'PINK' },
+]
+
 export default function TrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -275,7 +281,7 @@ export default function TrainingDetailPage() {
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(-1)
   const { showTranslations, setShowTranslations } = useTranslation()
   const { isDictationMode, setIsDictationMode } = useDictationMode()
-  const { isFocusMode, setIsFocusMode } = useFocusMode()
+  const { isFocusMode, focusTheme, setFocusTheme, setIsFocusMode } = useFocusMode()
   const [expandedTranslations, setExpandedTranslations] = useState<Set<string>>(new Set())
   const [collapsedGlobalTranslations, setCollapsedGlobalTranslations] = useState<Set<string>>(new Set())
   const [repeatMode, setRepeatMode] = useState<number | null>(null)
@@ -610,12 +616,14 @@ export default function TrainingDetailPage() {
   useEffect(() => {
     document.body.dataset.trainingPage = 'true'
     document.body.dataset.trainingFocusMode = isFocusMode ? 'true' : 'false'
+    document.body.dataset.trainingFocusTheme = focusTheme
 
     return () => {
       delete document.body.dataset.trainingPage
       delete document.body.dataset.trainingFocusMode
+      delete document.body.dataset.trainingFocusTheme
     }
-  }, [isFocusMode])
+  }, [focusTheme, isFocusMode])
 
   useEffect(() => {
     return () => {
@@ -2025,6 +2033,11 @@ export default function TrainingDetailPage() {
     ? isVocabularyFormSubmittable(activeVocabularyModalState.form)
     : false
   const isModernFocusLayout = isFocusMode
+  const focusWordLookupTheme = isModernFocusLayout
+    ? focusTheme === 'night'
+      ? 'slate'
+      : focusTheme
+    : 'green'
   const trainingShellClassName = isFullscreen
     ? isModernFocusLayout
       ? 'training-focus-shell relative z-10 flex h-full flex-col gap-6 px-6 py-6 md:gap-8 md:px-8 md:py-8 xl:gap-10 xl:px-10 xl:py-10'
@@ -2205,6 +2218,7 @@ export default function TrainingDetailPage() {
     <div 
       data-training-page
       data-focus-mode={isFocusMode ? 'true' : 'false'}
+      data-focus-theme={focusTheme}
       className={`relative flex justify-center overflow-hidden transition-all duration-300 ${
         isFullscreen ? 'fixed inset-0 z-[100] items-center training-fullscreen' : 'h-[100dvh] min-h-[100dvh] items-stretch'
       } ${
@@ -2424,6 +2438,25 @@ export default function TrainingDetailPage() {
                       </svg>
                     </div>
                   </div>
+                  {isModernFocusLayout ? (
+                    <div className="training-focus-theme-group">
+                      <span className="training-focus-theme-label">THEME</span>
+                      <div className="training-focus-theme-pills">
+                        {FOCUS_THEME_OPTIONS.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setFocusTheme(option.id)}
+                            className={`training-focus-theme-pill ${focusTheme === option.id ? 'is-active' : ''}`}
+                            aria-pressed={focusTheme === option.id}
+                            title={`Switch focus theme to ${option.label.toLowerCase()}`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   {isAdmin ? (
                     <>
                       <button
@@ -3542,7 +3575,7 @@ export default function TrainingDetailPage() {
       <WordLookupPopover
         request={wordLookup}
         savedEntryKeys={wordLookupSavedKeys}
-        theme={isModernFocusLayout ? 'slate' : 'green'}
+        theme={focusWordLookupTheme}
         onSave={handleSaveLookupVocabulary}
         onClose={() => setWordLookup(null)}
       />

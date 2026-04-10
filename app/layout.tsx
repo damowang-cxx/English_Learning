@@ -7,6 +7,7 @@ import { TranslationProvider } from "@/contexts/TranslationContext";
 import { DictationModeProvider } from "@/contexts/DictationModeContext";
 import { FocusModeProvider } from "@/contexts/FocusModeContext";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
+import { CockpitUiProvider } from "@/contexts/CockpitUiContext";
 
 const BASE_PATH = "/listen";
 
@@ -37,11 +38,13 @@ export default function RootLayout({
           <TranslationProvider>
             <FocusModeProvider>
               <DictationModeProvider>
-                <StarBackground />
-                <ParticleBackground />
-                <CockpitPanel />
-                <div className="scan-line" />
-                <div className="relative z-10">{children}</div>
+                <CockpitUiProvider>
+                  <StarBackground />
+                  <ParticleBackground />
+                  <CockpitPanel />
+                  <div className="scan-line" />
+                  <div className="relative z-10">{children}</div>
+                </CockpitUiProvider>
               </DictationModeProvider>
             </FocusModeProvider>
           </TranslationProvider>

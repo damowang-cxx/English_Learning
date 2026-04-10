@@ -38,7 +38,7 @@ interface DictionaryLookupEntry {
 interface WordLookupPopoverProps {
   request: WordLookupRequest | null
   savedEntryKeys: Set<string>
-  theme?: 'green' | 'cyan' | 'slate'
+  theme?: 'green' | 'cyan' | 'slate' | 'warm' | 'pink'
   onSave: (entry: VocabularyEntry) => Promise<void> | void
   onClose: () => void
 }
@@ -142,6 +142,28 @@ function getThemeClasses(theme: WordLookupPopoverProps['theme']) {
       accent: 'text-slate-200',
       closeButton: 'border-slate-500/40 text-slate-400/85 hover:border-slate-300/70 hover:text-slate-100',
       button: 'border-slate-400/45 bg-slate-200/[0.08] text-slate-100 hover:border-slate-200/70 hover:bg-slate-200/[0.13]',
+    }
+  }
+
+  if (theme === 'warm') {
+    return {
+      shell: 'border-amber-400/38 bg-[#171008]/94 shadow-[0_22px_48px_rgba(120,53,15,0.28)]',
+      muted: 'text-amber-200/68',
+      text: 'text-amber-50',
+      accent: 'text-amber-100',
+      closeButton: 'border-amber-300/28 text-amber-200/72 hover:border-amber-200/58 hover:text-amber-50',
+      button: 'border-amber-300/42 bg-amber-400/[0.12] text-amber-50 hover:border-amber-100/72 hover:bg-amber-400/[0.18]',
+    }
+  }
+
+  if (theme === 'pink') {
+    return {
+      shell: 'border-rose-400/38 bg-[#16090f]/94 shadow-[0_22px_48px_rgba(190,24,93,0.24)]',
+      muted: 'text-rose-200/68',
+      text: 'text-rose-50',
+      accent: 'text-rose-100',
+      closeButton: 'border-rose-300/28 text-rose-200/72 hover:border-rose-200/58 hover:text-rose-50',
+      button: 'border-rose-300/42 bg-rose-400/[0.12] text-rose-50 hover:border-rose-100/72 hover:bg-rose-400/[0.18]',
     }
   }
 

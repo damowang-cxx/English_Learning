@@ -19,7 +19,7 @@ export default async function VocabularyPage() {
           position: 'relative',
           zIndex: 10,
           paddingTop: '6vh',
-          paddingBottom: '24vh',
+          paddingBottom: '12vh',
           paddingLeft: '2rem',
           paddingRight: '2rem',
           minHeight: '76vh',

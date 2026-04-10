@@ -4,6 +4,7 @@ import {
   type VideoCharacterInput,
   type VideoTrainingTag,
 } from '@/lib/video-training'
+export { getUploadFile, parseBooleanFormField } from '@/lib/upload-form'
 
 export function parseJsonFormField<T>(formData: FormData, fieldName: string, fallback: T): T {
   const rawValue = formData.get(fieldName)
@@ -13,21 +14,6 @@ export function parseJsonFormField<T>(formData: FormData, fieldName: string, fal
   }
 
   return JSON.parse(rawValue) as T
-}
-
-export function getUploadFile(formData: FormData, fieldName: string) {
-  const value = formData.get(fieldName)
-
-  if (value instanceof File && value.size > 0) {
-    return value
-  }
-
-  return null
-}
-
-export function parseBooleanFormField(formData: FormData, fieldName: string) {
-  const rawValue = formData.get(fieldName)
-  return rawValue === 'true' || rawValue === '1' || rawValue === 'on'
 }
 
 export function normalizeCaptions(value: VideoCaptionInput[], tag: VideoTrainingTag) {

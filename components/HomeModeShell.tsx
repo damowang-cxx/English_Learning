@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import AuthStatusNav from '@/components/AuthStatusNav'
 import HomeUploadAction from '@/components/HomeUploadAction'
+import TopActionNav from '@/components/TopActionNav'
 
 type HomeMode = 'listening' | 'video'
 
@@ -27,10 +27,10 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
         position: 'relative',
         zIndex: 10,
         paddingTop: '8vh',
-        paddingBottom: '45vh',
+        paddingBottom: '14vh',
         paddingLeft: '2rem',
         paddingRight: '2rem',
-        maxHeight: '65vh',
+        maxHeight: '84vh',
         overflowY: 'auto',
         overflowX: 'visible',
         marginLeft: 'auto',
@@ -61,7 +61,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
         </div>
 
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <AuthStatusNav />
+          <TopActionNav />
           <Link
             href="/vocabulary"
             className="home-global-vocab-button group inline-flex items-center gap-2 rounded-md px-3 py-2"

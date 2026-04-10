@@ -474,7 +474,7 @@ export default function VideoUploadPage() {
   }
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center" style={{ paddingBottom: '45vh', paddingTop: '10vh' }}>
+    <div className="min-h-screen relative flex items-center justify-center" style={{ paddingBottom: '16vh', paddingTop: '10vh' }}>
       <div className="w-[95%] max-w-6xl mx-auto relative" style={{ zIndex: 50 }}>
         <div className="relative overflow-hidden rounded-lg border-2 border-cyan-500/45 bg-black/75 shadow-[0_0_40px_rgba(34,211,238,0.22),inset_0_0_30px_rgba(34,211,238,0.08)] backdrop-blur-md">
           <div className="relative z-10 border-b-2 border-cyan-500/40 bg-cyan-950/30 p-4">

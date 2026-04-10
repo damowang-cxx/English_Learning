@@ -17,6 +17,7 @@ export async function getCurrentUser() {
       id: true,
       email: true,
       name: true,
+      avatarUrl: true,
       role: true,
       isActive: true,
     },
@@ -30,6 +31,7 @@ export async function getCurrentUser() {
     id: user.id,
     email: user.email,
     name: user.name,
+    avatarUrl: user.avatarUrl,
     role: normalizeUserRole(user.role),
   }
 }

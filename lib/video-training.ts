@@ -1,6 +1,7 @@
-export const VIDEO_TRAINING_TAGS = ['\u6f14\u8bb2', '\u5f71\u89c6'] as const
+export const VIDEO_TRAINING_TAGS = ['\u6f14\u8bb2', 'YouTube', '\u5f71\u89c6'] as const
 export const VIDEO_TRAINING_SPEECH_TAG = VIDEO_TRAINING_TAGS[0]
-export const VIDEO_TRAINING_DRAMA_TAG = VIDEO_TRAINING_TAGS[1]
+export const VIDEO_TRAINING_YOUTUBE_TAG = VIDEO_TRAINING_TAGS[1]
+export const VIDEO_TRAINING_DRAMA_TAG = VIDEO_TRAINING_TAGS[2]
 
 export type VideoTrainingTag = (typeof VIDEO_TRAINING_TAGS)[number]
 export type VideoCaptionMode = 'english' | 'bilingual' | 'hidden'

@@ -51,4 +51,5 @@ next-env.d.ts
 public/video/*.mp4
 public/video/*.mp4
 public/video/*.mp4
+public/user-avatars/*
 prisma/dev.db

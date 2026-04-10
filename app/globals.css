@@ -1437,6 +1437,572 @@ body[data-training-focus-mode='true'] .training-dock-button-label {
   text-shadow: none !important;
 }
 
+body[data-training-focus-mode='true'] {
+  --training-focus-page-bg-color: #0b1014;
+  --training-focus-page-bg:
+    radial-gradient(circle at top center, rgba(71, 85, 105, 0.16), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(30, 41, 59, 0.22), transparent 28%),
+    linear-gradient(180deg, #11161b 0%, #0b1014 100%);
+  --training-focus-frame-bg: rgba(13, 18, 23, 0.95);
+  --training-focus-frame-border: rgba(71, 85, 105, 0.55);
+  --training-focus-frame-inset:
+    radial-gradient(circle at top left, rgba(148, 163, 184, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.32), transparent);
+  --training-focus-header-bg:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(18, 24, 31, 0.96), rgba(13, 18, 24, 0.96));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(11, 16, 22, 0.98), rgba(10, 14, 20, 0.96));
+  --training-focus-content-overlay:
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(16, 21, 28, 0.94), rgba(12, 17, 23, 0.96));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(19, 25, 33, 0.96), rgba(13, 18, 24, 0.94));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(24, 31, 40, 0.98), rgba(16, 22, 29, 0.96));
+  --training-focus-select-bg: rgba(15, 23, 42, 0.34);
+  --training-focus-select-bg-focus: rgba(15, 23, 42, 0.48);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.01)),
+    rgba(15, 23, 42, 0.24);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.014)),
+    rgba(15, 23, 42, 0.28);
+  --training-focus-surface-bg-active:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.015)),
+    rgba(15, 23, 42, 0.32);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.22), rgba(10, 14, 20, 0.58));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.24), rgba(10, 14, 20, 0.66));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(120, 53, 15, 0.12), rgba(17, 24, 39, 0.82));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(17, 24, 39, 0.48), rgba(11, 15, 21, 0.82));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(17, 24, 39, 0.38), rgba(10, 14, 20, 0.84));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(17, 24, 39, 0.3), rgba(10, 14, 20, 0.68));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(120, 53, 15, 0.12), rgba(17, 24, 39, 0.68));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(17, 24, 39, 0.36), rgba(12, 17, 23, 0.72));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(17, 24, 39, 0.34), rgba(11, 15, 21, 0.74));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(21, 29, 39, 0.42), rgba(14, 19, 26, 0.82));
+  --training-focus-border-strong: rgba(226, 232, 240, 0.46);
+  --training-focus-border: rgba(71, 85, 105, 0.5);
+  --training-focus-border-soft: rgba(71, 85, 105, 0.38);
+  --training-focus-border-faint: rgba(51, 65, 85, 0.34);
+  --training-focus-border-muted: rgba(100, 116, 139, 0.42);
+  --training-focus-border-hover: rgba(148, 163, 184, 0.66);
+  --training-focus-text-strong: #f8fafc;
+  --training-focus-text-primary: rgba(226, 232, 240, 0.92);
+  --training-focus-text-secondary: rgba(203, 213, 225, 0.88);
+  --training-focus-text-muted: rgba(148, 163, 184, 0.84);
+  --training-focus-text-dim: rgba(100, 116, 139, 0.82);
+  --training-focus-accent: rgba(226, 232, 240, 0.82);
+  --training-focus-accent-soft: rgba(226, 232, 240, 0.12);
+  --training-focus-pill-bg: rgba(15, 23, 42, 0.42);
+  --training-focus-pill-border: rgba(71, 85, 105, 0.48);
+  --training-focus-pill-text: rgba(226, 232, 240, 0.86);
+  --training-focus-pill-active-bg: rgba(226, 232, 240, 0.08);
+  --training-focus-pill-active-border: rgba(226, 232, 240, 0.46);
+  --training-focus-rail: linear-gradient(180deg, rgba(226, 232, 240, 0.5), rgba(148, 163, 184, 0.12), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.2), transparent);
+  --training-focus-scroll-track: rgba(30, 41, 59, 0.46);
+  --training-focus-scroll-track-border: rgba(71, 85, 105, 0.32);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(148, 163, 184, 0.72), rgba(100, 116, 139, 0.58));
+  --training-focus-scroll-thumb-border: rgba(71, 85, 105, 0.35);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(203, 213, 225, 0.78), rgba(148, 163, 184, 0.62));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(15, 18, 22, 0.92));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(28, 32, 38, 0.96));
+  --training-focus-dock-border: rgba(148, 163, 184, 0.24);
+  --training-focus-dock-border-active: rgba(226, 232, 240, 0.56);
+  --training-focus-dock-shadow: 0 8px 18px rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --training-focus-dock-shadow-active: 0 10px 22px rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+body[data-training-focus-mode='true'][data-training-focus-theme='warm'] {
+  --training-focus-page-bg-color: #0f0b08;
+  --training-focus-page-bg:
+    radial-gradient(circle at top center, rgba(251, 191, 36, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(180, 83, 9, 0.22), transparent 28%),
+    linear-gradient(180deg, #1a120b 0%, #0f0b08 100%);
+  --training-focus-frame-bg: rgba(23, 16, 12, 0.95);
+  --training-focus-frame-border: rgba(217, 119, 6, 0.5);
+  --training-focus-frame-inset:
+    radial-gradient(circle at top left, rgba(252, 211, 77, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(120, 53, 15, 0.18), rgba(15, 23, 42, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(253, 230, 138, 0.38), transparent);
+  --training-focus-header-bg:
+    radial-gradient(circle at top right, rgba(252, 211, 77, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(36, 22, 12, 0.96), rgba(18, 12, 8, 0.96));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(21, 14, 10, 0.98), rgba(12, 8, 6, 0.96));
+  --training-focus-content-overlay:
+    radial-gradient(circle at top right, rgba(252, 211, 77, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 251, 235, 0.02), transparent 18%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(29, 18, 12, 0.94), rgba(16, 11, 8, 0.96));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(33, 22, 14, 0.96), rgba(18, 12, 8, 0.94));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(44, 28, 18, 0.98), rgba(24, 16, 10, 0.96));
+  --training-focus-select-bg: rgba(92, 53, 18, 0.22);
+  --training-focus-select-bg-focus: rgba(120, 53, 15, 0.26);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 247, 237, 0.02), rgba(255, 247, 237, 0.012)),
+    rgba(51, 27, 12, 0.28);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 247, 237, 0.024), rgba(255, 247, 237, 0.016)),
+    rgba(64, 34, 16, 0.32);
+  --training-focus-surface-bg-active:
+    linear-gradient(180deg, rgba(255, 247, 237, 0.028), rgba(255, 247, 237, 0.018)),
+    rgba(71, 39, 18, 0.36);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(71, 39, 18, 0.24), rgba(12, 8, 6, 0.62));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(83, 47, 20, 0.26), rgba(12, 8, 6, 0.7));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(120, 53, 15, 0.18), rgba(23, 14, 10, 0.84));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(54, 31, 15, 0.42), rgba(13, 10, 8, 0.82));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(54, 31, 15, 0.32), rgba(12, 8, 6, 0.84));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(58, 32, 15, 0.3), rgba(12, 8, 6, 0.72));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(146, 64, 14, 0.18), rgba(24, 16, 10, 0.72));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(58, 32, 15, 0.34), rgba(16, 11, 8, 0.74));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(58, 32, 15, 0.32), rgba(12, 8, 6, 0.74));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(79, 43, 19, 0.42), rgba(16, 11, 8, 0.82));
+  --training-focus-border-strong: rgba(253, 224, 71, 0.62);
+  --training-focus-border: rgba(217, 119, 6, 0.42);
+  --training-focus-border-soft: rgba(180, 83, 9, 0.32);
+  --training-focus-border-faint: rgba(146, 64, 14, 0.3);
+  --training-focus-border-muted: rgba(245, 158, 11, 0.4);
+  --training-focus-border-hover: rgba(252, 211, 77, 0.68);
+  --training-focus-text-strong: #fff7ed;
+  --training-focus-text-primary: rgba(255, 247, 237, 0.94);
+  --training-focus-text-secondary: rgba(254, 240, 138, 0.9);
+  --training-focus-text-muted: rgba(252, 211, 77, 0.84);
+  --training-focus-text-dim: rgba(245, 158, 11, 0.76);
+  --training-focus-accent: rgba(253, 224, 71, 0.88);
+  --training-focus-accent-soft: rgba(251, 191, 36, 0.14);
+  --training-focus-pill-bg: rgba(92, 53, 18, 0.36);
+  --training-focus-pill-border: rgba(217, 119, 6, 0.42);
+  --training-focus-pill-text: rgba(255, 247, 237, 0.9);
+  --training-focus-pill-active-bg: rgba(251, 191, 36, 0.16);
+  --training-focus-pill-active-border: rgba(253, 224, 71, 0.62);
+  --training-focus-rail: linear-gradient(180deg, rgba(253, 224, 71, 0.62), rgba(245, 158, 11, 0.18), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(252, 211, 77, 0.24), transparent);
+  --training-focus-scroll-track: rgba(69, 39, 16, 0.46);
+  --training-focus-scroll-track-border: rgba(180, 83, 9, 0.28);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(252, 211, 77, 0.76), rgba(245, 158, 11, 0.62));
+  --training-focus-scroll-thumb-border: rgba(180, 83, 9, 0.36);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(253, 224, 71, 0.84), rgba(251, 191, 36, 0.68));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(120, 53, 15, 0.18), rgba(18, 12, 8, 0.92));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(251, 191, 36, 0.18), rgba(46, 24, 12, 0.96));
+  --training-focus-dock-border: rgba(217, 119, 6, 0.34);
+  --training-focus-dock-border-active: rgba(253, 224, 71, 0.72);
+}
+
+body[data-training-focus-mode='true'][data-training-focus-theme='pink'] {
+  --training-focus-page-bg-color: #0f0910;
+  --training-focus-page-bg:
+    radial-gradient(circle at top center, rgba(251, 113, 133, 0.18), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(190, 24, 93, 0.2), transparent 28%),
+    linear-gradient(180deg, #170b11 0%, #0f0910 100%);
+  --training-focus-frame-bg: rgba(21, 10, 15, 0.95);
+  --training-focus-frame-border: rgba(244, 114, 182, 0.48);
+  --training-focus-frame-inset:
+    radial-gradient(circle at top left, rgba(253, 164, 175, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(190, 24, 93, 0.16), rgba(15, 23, 42, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(253, 164, 175, 0.36), transparent);
+  --training-focus-header-bg:
+    radial-gradient(circle at top right, rgba(253, 164, 175, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(33, 13, 20, 0.96), rgba(18, 9, 14, 0.96));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(20, 10, 15, 0.98), rgba(12, 8, 11, 0.96));
+  --training-focus-content-overlay:
+    radial-gradient(circle at top right, rgba(253, 164, 175, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 241, 242, 0.02), transparent 18%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(28, 13, 19, 0.94), rgba(15, 9, 13, 0.96));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(31, 14, 20, 0.96), rgba(16, 9, 13, 0.94));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(42, 18, 26, 0.98), rgba(19, 10, 15, 0.96));
+  --training-focus-select-bg: rgba(96, 24, 54, 0.22);
+  --training-focus-select-bg-focus: rgba(127, 29, 59, 0.28);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 241, 242, 0.02), rgba(255, 241, 242, 0.012)),
+    rgba(72, 18, 40, 0.26);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 241, 242, 0.024), rgba(255, 241, 242, 0.016)),
+    rgba(88, 20, 49, 0.3);
+  --training-focus-surface-bg-active:
+    linear-gradient(180deg, rgba(255, 241, 242, 0.028), rgba(255, 241, 242, 0.018)),
+    rgba(100, 24, 56, 0.34);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(88, 20, 49, 0.24), rgba(12, 8, 11, 0.62));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(100, 24, 56, 0.26), rgba(12, 8, 11, 0.7));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(159, 18, 57, 0.18), rgba(22, 10, 15, 0.84));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(76, 16, 39, 0.42), rgba(13, 9, 12, 0.82));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(76, 16, 39, 0.32), rgba(12, 8, 11, 0.84));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(76, 16, 39, 0.3), rgba(12, 8, 11, 0.72));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(190, 24, 93, 0.16), rgba(22, 10, 15, 0.72));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(76, 16, 39, 0.34), rgba(15, 9, 13, 0.74));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(76, 16, 39, 0.32), rgba(12, 8, 11, 0.74));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(100, 24, 56, 0.42), rgba(15, 9, 13, 0.82));
+  --training-focus-border-strong: rgba(253, 164, 175, 0.62);
+  --training-focus-border: rgba(244, 114, 182, 0.42);
+  --training-focus-border-soft: rgba(190, 24, 93, 0.3);
+  --training-focus-border-faint: rgba(159, 18, 57, 0.28);
+  --training-focus-border-muted: rgba(251, 113, 133, 0.42);
+  --training-focus-border-hover: rgba(253, 164, 175, 0.68);
+  --training-focus-text-strong: #fff1f2;
+  --training-focus-text-primary: rgba(255, 241, 242, 0.94);
+  --training-focus-text-secondary: rgba(254, 205, 211, 0.9);
+  --training-focus-text-muted: rgba(253, 164, 175, 0.84);
+  --training-focus-text-dim: rgba(251, 113, 133, 0.76);
+  --training-focus-accent: rgba(253, 164, 175, 0.88);
+  --training-focus-accent-soft: rgba(244, 114, 182, 0.14);
+  --training-focus-pill-bg: rgba(88, 20, 49, 0.34);
+  --training-focus-pill-border: rgba(244, 114, 182, 0.42);
+  --training-focus-pill-text: rgba(255, 241, 242, 0.9);
+  --training-focus-pill-active-bg: rgba(244, 114, 182, 0.16);
+  --training-focus-pill-active-border: rgba(253, 164, 175, 0.62);
+  --training-focus-rail: linear-gradient(180deg, rgba(253, 164, 175, 0.62), rgba(244, 114, 182, 0.18), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(253, 164, 175, 0.22), transparent);
+  --training-focus-scroll-track: rgba(76, 16, 39, 0.46);
+  --training-focus-scroll-track-border: rgba(190, 24, 93, 0.26);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(253, 164, 175, 0.74), rgba(244, 114, 182, 0.62));
+  --training-focus-scroll-thumb-border: rgba(190, 24, 93, 0.34);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(254, 205, 211, 0.82), rgba(251, 113, 133, 0.68));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(159, 18, 57, 0.16), rgba(18, 9, 14, 0.92));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(244, 114, 182, 0.18), rgba(46, 15, 25, 0.96));
+  --training-focus-dock-border: rgba(244, 114, 182, 0.32);
+  --training-focus-dock-border-active: rgba(253, 164, 175, 0.72);
+}
+
+body[data-training-focus-mode='true'] [data-training-page].training-focus-mode {
+  color: var(--training-focus-text-primary);
+  background: var(--training-focus-page-bg);
+}
+
+body[data-training-focus-mode='true'] {
+  background-color: var(--training-focus-page-bg-color);
+  background-image: var(--training-focus-page-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [data-training-frame] {
+  border-color: var(--training-focus-frame-border) !important;
+  background: var(--training-focus-frame-bg) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-frame::before {
+  background: var(--training-focus-frame-inset);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-frame::after {
+  background: var(--training-focus-frame-line);
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell {
+  border-color: var(--training-focus-dock-border) !important;
+  background: var(--training-focus-dock-bg) !important;
+  box-shadow: var(--training-focus-dock-shadow) !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell.is-active {
+  border-color: var(--training-focus-dock-border-active) !important;
+  background: var(--training-focus-dock-bg-active) !important;
+}
+
+body[data-training-focus-mode='true'] .focus-mode-toggle-shell.is-active {
+  border-color: var(--training-focus-dock-border-active) !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell svg,
+body[data-training-focus-mode='true'] .training-dock-button-label {
+  color: var(--training-focus-text-primary) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-header {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-header-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-header::after {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--training-focus-accent) 24%, transparent), transparent);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-kicker {
+  border-color: var(--training-focus-border-muted);
+  background: color-mix(in srgb, var(--training-focus-accent-soft) 38%, transparent);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-content-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content::before {
+  background: var(--training-focus-content-overlay);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-panel {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-panel-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-panel-header,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-stream-header {
+  border-bottom-color: var(--training-focus-border-muted);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-panel-header::after,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-stream-header::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--training-focus-accent) 44%, transparent), color-mix(in srgb, var(--training-focus-accent) 18%, transparent), transparent);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-control-shell,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-toolbar-button {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-control-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-toolbar-button:hover,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-control-shell:hover {
+  border-color: var(--training-focus-border-hover);
+  background: var(--training-focus-control-bg-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-select {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-select-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-select:hover {
+  border-color: var(--training-focus-border-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-select:focus {
+  border-color: var(--training-focus-border-strong);
+  background: var(--training-focus-select-bg-focus);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-meta-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-order-pill {
+  border-color: var(--training-focus-pill-border);
+  background: var(--training-focus-pill-bg);
+  color: var(--training-focus-pill-text);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-pill--active,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-order-pill.is-active {
+  border-color: var(--training-focus-pill-active-border);
+  background: var(--training-focus-pill-active-bg);
+  color: var(--training-focus-text-strong);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card {
+  border-color: var(--training-focus-border-soft);
+  background: var(--training-focus-panel-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:hover {
+  border-color: var(--training-focus-border-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active {
+  border-color: var(--training-focus-border-strong);
+  background: var(--training-focus-control-bg-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-rail {
+  background: var(--training-focus-rail);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-divider {
+  background: var(--training-focus-divider);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-dictation-surface {
+  border-color: var(--training-focus-border-faint);
+  background: var(--training-focus-surface-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-reading-surface:hover {
+  border-color: var(--training-focus-border-hover);
+  background: var(--training-focus-surface-bg-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-dictation-surface.is-active {
+  border-color: var(--training-focus-border-strong);
+  background: var(--training-focus-surface-bg-active);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset {
+  border-color: var(--training-focus-border-faint);
+  background: var(--training-focus-inset-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset--dense {
+  background: var(--training-focus-inset-dense-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset--warning {
+  border-color: color-mix(in srgb, var(--training-focus-accent) 36%, transparent);
+  background: var(--training-focus-inset-warning-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset--review {
+  background: var(--training-focus-inset-review-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset--form {
+  background: var(--training-focus-inset-form-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-record {
+  border-color: var(--training-focus-border-faint);
+  background: var(--training-focus-record-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-record.is-legacy {
+  border-color: color-mix(in srgb, var(--training-focus-accent) 34%, transparent);
+  background: var(--training-focus-record-legacy-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-stat-box {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-stat-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-mini-button {
+  border-color: var(--training-focus-border);
+  background: var(--training-focus-mini-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-mini-button:hover {
+  border-color: var(--training-focus-border-hover);
+  background: var(--training-focus-mini-bg-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content.training-hud-content {
+  scrollbar-color: color-mix(in srgb, var(--training-focus-accent) 60%, transparent) var(--training-focus-scroll-track);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content.training-hud-content::-webkit-scrollbar-track,
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll::-webkit-scrollbar-track {
+  background: var(--training-focus-scroll-track);
+  border-left-color: var(--training-focus-scroll-track-border);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content.training-hud-content::-webkit-scrollbar-thumb,
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll::-webkit-scrollbar-thumb {
+  background: var(--training-focus-scroll-thumb);
+  border-color: var(--training-focus-scroll-thumb-border);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content.training-hud-content::-webkit-scrollbar-thumb:hover,
+body[data-training-focus-mode='true'] [data-training-page] .training-subpanel-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--training-focus-scroll-thumb-hover);
+  border-color: var(--training-focus-border-hover);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.95rem;
+  border: 1px solid var(--training-focus-border);
+  background: var(--training-focus-control-bg);
+  color: var(--training-focus-text-primary);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--training-focus-text-muted);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pill {
+  border-radius: 999px;
+  border: 1px solid var(--training-focus-pill-border);
+  background: var(--training-focus-pill-bg);
+  color: var(--training-focus-pill-text);
+  padding: 0.35rem 0.72rem;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pill:hover {
+  border-color: var(--training-focus-border-hover);
+  color: var(--training-focus-text-strong);
+  transform: translateY(-1px);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pill.is-active {
+  border-color: var(--training-focus-pill-active-border);
+  background: var(--training-focus-pill-active-bg);
+  color: var(--training-focus-text-strong);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-50'] {
+  color: var(--training-focus-text-strong) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-100'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-200'] {
+  color: var(--training-focus-text-primary) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-300'] {
+  color: var(--training-focus-text-secondary) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-400'] {
+  color: var(--training-focus-text-muted) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-slate-500'] {
+  color: var(--training-focus-text-dim) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-300'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-400'] {
+  border-color: var(--training-focus-border-strong) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-500'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-600'] {
+  border-color: var(--training-focus-border-hover) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-700'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-slate-800'] {
+  border-color: var(--training-focus-border) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-950'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-900'] {
+  background-color: color-mix(in srgb, var(--training-focus-frame-bg) 96%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-800'] {
+  background-color: color-mix(in srgb, var(--training-focus-control-bg) 82%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-300'] {
+  background-color: var(--training-focus-accent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-200'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-100'] {
+  background-color: var(--training-focus-accent-soft) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] input::placeholder,
+body[data-training-focus-mode='true'] [data-training-page] textarea::placeholder {
+  color: var(--training-focus-text-dim) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='caret-slate-200'] {
+  caret-color: var(--training-focus-text-secondary) !important;
+}
+
 /* 确保训练页面时 body 和 html 不显示滚动条 */
 [data-training-page] {
   overflow: hidden;
