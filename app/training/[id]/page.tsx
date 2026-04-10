@@ -1949,8 +1949,8 @@ export default function TrainingDetailPage() {
       ? 'training-focus-shell relative z-10 flex h-full flex-col gap-6 px-6 py-6 md:gap-8 md:px-8 md:py-8 xl:gap-10 xl:px-10 xl:py-10'
       : 'relative z-10 flex h-full flex-col gap-6 px-10 py-8 md:gap-7 md:px-12 md:py-9 xl:gap-8 xl:px-16 xl:py-12'
     : isModernFocusLayout
-      ? 'training-focus-shell relative z-10 flex flex-col gap-6 px-5 py-5 md:gap-7 md:px-7 md:py-7 xl:gap-8 xl:px-8 xl:py-8'
-      : 'relative z-10 flex flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
+      ? 'training-focus-shell relative z-10 flex h-full min-h-0 flex-col gap-6 px-5 py-5 md:gap-7 md:px-7 md:py-7 xl:gap-8 xl:px-8 xl:py-8'
+      : 'relative z-10 flex h-full min-h-0 flex-col gap-5 px-8 py-6 md:gap-6 md:px-10 md:py-7 xl:gap-7 xl:px-12 xl:py-8'
   const trainingOuterInsetClassName = isModernFocusLayout
     ? ''
     : isFullscreen
@@ -1959,9 +1959,7 @@ export default function TrainingDetailPage() {
   const headerPanelClassName = isModernFocusLayout
     ? 'training-focus-header px-5 py-5 md:px-6 md:py-6 xl:px-7'
     : `training-future-commanddeck ${trainingOuterInsetClassName} px-4 py-3 md:px-5 md:py-4`
-  const contentPanelClassName = `${isModernFocusLayout ? 'training-focus-content' : 'training-future-content'} ${trainingOuterInsetClassName} training-hud-content min-h-0 ${
-    isFullscreen ? 'flex-1' : ''
-  }`
+  const contentPanelClassName = `${isModernFocusLayout ? 'training-focus-content' : 'training-future-content'} ${trainingOuterInsetClassName} training-hud-content flex-1 min-h-0`
   const contentInnerClassName = isModernFocusLayout
     ? 'relative px-5 py-5 md:px-6 md:py-6 xl:px-7 xl:py-7'
     : 'relative px-4 py-4 md:px-5 md:py-5 xl:px-6 xl:py-6'
@@ -2126,17 +2124,17 @@ export default function TrainingDetailPage() {
     <div 
       data-training-page
       data-focus-mode={isFocusMode ? 'true' : 'false'}
-      className={`min-h-screen relative flex items-center justify-center transition-all duration-300 ${
-        isFullscreen ? 'fixed inset-0 z-[100] training-fullscreen' : ''
+      className={`relative flex justify-center overflow-hidden transition-all duration-300 ${
+        isFullscreen ? 'fixed inset-0 z-[100] items-center training-fullscreen' : 'h-[100dvh] min-h-[100dvh] items-stretch'
       } ${
         isFocusMode ? 'training-focus-mode' : ''
       }`}
-      style={isFullscreen ? {} : { paddingBottom: '45vh', paddingTop: '10vh' }}
+      style={isFullscreen ? {} : { paddingBottom: 'clamp(1.5rem, 4vh, 2.75rem)', paddingTop: 'clamp(4.5rem, 8vh, 6.5rem)' }}
     >
         {/* HUD灞忓箷瀹瑰櫒 - 璧涘崥鏈嬪厠缁胯壊涓婚 */}
         <div 
           className={`mx-auto relative transition-all duration-300 ${
-            isFullscreen ? 'w-[98%] h-[98vh]' : 'w-[95%] max-w-6xl'
+            isFullscreen ? 'w-[98%] h-[98vh]' : 'flex h-full min-h-0 w-[95%] max-w-6xl flex-col'
           }`}
           style={{ zIndex: isFullscreen ? 100 : 50 }}
         >
@@ -2150,7 +2148,7 @@ export default function TrainingDetailPage() {
           } ${
             isFullscreen
               ? isFocusMode ? 'h-full bg-[#0b1014]/96' : 'bg-black/30 h-full'
-              : isFocusMode ? 'bg-[#0d1217]/94' : 'bg-black/40'
+              : isFocusMode ? 'flex h-full min-h-0 flex-col bg-[#0d1217]/94' : 'flex h-full min-h-0 flex-col bg-black/40'
           }`}
             style={{
             boxShadow: isFocusMode
@@ -2434,9 +2432,6 @@ export default function TrainingDetailPage() {
             <div
               ref={contentRef}
               className={`${contentPanelClassName} relative`}
-              style={{
-                maxHeight: isFullscreen ? undefined : '75vh',
-              }}
             >
               <div className={contentInnerClassName}>
                 <div className={mainGridClassName}>
