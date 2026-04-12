@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import HomeUploadAction from '@/components/HomeUploadAction'
 import TopActionNav from '@/components/TopActionNav'
 import HomeBottomHud from '@/components/HomeBottomHud'
+import HomeTopHud from '@/components/HomeTopHud'
 import HomeUserWatch from '@/components/HomeUserWatch'
 
 type HomeMode = 'listening' | 'video'
@@ -24,6 +25,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
 
   return (
     <>
+      <HomeTopHud />
       <HomeBottomHud />
       <HomeUserWatch key={mode} />
       <div
@@ -31,7 +33,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
       style={{
         position: 'relative',
         zIndex: 10,
-        paddingTop: '5vh',
+        paddingTop: 'clamp(6.4rem, 12vh, 8rem)',
         paddingBottom: '14vh',
         paddingLeft: '2rem',
         paddingRight: '2rem',

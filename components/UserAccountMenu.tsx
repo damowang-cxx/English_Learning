@@ -13,12 +13,14 @@ interface UserAccountMenuProps {
   sessionUser: SessionUser
   buttonClassName?: string
   panelPlacement?: UserAccountMenuPanelPlacement
+  iconOnly?: boolean
 }
 
 export default function UserAccountMenu({
   sessionUser,
   buttonClassName = '',
   panelPlacement = 'bottom',
+  iconOnly = false,
 }: UserAccountMenuProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -58,16 +60,20 @@ export default function UserAccountMenu({
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 font-mono text-[11px] tracking-[0.18em] transition-colors ${
+        className={`inline-flex items-center justify-center gap-2 border font-mono text-[11px] tracking-[0.18em] transition-colors ${
+          iconOnly ? 'h-11 w-11 rounded-full p-0' : 'rounded-md px-3 py-2'
+        } ${
           isOpen
             ? 'border-cyan-300/55 bg-cyan-500/[0.12] text-cyan-100'
             : 'border-cyan-500/28 bg-black/25 text-cyan-300/72 hover:border-cyan-400/48 hover:text-cyan-100'
         } ${buttonClassName}`.trim()}
+        aria-label="Open user account"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
+        title={iconOnly ? 'User account' : undefined}
       >
-        <UserIcon size={14} />
-        USER
+        <UserIcon size={iconOnly ? 18 : 14} />
+        {iconOnly ? <span className="sr-only">USER</span> : 'USER'}
       </button>
 
       {isOpen ? (

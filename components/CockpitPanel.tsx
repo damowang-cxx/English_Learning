@@ -63,21 +63,41 @@ function DockButton({
   const toneClass = DOCK_TONE_CLASS[tone]
   const isCornerLayout = layout === 'corner'
 
+  if (isCornerLayout) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        disabled={disabled}
+        className={`training-dock-button training-dock-button-shell inline-flex h-11 w-11 items-center justify-center rounded-full border text-sm transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
+          toneClass.shell
+        } ${
+          active
+            ? 'is-active shadow-[0_0_18px_rgba(255,255,255,0.08)]'
+            : 'shadow-[0_0_14px_rgba(0,0,0,0.18)]'
+        } ${
+          label === 'FOCUS' ? 'focus-mode-toggle-shell' : ''
+        }`}
+        aria-label={title}
+      >
+        <span className="sr-only">{label}</span>
+        {icon}
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`training-dock-button group disabled:cursor-not-allowed disabled:opacity-40 ${
-        isCornerLayout
-          ? 'flex w-[8.5rem] items-center gap-3 rounded-lg border border-cyan-500/16 bg-black/30 px-2.5 py-2 text-left transition-colors hover:border-cyan-400/36 hover:bg-cyan-500/[0.06]'
-          : 'flex flex-col items-center gap-2'
-      }`}
+      className="training-dock-button group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <span
         className={`training-dock-button-shell inline-flex items-center justify-center rounded-full border text-sm transition-all duration-200 ${
-          isCornerLayout ? 'h-8 w-8 shrink-0' : 'h-12 w-12'
+          'h-12 w-12'
         } ${
           toneClass.shell
         } ${
@@ -90,11 +110,7 @@ function DockButton({
       >
         {icon}
       </span>
-      <span
-        className={`training-dock-button-label font-mono text-[10px] tracking-[0.16em] ${
-          isCornerLayout ? 'leading-none' : ''
-        } ${toneClass.label}`}
-      >
+      <span className={`training-dock-button-label font-mono text-[10px] tracking-[0.16em] ${toneClass.label}`}>
         {label}
       </span>
     </button>
@@ -345,28 +361,25 @@ export default function CockpitPanel() {
       <TrainingMenuOverlay isVideoDomain={isVideoDomain} />
 
       {useTrainingCornerNav ? (
-        <div className="pointer-events-auto fixed right-4 bottom-5 z-[90] flex w-[9.85rem] flex-col items-stretch gap-2.5 rounded-2xl border border-cyan-500/18 bg-black/72 p-2.5 shadow-[0_0_28px_rgba(0,0,0,0.24)] backdrop-blur-md">
-          <TopActionNav orientation="vertical" accountMenuPlacement="top" className="w-full" />
+        <div className="pointer-events-auto fixed right-4 bottom-5 z-[90] flex flex-col items-end gap-2.5">
+          <TopActionNav orientation="vertical" accountMenuPlacement="top" />
 
           {dockButtons.length > 0 ? (
-            <>
-              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400/22 to-transparent" />
-              <div className="flex flex-col items-end gap-2.5">
-                {dockButtons.map((button) => (
-                  <DockButton
-                    key={button.key}
-                    label={button.label}
-                    title={button.title}
-                    tone={button.tone}
-                    active={button.active}
-                    disabled={button.disabled}
-                    icon={button.icon}
-                    onClick={button.onClick}
-                    layout="corner"
-                  />
-                ))}
-              </div>
-            </>
+            <div className="flex flex-col items-end gap-2.5">
+              {dockButtons.map((button) => (
+                <DockButton
+                  key={button.key}
+                  label={button.label}
+                  title={button.title}
+                  tone={button.tone}
+                  active={button.active}
+                  disabled={button.disabled}
+                  icon={button.icon}
+                  onClick={button.onClick}
+                  layout="corner"
+                />
+              ))}
+            </div>
           ) : null}
         </div>
       ) : null}
