@@ -40,6 +40,8 @@ const futureTech = localFont({
   display: 'swap',
 })
 
+export const FUTURE_TECH_FONT_CLASSNAME = futureTech.className
+
 export const TRAINING_SENTENCE_FONT_STORAGE_KEY = 'trainingSentenceFont'
 
 export const TRAINING_SENTENCE_FONT_OPTIONS = [

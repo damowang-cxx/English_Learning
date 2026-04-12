@@ -2903,61 +2903,207 @@ input[type="checkbox"]:checked {
   animation: hud-progress-sweep 3.5s ease-in-out infinite;
 }
 
-/* Home User Reactor Dock UI */
-.home-user-reactor-panel {
+/* Home Dock Accent + Account Dock UI */
+.home-shuttle-dock,
+.home-user-command-panel,
+.home-user-command-dock,
+.user-account-screen--watch {
+  --home-dock-edge: rgba(34, 211, 238, 0.28);
+  --home-dock-edge-strong: rgba(103, 232, 249, 0.42);
+  --home-dock-ice: rgba(103, 232, 249, 0.96);
+  --home-dock-ice-soft: rgba(56, 189, 248, 0.34);
+  --home-dock-panel: rgba(7, 16, 30, 0.95);
+  --home-dock-panel-strong: rgba(2, 8, 18, 0.99);
+}
+
+.home-shuttle-dock {
+  position: absolute;
+  right: 1.1rem;
+  bottom: 0.4rem;
+  width: 17rem;
+  height: 5.4rem;
+  pointer-events: none;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 12px rgba(34, 211, 238, 0.22));
+}
+
+.home-shuttle-dock span,
+.home-user-command-panel__backplate,
+.home-user-command-panel__tether,
+.home-user-command-dock__halo,
+.home-user-command-dock__frame,
+.home-user-command-dock__slab,
+.home-user-command-dock__status-rail,
+.home-user-command-dock__status-dot,
+.home-user-command-dock__content,
+.home-user-command-dock__signature {
+  position: absolute;
+}
+
+.home-shuttle-dock__rail {
+  right: 0;
+  bottom: 0.82rem;
+  width: 14rem;
+  height: 0.72rem;
+  clip-path: polygon(0 45%, 18% 45%, 22% 0, 100% 0, 100% 100%, 10% 100%, 0 62%);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background:
+    linear-gradient(90deg, rgba(3, 14, 26, 0.88), rgba(10, 36, 58, 0.98) 36%, rgba(3, 11, 22, 0.98)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(34, 211, 238, 0.16) 40%, rgba(56, 189, 248, 0.18) 68%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 18px rgba(34, 211, 238, 0.14);
+}
+
+.home-shuttle-dock__rail::before,
+.home-shuttle-dock__rail::after {
+  content: '';
+  position: absolute;
+  top: 0.2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.72), transparent);
+}
+
+.home-shuttle-dock__rail::before {
+  left: 1.4rem;
+  width: 4rem;
+}
+
+.home-shuttle-dock__rail::after {
+  right: 1rem;
+  width: 2.6rem;
+}
+
+.home-shuttle-dock__bay {
+  right: 2.1rem;
+  bottom: 1.06rem;
+  width: 4.8rem;
+  height: 1.65rem;
+  clip-path: polygon(14px 0, 100% 0, 100% 74%, calc(100% - 12px) 100%, 0 100%, 0 14px);
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background:
+    linear-gradient(180deg, rgba(8, 36, 56, 0.96), rgba(2, 14, 24, 0.96)),
+    radial-gradient(circle at 42% 42%, rgba(34, 211, 238, 0.2), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 14px rgba(34, 211, 238, 0.12);
+}
+
+.home-shuttle-dock__signal {
+  right: 7.2rem;
+  bottom: 1.46rem;
+  width: 4.6rem;
+  height: 0.26rem;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.18), rgba(255, 255, 255, 0.62), rgba(56, 189, 248, 0.34), transparent);
+  filter: blur(0.2px);
+  opacity: 0.82;
+  animation: home-user-command-signal 5.8s ease-in-out infinite;
+}
+
+.home-shuttle-dock__mast {
+  right: 5.42rem;
+  bottom: 1.3rem;
+  width: 0.44rem;
+  height: 1.85rem;
+  clip-path: polygon(30% 0, 100% 0, 100% 100%, 0 100%, 0 26%);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  background: linear-gradient(180deg, rgba(16, 57, 84, 0.94), rgba(4, 17, 30, 0.96));
+}
+
+.home-shuttle-dock__beacon {
+  right: 4.7rem;
+  bottom: 2.68rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.98), rgba(103, 232, 249, 0.82) 26%, rgba(14, 165, 233, 0.3) 62%, rgba(14, 165, 233, 0) 100%);
+  box-shadow:
+    0 0 18px rgba(103, 232, 249, 0.28),
+    0 0 28px rgba(14, 165, 233, 0.18);
+  animation: home-user-command-indicator 5.2s ease-in-out infinite;
+}
+
+.home-shuttle-dock__reflection {
+  right: 1.8rem;
+  bottom: 0.22rem;
+  width: 8.2rem;
+  height: 1rem;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.24), rgba(14, 165, 233, 0.16), transparent);
+  filter: blur(18px);
+  opacity: 0.56;
+}
+
+.home-user-command-panel {
   position: relative;
-  perspective: 980px;
-  transform-style: preserve-3d;
+  isolation: isolate;
+  filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.42));
 }
 
-.home-user-reactor-panel::before {
-  content: '';
-  position: absolute;
-  right: 2.18rem;
-  bottom: -1.14rem;
-  width: 3px;
-  height: 1.2rem;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg, rgba(203, 213, 225, 0.8), rgba(34, 211, 238, 0.22) 58%, rgba(217, 70, 239, 0.08)),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9));
-  box-shadow:
-    0 0 10px rgba(34, 211, 238, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  transform-origin: bottom center;
-  animation: home-user-reactor-link-grow 0.22s ease-out both;
+.home-user-command-panel.is-closing {
+  pointer-events: none;
 }
 
-.home-user-reactor-panel::after {
-  content: '';
-  position: absolute;
-  right: 2.18rem;
-  bottom: -1.08rem;
-  width: 6.3rem;
-  height: 4px;
-  border: 1px solid rgba(100, 116, 139, 0.18);
-  border-radius: 2px;
+.home-user-command-panel__backplate {
+  inset: 0.85rem 0.5rem -0.6rem 0.5rem;
+  border-radius: 1.3rem;
   background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.94), rgba(30, 41, 59, 0.88)),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.12), rgba(226, 247, 255, 0.26), rgba(217, 70, 239, 0.1));
-  box-shadow:
-    0 0 10px rgba(34, 211, 238, 0.16),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    radial-gradient(circle at 74% 28%, rgba(34, 211, 238, 0.22), transparent 40%),
+    linear-gradient(180deg, rgba(6, 23, 38, 0.46), rgba(4, 8, 12, 0));
+  filter: blur(22px);
+  opacity: 0;
+}
+
+.home-user-command-panel__tether {
+  right: 2.35rem;
+  bottom: -0.62rem;
+  width: 10.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.14), rgba(34, 211, 238, 0.42), transparent);
+  opacity: 0;
   transform-origin: right center;
-  animation: home-user-reactor-arm-grow 0.26s 0.04s ease-out both;
 }
 
-.home-user-reactor-panel .user-account-screen--watch {
+.home-user-command-panel__tether::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1.2rem;
+  background: linear-gradient(180deg, rgba(103, 232, 249, 0.28), rgba(34, 211, 238, 0.52), transparent);
+}
+
+.home-user-command-panel.is-open .home-user-command-panel__backplate {
+  animation: home-user-command-backplate-in 0.3s ease-out both;
+}
+
+.home-user-command-panel.is-closing .home-user-command-panel__backplate {
+  animation: home-user-command-backplate-out 0.22s ease-in both;
+}
+
+.home-user-command-panel.is-open .home-user-command-panel__tether {
+  animation: home-user-command-tether-in 0.28s 0.05s ease-out both;
+}
+
+.home-user-command-panel.is-closing .home-user-command-panel__tether {
+  animation: home-user-command-tether-out 0.18s ease-in both;
+}
+
+.home-user-command-panel.is-open .user-account-screen--watch {
   transform-origin: bottom right;
-  animation: home-user-reactor-console-unfold 0.36s cubic-bezier(0.18, 0.88, 0.24, 1) both;
+  animation: home-user-command-panel-in 0.36s cubic-bezier(0.18, 0.9, 0.24, 1) both;
 }
 
-.home-user-reactor-trigger {
+.home-user-command-panel.is-closing .user-account-screen--watch {
+  transform-origin: bottom right;
+  animation: home-user-command-panel-out 0.22s ease-in both;
+}
+
+.home-user-command-dock {
   position: relative;
   display: inline-flex;
-  height: 4.05rem;
-  width: 13.6rem;
+  width: 15rem;
+  height: 4.7rem;
   align-items: flex-end;
   justify-content: flex-end;
   border: none;
@@ -2965,453 +3111,214 @@ input[type="checkbox"]:checked {
   cursor: pointer;
   isolation: isolate;
   transition:
-    transform 0.2s ease,
-    filter 0.2s ease;
+    transform 0.22s ease,
+    filter 0.22s ease;
 }
 
-.home-user-reactor-trigger::before {
-  content: '';
-  position: absolute;
-  left: 6.9rem;
-  right: 0.6rem;
-  top: 0.5rem;
-  bottom: 0.4rem;
-  background:
-    radial-gradient(circle at 54% 52%, rgba(34, 211, 238, 0.18), transparent 34%),
-    radial-gradient(circle at 68% 50%, rgba(226, 247, 255, 0.1), transparent 22%),
-    radial-gradient(circle at 78% 58%, rgba(217, 70, 239, 0.1), transparent 30%);
-  filter: blur(14px);
-  opacity: 0.58;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
+.home-user-command-dock:hover,
+.home-user-command-dock:focus-visible {
+  transform: translate3d(0, -1px, 0);
+  filter: brightness(1.08);
 }
 
-.home-user-reactor-trigger:hover,
-.home-user-reactor-trigger:focus-visible {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-
-.home-user-reactor-trigger:focus-visible {
+.home-user-command-dock:focus-visible {
   outline: none;
 }
 
-.home-user-reactor-trigger__arm,
-.home-user-reactor-trigger__arm-glow,
-.home-user-reactor-trigger__brace,
-.home-user-reactor-trigger__dock,
-.home-user-reactor-trigger__bulkhead,
-.home-user-reactor-trigger__plate,
-.home-user-reactor-trigger__vent,
-.home-user-reactor-trigger__microtag,
-.home-user-reactor-trigger__core,
-.home-user-reactor-trigger__core-frame,
-.home-user-reactor-trigger__core-ring,
-.home-user-reactor-trigger__core-glow,
-.home-user-reactor-trigger__core-cell,
-.home-user-reactor-trigger__lock,
-.home-user-reactor-trigger__lock-pin {
-  position: absolute;
-}
-
-.home-user-reactor-trigger__arm {
-  left: -0.65rem;
-  right: 9.05rem;
-  bottom: 1.16rem;
-  height: 4px;
-  border: 1px solid rgba(100, 116, 139, 0.18);
-  border-radius: 2px;
+.home-user-command-dock__halo {
+  inset: 0.6rem 0.5rem 0.7rem 4.8rem;
   background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.08), rgba(226, 247, 255, 0.22), rgba(217, 70, 239, 0.08));
-  box-shadow:
-    0 0 8px rgba(34, 211, 238, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    radial-gradient(circle at 20% 44%, rgba(34, 211, 238, 0.28), transparent 26%),
+    radial-gradient(circle at 78% 56%, rgba(56, 189, 248, 0.32), transparent 24%);
+  filter: blur(20px);
+  opacity: 0.6;
 }
 
-.home-user-reactor-trigger__arm::before {
-  content: '';
-  position: absolute;
-  left: 1.35rem;
-  right: 0.6rem;
-  top: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(226, 247, 255, 0.48), rgba(34, 211, 238, 0.18), transparent);
-}
-
-.home-user-reactor-trigger__arm::after {
-  content: '';
-  position: absolute;
-  left: 0.35rem;
-  width: 1.1rem;
-  top: -0.42rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.22), transparent);
-}
-
-.home-user-reactor-trigger__arm-glow {
-  left: -0.3rem;
-  right: 8.8rem;
-  bottom: 0.74rem;
-  height: 0.86rem;
-  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), rgba(34, 211, 238, 0.2) 68%, rgba(226, 247, 255, 0.06));
-  filter: blur(10px);
-  opacity: 0.42;
-  animation: home-user-reactor-arm-charge 4.2s ease-in-out infinite;
-}
-
-.home-user-reactor-trigger__brace {
-  left: 2.55rem;
-  bottom: 0.68rem;
-  width: 0.78rem;
-  height: 1.08rem;
-  clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%, 0 28%);
-  border: 1px solid rgba(100, 116, 139, 0.18);
+.home-user-command-dock__frame {
+  right: 0.15rem;
+  bottom: 0.46rem;
+  width: 14rem;
+  height: 3.35rem;
+  clip-path: polygon(18px 0, calc(100% - 12px) 0, 100% 14px, 100% calc(100% - 18px), calc(100% - 24px) 100%, 0 100%, 0 20px);
+  border: 1px solid var(--home-dock-edge);
   background:
-    linear-gradient(180deg, rgba(37, 47, 61, 0.96), rgba(15, 23, 42, 0.94)),
-    linear-gradient(180deg, rgba(226, 247, 255, 0.08), transparent 40%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.home-user-reactor-trigger__brace::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 0.2rem;
-  width: 0.22rem;
-  height: 0.22rem;
-  border-radius: 999px;
-  transform: translateX(-50%);
-  background: rgba(226, 247, 255, 0.74);
+    linear-gradient(180deg, rgba(4, 21, 38, 0.82), rgba(1, 8, 16, 0.9)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(34, 211, 238, 0.12), rgba(56, 189, 248, 0.1) 76%, transparent 92%);
   box-shadow:
-    0 0 8px rgba(34, 211, 238, 0.24),
-    0 0 12px rgba(217, 70, 239, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 28px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(34, 211, 238, 0.14);
 }
 
-.home-user-reactor-trigger__dock {
-  left: 2.35rem;
-  right: 0.16rem;
-  top: 0.28rem;
-  bottom: 0.26rem;
+.home-user-command-dock__slab {
+  right: 0.42rem;
+  bottom: 0.76rem;
+  width: 13.48rem;
+  height: 2.58rem;
   overflow: hidden;
-  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 20px) 100%, 0 100%, 0 18px);
-  border: 1px solid rgba(125, 139, 161, 0.2);
+  clip-path: polygon(14px 0, calc(100% - 10px) 0, 100% 12px, 100% calc(100% - 14px), calc(100% - 20px) 100%, 0 100%, 0 16px);
+  border: 1px solid rgba(103, 232, 249, 0.2);
   background:
-    linear-gradient(160deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.96)),
-    radial-gradient(circle at 72% 50%, rgba(34, 211, 238, 0.08), transparent 28%);
+    linear-gradient(180deg, rgba(8, 34, 55, 0.98), rgba(3, 11, 22, 0.99)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(34, 211, 238, 0.08) 24%, transparent 44%, rgba(56, 189, 248, 0.14) 84%, transparent 100%);
   box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 0 14px rgba(34, 211, 238, 0.06),
-    0 0 22px rgba(217, 70, 239, 0.04);
-  backdrop-filter: blur(10px);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+    0 0 20px rgba(34, 211, 238, 0.14);
 }
 
-.home-user-reactor-trigger__dock::before {
+.home-user-command-dock__slab::before {
   content: '';
   position: absolute;
-  left: 0.82rem;
-  right: 0.82rem;
+  left: 0.8rem;
+  right: 0.9rem;
   top: 0.44rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(226, 247, 255, 0.04), rgba(148, 163, 184, 0.24), rgba(34, 211, 238, 0.16), transparent);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.18), rgba(34, 211, 238, 0.62), transparent 72%);
 }
 
-.home-user-reactor-trigger__dock::after {
+.home-user-command-dock__slab::after {
   content: '';
   position: absolute;
-  inset: 0.22rem;
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 16px) 100%, 0 100%, 0 14px);
-  border: 1px solid rgba(71, 85, 105, 0.28);
-  pointer-events: none;
+  top: 0;
+  bottom: 0;
+  left: -18%;
+  width: 18%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), rgba(34, 211, 238, 0.18), transparent);
+  opacity: 0.28;
+  transform: translateX(-140%);
+  animation: home-user-command-sheen 11s linear infinite;
 }
 
-.home-user-reactor-trigger__bulkhead {
-  inset: 0.32rem;
-  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 16px) 100%, 0 100%, 0 14px);
-  border: 1px solid rgba(71, 85, 105, 0.24);
-  background:
-    linear-gradient(180deg, rgba(10, 16, 24, 0.82), rgba(2, 6, 10, 0.52)),
-    radial-gradient(circle at 74% 50%, rgba(34, 211, 238, 0.08), transparent 26%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
-    inset 0 0 24px rgba(0, 0, 0, 0.16);
-}
-
-.home-user-reactor-trigger__plate {
-  top: 0.48rem;
-  bottom: 0.48rem;
-  border: 1px solid rgba(71, 85, 105, 0.22);
-  background:
-    linear-gradient(180deg, rgba(51, 65, 85, 0.96), rgba(15, 23, 42, 0.92)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.home-user-reactor-trigger__plate--left {
-  left: 0.48rem;
-  width: 2.86rem;
-  clip-path: polygon(14px 0, 100% 0, 82% 100%, 0 100%, 0 14px);
-}
-
-.home-user-reactor-trigger__plate--right {
-  right: 3.48rem;
-  width: 1.38rem;
-  clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%, 22% 50%);
-}
-
-.home-user-reactor-trigger__vent {
-  left: 6.18rem;
-  width: 1.45rem;
-  height: 0.24rem;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(148, 163, 184, 0.2),
-    rgba(148, 163, 184, 0.2) 3px,
-    transparent 3px,
-    transparent 6px
-  );
-  opacity: 0.82;
-}
-
-.home-user-reactor-trigger__vent--top {
-  top: 0.76rem;
-}
-
-.home-user-reactor-trigger__vent--bottom {
-  bottom: 0.76rem;
-}
-
-.home-user-reactor-trigger__microtag {
+.home-user-command-dock__status-rail {
   left: 1.12rem;
-  top: 0.92rem;
-  z-index: 1;
+  right: 3.5rem;
+  bottom: 0.64rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.24), rgba(255, 255, 255, 0.8) 34%, rgba(56, 189, 248, 0.48) 68%, transparent);
+  opacity: 0.88;
+}
+
+.home-user-command-dock__status-dot {
+  left: 0.9rem;
+  bottom: 0.49rem;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(225, 255, 255, 0.98);
+  box-shadow:
+    0 0 12px rgba(103, 232, 249, 0.34),
+    0 0 18px rgba(14, 165, 233, 0.18);
+  animation: home-user-command-indicator 4.8s ease-in-out infinite;
+}
+
+.home-user-command-dock__content {
+  left: 1.08rem;
+  top: 0.58rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.24rem;
+  gap: 0.22rem;
   text-align: left;
 }
 
-.home-user-reactor-trigger__eyebrow,
-.home-user-reactor-trigger__meta {
+.home-user-command-dock__eyebrow,
+.home-user-command-dock__meta,
+.home-user-command-dock__submeta {
   font-family: 'Courier New', 'Monaco', monospace;
-  font-weight: 700;
   line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.home-user-reactor-trigger__eyebrow {
-  font-size: 0.4rem;
-  letter-spacing: 0.26em;
-  color: rgba(165, 243, 252, 0.48);
-  text-shadow: 0 0 8px rgba(34, 211, 238, 0.12);
+.home-user-command-dock__eyebrow {
+  font-size: 0.42rem;
+  letter-spacing: 0.34em;
+  color: rgba(125, 211, 252, 0.9);
 }
 
-.home-user-reactor-trigger__meta {
-  font-size: 0.5rem;
+.home-user-command-dock__meta {
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  color: rgba(248, 254, 255, 0.98);
+  text-shadow: 0 0 14px rgba(34, 211, 238, 0.18);
+}
+
+.home-user-command-dock__submeta {
+  font-size: 0.42rem;
   letter-spacing: 0.16em;
-  color: rgba(226, 232, 240, 0.62);
-  text-shadow:
-    0 0 8px rgba(34, 211, 238, 0.08),
-    0 0 12px rgba(217, 70, 239, 0.04);
-  transition: color 0.2s ease;
+  color: rgba(147, 197, 253, 0.76);
 }
 
-.home-user-reactor-trigger__core {
-  right: 1rem;
-  top: 50%;
-  width: 2.7rem;
-  height: 2.12rem;
-  transform: translateY(-50%);
-  overflow: visible;
-}
-
-.home-user-reactor-trigger__core-frame {
-  inset: 0;
-  clip-path: polygon(14px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 14px) 100%, 0 100%, 0 14px);
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 10, 0.82)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 24%);
+.home-user-command-dock__signature {
+  top: 0.52rem;
+  right: 0.88rem;
+  display: flex;
+  min-width: 2.36rem;
+  height: 1.66rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.65rem;
+  border: 1px solid rgba(103, 232, 249, 0.24);
+  border-radius: 0.8rem;
+  background: linear-gradient(180deg, rgba(6, 31, 48, 0.92), rgba(1, 10, 18, 0.98));
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 0 12px rgba(34, 211, 238, 0.08);
-}
-
-.home-user-reactor-trigger__core-frame::before,
-.home-user-reactor-trigger__core-frame::after {
-  content: '';
-  position: absolute;
-  top: 0.34rem;
-  bottom: 0.34rem;
-  width: 0.22rem;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(71, 85, 105, 0.7),
-    rgba(71, 85, 105, 0.7) 4px,
-    transparent 4px,
-    transparent 7px
-  );
-  opacity: 0.82;
-}
-
-.home-user-reactor-trigger__core-frame::before {
-  left: 0.28rem;
-}
-
-.home-user-reactor-trigger__core-frame::after {
-  right: 0.28rem;
-}
-
-.home-user-reactor-trigger__core-ring {
-  inset: 0.18rem;
-  clip-path: polygon(12px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-  border: 1px solid rgba(34, 211, 238, 0.24);
-  box-shadow:
-    inset 0 0 0 1px rgba(226, 247, 255, 0.04),
-    0 0 14px rgba(34, 211, 238, 0.12);
-}
-
-.home-user-reactor-trigger__core-glow {
-  inset: -0.46rem;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.28), transparent 40%),
-    radial-gradient(circle at 54% 52%, rgba(255, 255, 255, 0.14), transparent 18%),
-    radial-gradient(circle at 58% 56%, rgba(217, 70, 239, 0.1), transparent 34%);
-  filter: blur(12px);
-  opacity: 0.68;
-  animation: home-user-reactor-core-pulse 3.2s ease-in-out infinite;
-}
-
-.home-user-reactor-trigger__core-cell {
-  inset: 0.48rem 0.54rem;
-  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.96), rgba(186, 230, 253, 0.92) 28%, rgba(34, 211, 238, 0.74) 58%, rgba(34, 211, 238, 0.08) 100%),
-    linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.12), transparent);
-  box-shadow:
-    0 0 12px rgba(255, 255, 255, 0.28),
-    0 0 20px rgba(34, 211, 238, 0.28),
-    0 0 26px rgba(217, 70, 239, 0.08);
-  animation: home-user-reactor-core-flicker 4.4s linear infinite;
-}
-
-.home-user-reactor-trigger__lock {
-  right: -0.04rem;
-  top: 50%;
-  width: 0.96rem;
-  height: 1.52rem;
-  transform: translateY(-50%);
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
-  border: 1px solid rgba(100, 116, 139, 0.22);
-  background:
-    linear-gradient(180deg, rgba(51, 65, 85, 0.98), rgba(15, 23, 42, 0.94)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 0 10px rgba(34, 211, 238, 0.05);
-}
-
-.home-user-reactor-trigger__lock::before {
-  content: '';
-  position: absolute;
-  left: 0.18rem;
-  right: 0.16rem;
-  top: 0.34rem;
-  height: 1px;
-  background: linear-gradient(90deg, rgba(226, 247, 255, 0.06), rgba(34, 211, 238, 0.24), transparent);
-}
-
-.home-user-reactor-trigger__lock-pin {
-  top: 50%;
-  left: 50%;
-  width: 0.28rem;
-  height: 0.28rem;
-  border-radius: 999px;
-  transform: translate(-50%, -50%);
-  background: rgba(226, 247, 255, 0.88);
-  box-shadow:
-    0 0 8px rgba(34, 211, 238, 0.22),
-    0 0 12px rgba(217, 70, 239, 0.06);
-}
-
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__arm,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__arm,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__arm {
-  background:
-    linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.12), rgba(226, 247, 255, 0.3), rgba(217, 70, 239, 0.1));
-}
-
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__arm-glow,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__arm-glow,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__arm-glow {
-  opacity: 0.66;
-  animation-duration: 2.8s;
-}
-
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__dock,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__dock,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__dock {
-  border-color: rgba(148, 163, 184, 0.28);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 18px rgba(34, 211, 238, 0.1),
-    0 0 26px rgba(217, 70, 239, 0.06);
+    0 0 16px rgba(34, 211, 238, 0.14);
+  font-family: 'Courier New', 'Monaco', monospace;
+  font-size: 0.94rem;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  color: rgba(248, 254, 255, 0.96);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.18);
 }
 
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__meta,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__meta,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__meta {
-  color: rgba(241, 245, 249, 0.84);
-}
-
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__core-ring,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__core-ring,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__core-ring {
-  border-color: rgba(125, 211, 252, 0.36);
+.home-user-command-dock:hover .home-user-command-dock__frame,
+.home-user-command-dock:focus-visible .home-user-command-dock__frame,
+.home-user-command-dock.is-active .home-user-command-dock__frame {
+  border-color: rgba(103, 232, 249, 0.34);
   box-shadow:
-    inset 0 0 0 1px rgba(226, 247, 255, 0.06),
-    0 0 18px rgba(34, 211, 238, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 28px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(34, 211, 238, 0.18);
 }
 
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__core-glow,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__core-glow,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__core-glow {
-  opacity: 0.9;
+.home-user-command-dock:hover .home-user-command-dock__slab,
+.home-user-command-dock:focus-visible .home-user-command-dock__slab,
+.home-user-command-dock.is-active .home-user-command-dock__slab {
+  border-color: rgba(103, 232, 249, 0.3);
 }
 
-.home-user-reactor-trigger:hover .home-user-reactor-trigger__core-cell,
-.home-user-reactor-trigger:focus-visible .home-user-reactor-trigger__core-cell,
-.home-user-reactor-trigger.is-active .home-user-reactor-trigger__core-cell {
-  box-shadow:
-    0 0 14px rgba(255, 255, 255, 0.34),
-    0 0 24px rgba(34, 211, 238, 0.34),
-    0 0 30px rgba(217, 70, 239, 0.1);
+.home-user-command-dock:hover .home-user-command-dock__status-rail,
+.home-user-command-dock:focus-visible .home-user-command-dock__status-rail,
+.home-user-command-dock.is-active .home-user-command-dock__status-rail {
+  opacity: 1;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.32), rgba(255, 255, 255, 0.9) 34%, rgba(56, 189, 248, 0.56) 68%, transparent);
 }
 
-.home-user-reactor-trigger:hover::before,
-.home-user-reactor-trigger:focus-visible::before,
-.home-user-reactor-trigger.is-active::before {
-  opacity: 0.78;
+.home-user-command-dock:hover .home-user-command-dock__signature,
+.home-user-command-dock:focus-visible .home-user-command-dock__signature,
+.home-user-command-dock.is-active .home-user-command-dock__signature {
+  border-color: rgba(103, 232, 249, 0.34);
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.home-user-command-dock:hover .home-user-command-dock__meta,
+.home-user-command-dock:focus-visible .home-user-command-dock__meta,
+.home-user-command-dock.is-active .home-user-command-dock__meta {
+  color: rgba(255, 255, 255, 0.96);
 }
 
 .user-account-screen {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(34, 211, 238, 0.18);
-  background: linear-gradient(180deg, rgba(8, 12, 16, 0.97), rgba(3, 7, 10, 0.95));
+  background: linear-gradient(180deg, rgba(4, 14, 26, 0.985), rgba(2, 8, 15, 0.97));
   backdrop-filter: blur(16px);
   box-shadow:
-    0 22px 54px rgba(0, 0, 0, 0.34),
-    0 0 24px rgba(34, 211, 238, 0.06),
-    0 0 36px rgba(217, 70, 239, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 22px 54px rgba(0, 0, 0, 0.38),
+    0 0 24px rgba(34, 211, 238, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .user-account-screen::before {
@@ -3419,14 +3326,14 @@ input[type="checkbox"]:checked {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%),
-    linear-gradient(135deg, rgba(34, 211, 238, 0.03), transparent 24%, transparent 72%, rgba(217, 70, 239, 0.03)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 24%),
+    linear-gradient(135deg, rgba(34, 211, 238, 0.05), transparent 24%, transparent 72%, rgba(56, 189, 248, 0.04)),
     repeating-linear-gradient(
       0deg,
       transparent,
       transparent 6px,
-      rgba(34, 211, 238, 0.018) 6px,
-      rgba(34, 211, 238, 0.018) 7px
+      rgba(34, 211, 238, 0.024) 6px,
+      rgba(34, 211, 238, 0.024) 7px
     );
   pointer-events: none;
 }
@@ -3447,7 +3354,9 @@ input[type="checkbox"]:checked {
 
 .user-account-screen__line,
 .user-account-screen__corner,
-.user-account-screen__watch-beam {
+.user-account-screen__watch-beam,
+.user-account-screen__watch-projection,
+.user-account-screen__watch-noise {
   position: absolute;
 }
 
@@ -3456,10 +3365,8 @@ input[type="checkbox"]:checked {
   left: 14%;
   right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(110, 231, 183, 0.18), rgba(34, 211, 238, 0.52) 44%, rgba(217, 70, 239, 0.26) 70%, transparent);
-  box-shadow:
-    0 0 10px rgba(34, 211, 238, 0.12),
-    0 0 14px rgba(217, 70, 239, 0.06);
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.22), rgba(103, 232, 249, 0.72) 46%, rgba(56, 189, 248, 0.34) 78%, transparent);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.18);
 }
 
 .user-account-screen__line--right {
@@ -3467,7 +3374,7 @@ input[type="checkbox"]:checked {
   right: 0;
   bottom: 18%;
   width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.12), rgba(217, 70, 239, 0.16), transparent);
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.18), rgba(56, 189, 248, 0.22), transparent);
 }
 
 .user-account-screen__corner--tl {
@@ -3475,9 +3382,9 @@ input[type="checkbox"]:checked {
   left: 0.88rem;
   width: 1rem;
   height: 1rem;
-  border-top: 1px solid rgba(224, 242, 254, 0.22);
-  border-left: 1px solid rgba(34, 211, 238, 0.28);
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.08);
+  border-top: 1px solid rgba(224, 255, 255, 0.34);
+  border-left: 1px solid rgba(34, 211, 238, 0.34);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.14);
 }
 
 .user-account-screen__corner--br {
@@ -3485,18 +3392,18 @@ input[type="checkbox"]:checked {
   bottom: 0.95rem;
   width: 1rem;
   height: 1rem;
-  border-right: 1px solid rgba(244, 114, 182, 0.26);
-  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
-  box-shadow: 0 0 10px rgba(217, 70, 239, 0.06);
+  border-right: 1px solid rgba(56, 189, 248, 0.28);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.28);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.12);
 }
 
 .user-account-screen__watch-grid {
   position: absolute;
   inset: 1rem;
   background:
-    linear-gradient(rgba(52, 211, 153, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px),
-    linear-gradient(135deg, transparent 46%, rgba(217, 70, 239, 0.035) 52%, transparent 58%);
+    linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(103, 232, 249, 0.05) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 46%, rgba(56, 189, 248, 0.05) 52%, transparent 58%);
   background-size: 20px 20px, 20px 20px, 54px 54px;
   opacity: 0.2;
   clip-path: inherit;
@@ -3507,27 +3414,81 @@ input[type="checkbox"]:checked {
   right: 1rem;
   width: 4.2rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(16, 185, 129, 0.02), rgba(34, 211, 238, 0.48), rgba(217, 70, 239, 0.18), transparent);
-  box-shadow:
-    0 0 10px rgba(34, 211, 238, 0.14),
-    0 0 16px rgba(217, 70, 239, 0.08);
-  animation: home-user-reactor-flicker 5.4s linear infinite;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.22), rgba(34, 211, 238, 0.66), transparent);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+  animation: home-user-command-flicker 6.4s linear infinite;
+}
+
+.user-account-screen__watch-projection {
+  right: 1.2rem;
+  bottom: 0.8rem;
+  width: 12rem;
+  height: 8rem;
+  clip-path: polygon(46% 0, 100% 0, 100% 78%, 26% 100%, 0 78%, 0 24%);
+  background:
+    radial-gradient(circle at 72% 42%, rgba(34, 211, 238, 0.22), transparent 36%),
+    linear-gradient(135deg, rgba(56, 189, 248, 0.12), transparent 28%, transparent 72%, rgba(34, 211, 238, 0.14));
+  filter: blur(18px);
+  opacity: 0.34;
+}
+
+.user-account-screen__watch-noise {
+  inset: 0.65rem;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 12px, rgba(34, 211, 238, 0.028) 12px, rgba(34, 211, 238, 0.028) 13px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.022), transparent 18%, transparent 68%, rgba(56, 189, 248, 0.04));
+  mix-blend-mode: screen;
+  opacity: 0.1;
 }
 
 .user-account-screen__header {
-  border-bottom: 1px solid rgba(34, 211, 238, 0.12);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.14);
 }
 
 .user-account-screen__title-stack {
   position: relative;
 }
 
-.user-account-screen__close {
-  border-color: rgba(34, 211, 238, 0.16);
-  background: rgba(4, 8, 10, 0.64);
+.user-account-screen__header-status {
+  border-color: rgba(34, 211, 238, 0.2);
+  background: rgba(3, 14, 26, 0.74);
+  color: rgba(224, 242, 254, 0.86);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 10px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(34, 211, 238, 0.08);
+}
+
+.user-account-screen__header-status-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(224, 255, 255, 0.98);
+  box-shadow:
+    0 0 10px rgba(103, 232, 249, 0.24),
+    0 0 16px rgba(14, 165, 233, 0.12);
+}
+
+.user-account-screen__close {
+  border-color: rgba(34, 211, 238, 0.18);
+  background: rgba(2, 10, 18, 0.74);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(34, 211, 238, 0.08);
+}
+
+.user-account-screen__body--watch {
+  padding-top: 1rem;
+}
+
+.user-account-screen__bridge-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.user-account-screen__bridge-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .user-account-screen__hero,
@@ -3551,8 +3512,8 @@ input[type="checkbox"]:checked {
 .user-account-screen__hero {
   padding: 0.3rem;
   border-radius: 1rem;
-  border: 1px solid rgba(34, 211, 238, 0.1);
-  background: linear-gradient(160deg, rgba(10, 17, 22, 0.9), rgba(4, 8, 11, 0.74));
+  border: 1px solid rgba(34, 211, 238, 0.14);
+  background: linear-gradient(160deg, rgba(4, 18, 30, 0.94), rgba(2, 9, 16, 0.82));
 }
 
 .user-account-screen__avatar-shell {
@@ -3564,19 +3525,19 @@ input[type="checkbox"]:checked {
 }
 
 .user-account-screen__role-chip {
-  border-color: rgba(34, 211, 238, 0.18);
-  background: rgba(34, 211, 238, 0.08);
+  border-color: rgba(34, 211, 238, 0.22);
+  background: rgba(14, 165, 233, 0.12);
 }
 
 .user-account-screen__action--primary {
-  border-color: rgba(34, 211, 238, 0.22);
-  background: rgba(0, 0, 0, 0.32);
-  color: rgba(165, 243, 252, 0.8);
+  border-color: rgba(34, 211, 238, 0.26);
+  background: rgba(3, 18, 31, 0.52);
+  color: rgba(224, 242, 254, 0.9);
 }
 
 .user-account-screen__action--primary:hover {
-  border-color: rgba(34, 211, 238, 0.42);
-  color: rgba(224, 255, 255, 0.98);
+  border-color: rgba(103, 232, 249, 0.42);
+  color: rgba(248, 250, 252, 0.98);
 }
 
 .user-account-screen__action--danger {
@@ -3592,7 +3553,7 @@ input[type="checkbox"]:checked {
 
 .user-account-screen__status {
   border-color: rgba(34, 211, 238, 0.18);
-  background: rgba(34, 211, 238, 0.05);
+  background: rgba(14, 165, 233, 0.1);
 }
 
 .user-account-screen__stats-grid {
@@ -3601,18 +3562,18 @@ input[type="checkbox"]:checked {
 
 .user-account-screen__stat-tile {
   border-color: rgba(34, 211, 238, 0.16);
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(2, 14, 24, 0.46);
 }
 
 .user-account-screen__heatmap {
   border-color: rgba(34, 211, 238, 0.18);
-  background: rgba(0, 0, 0, 0.34);
+  background: rgba(2, 12, 22, 0.52);
 }
 
 .user-account-screen__section-head {
   position: relative;
   padding-bottom: 0.55rem;
-  border-bottom: 1px solid rgba(34, 211, 238, 0.08);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.1);
 }
 
 .user-account-screen__section-head::after {
@@ -3622,7 +3583,7 @@ input[type="checkbox"]:checked {
   bottom: -1px;
   width: 5.2rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.46), rgba(16, 185, 129, 0.2), transparent);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.68), rgba(34, 211, 238, 0.28), transparent);
 }
 
 .user-account-screen__logout {
@@ -3641,17 +3602,16 @@ input[type="checkbox"]:checked {
 }
 
 .user-account-screen--watch {
-  clip-path: polygon(22px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 24px) 100%, 0 100%, 0 22px);
-  border-color: rgba(125, 211, 252, 0.2);
+  clip-path: polygon(20px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 20px), calc(100% - 24px) 100%, 0 100%, 0 20px);
+  border-color: rgba(34, 211, 238, 0.24);
   background:
-    linear-gradient(180deg, rgba(7, 12, 18, 0.97), rgba(3, 8, 12, 0.94)),
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.09), transparent 44%),
-    radial-gradient(circle at top right, rgba(217, 70, 239, 0.08), transparent 34%);
+    linear-gradient(180deg, rgba(3, 13, 26, 0.988), rgba(1, 7, 15, 0.972)),
+    radial-gradient(circle at 18% 14%, rgba(34, 211, 238, 0.16), transparent 38%),
+    radial-gradient(circle at 82% 10%, rgba(56, 189, 248, 0.16), transparent 26%);
   box-shadow:
-    0 22px 48px rgba(0, 0, 0, 0.34),
-    0 0 20px rgba(34, 211, 238, 0.1),
-    0 0 32px rgba(217, 70, 239, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 30px 64px rgba(0, 0, 0, 0.46),
+    0 0 28px rgba(34, 211, 238, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .user-account-screen--watch::after {
@@ -3659,110 +3619,144 @@ input[type="checkbox"]:checked {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(135deg, rgba(34, 211, 238, 0.08), transparent 28%),
-    radial-gradient(circle at 100% 0, rgba(217, 70, 239, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%);
+    linear-gradient(135deg, rgba(34, 211, 238, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 18%),
+    linear-gradient(90deg, transparent 56%, rgba(56, 189, 248, 0.1) 86%, transparent 100%);
   pointer-events: none;
 }
 
 .user-account-screen--watch .user-account-screen__header {
-  border-bottom-color: rgba(125, 211, 252, 0.12);
-  background: linear-gradient(90deg, rgba(8, 24, 34, 0.92), rgba(4, 10, 15, 0.42) 52%, rgba(217, 70, 239, 0.08) 78%, transparent);
+  border-bottom-color: rgba(34, 211, 238, 0.18);
+  background:
+    linear-gradient(90deg, rgba(3, 18, 34, 0.99), rgba(2, 13, 24, 0.9) 56%, rgba(14, 165, 233, 0.14) 82%, transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 68%);
 }
 
 .user-account-screen--watch .user-account-screen__header::after {
   content: '';
   position: absolute;
   left: 1rem;
-  right: 4.1rem;
+  right: 4.6rem;
   bottom: -1px;
   height: 1px;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.62), rgba(34, 211, 238, 0.26), rgba(217, 70, 239, 0.16), transparent 88%);
+  background: linear-gradient(90deg, rgba(224, 255, 255, 0.8), rgba(34, 211, 238, 0.48), rgba(56, 189, 248, 0.26), transparent 88%);
+}
+
+.user-account-screen--watch .user-account-screen__header::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 0.72rem;
+  width: 6.2rem;
+  height: 0.42rem;
+  clip-path: polygon(0 100%, 8% 0, 100% 0, 92% 100%);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.22), rgba(34, 211, 238, 0.28), rgba(56, 189, 248, 0.2));
+  opacity: 0.92;
 }
 
 .user-account-screen--watch .user-account-screen__title-stack {
-  padding-left: 1rem;
-  padding-bottom: 0.08rem;
+  padding-left: 1.05rem;
+  padding-bottom: 0.14rem;
 }
 
 .user-account-screen--watch .user-account-screen__title-stack::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 0.26rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
-  background: linear-gradient(135deg, rgba(224, 242, 254, 0.92), rgba(125, 211, 252, 0.36));
-  box-shadow:
-    0 0 12px rgba(34, 211, 238, 0.22),
-    0 0 18px rgba(217, 70, 239, 0.08);
+  top: 0.18rem;
+  width: 0.56rem;
+  height: 0.56rem;
+  clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+  background: linear-gradient(135deg, rgba(224, 255, 255, 0.98), rgba(34, 211, 238, 0.44));
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.24);
 }
 
 .user-account-screen--watch .user-account-screen__title-stack::after {
   content: '';
   position: absolute;
-  left: 1rem;
-  bottom: -0.8rem;
-  width: 5rem;
+  left: 1.1rem;
+  bottom: -0.86rem;
+  width: 6.4rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.58), rgba(217, 70, 239, 0.16), transparent 88%);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.66), rgba(34, 211, 238, 0.28), transparent 88%);
+}
+
+.user-account-screen--watch .user-account-screen__header-status {
+  border-color: rgba(34, 211, 238, 0.26);
+  background: rgba(2, 16, 28, 0.84);
+  color: rgba(224, 255, 255, 0.9);
+}
+
+.user-account-screen--watch .user-account-screen__header-status-dot {
+  background: rgba(224, 255, 255, 0.98);
+  box-shadow:
+    0 0 12px rgba(103, 232, 249, 0.3),
+    0 0 18px rgba(14, 165, 233, 0.16);
 }
 
 .user-account-screen--watch .user-account-screen__close {
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
-  border-color: rgba(125, 211, 252, 0.18);
-  background: linear-gradient(180deg, rgba(10, 17, 23, 0.92), rgba(2, 6, 10, 0.9));
-  color: rgba(224, 242, 254, 0.76);
+  border-color: rgba(34, 211, 238, 0.26);
+  background: linear-gradient(180deg, rgba(2, 18, 32, 0.98), rgba(1, 8, 16, 0.94));
+  color: rgba(224, 242, 254, 0.88);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 12px rgba(34, 211, 238, 0.06),
-    0 0 16px rgba(217, 70, 239, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 14px rgba(34, 211, 238, 0.12);
 }
 
 .user-account-screen--watch .user-account-screen__close:hover {
-  border-color: rgba(125, 211, 252, 0.3);
-  color: rgba(240, 249, 255, 0.96);
+  border-color: rgba(103, 232, 249, 0.42);
+  color: rgba(248, 250, 252, 0.98);
+}
+
+.user-account-screen__bridge-grid--watch {
+  grid-template-columns: minmax(0, 1.5fr) minmax(12rem, 0.9fr);
+  align-items: stretch;
+}
+
+.user-account-screen--watch .user-account-screen__bridge-side--watch {
+  justify-content: space-between;
 }
 
 .user-account-screen--watch .user-account-screen__hero {
-  clip-path: polygon(14px 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%, 0 14px);
+  min-height: 12rem;
+  clip-path: polygon(18px 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%, 0 18px);
   border-radius: 0;
-  border-color: rgba(125, 211, 252, 0.12);
+  border-color: rgba(34, 211, 238, 0.22);
   background:
-    linear-gradient(160deg, rgba(8, 15, 22, 0.9), rgba(0, 0, 0, 0.2)),
-    radial-gradient(circle at top left, rgba(165, 243, 252, 0.06), transparent 44%),
-    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.05), transparent 32%);
+    linear-gradient(160deg, rgba(3, 19, 34, 0.96), rgba(2, 10, 18, 0.86)),
+    radial-gradient(circle at top left, rgba(103, 232, 249, 0.14), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.14), transparent 30%);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 18px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 18px rgba(34, 211, 238, 0.14);
 }
 
 .user-account-screen--watch .user-account-screen__hero::before {
   background:
-    linear-gradient(90deg, rgba(165, 243, 252, 0.04), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 34%);
+    linear-gradient(90deg, rgba(103, 232, 249, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%);
 }
 
 .user-account-screen--watch .user-account-screen__hero::after {
   content: '';
   position: absolute;
-  left: 0.95rem;
-  right: 1.15rem;
-  top: 0.72rem;
+  left: 1rem;
+  right: 1.1rem;
+  top: 0.82rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.26), transparent 82%);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.34), transparent 82%);
   pointer-events: none;
 }
 
 .user-account-screen--watch .user-account-screen__avatar-shell {
   clip-path: polygon(12px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 12px), calc(100% - 14px) 100%, 0 100%, 0 12px);
   border-radius: 0;
-  border-color: rgba(125, 211, 252, 0.24);
+  border-color: rgba(34, 211, 238, 0.28);
   box-shadow:
-    0 0 14px rgba(34, 211, 238, 0.1),
-    0 0 20px rgba(217, 70, 239, 0.04),
-    inset 0 0 0 1px rgba(34, 211, 238, 0.04);
+    0 0 16px rgba(34, 211, 238, 0.18),
+    0 0 22px rgba(14, 165, 233, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .user-account-screen--watch .user-account-screen__identity::after {
@@ -3770,19 +3764,19 @@ input[type="checkbox"]:checked {
   position: absolute;
   top: 0.22rem;
   right: 0;
-  width: 3.2rem;
+  width: 4.2rem;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.26));
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.32));
 }
 
 .user-account-screen--watch .user-account-screen__role-chip {
   clip-path: polygon(10px 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%, 0 10px);
-  border-color: rgba(125, 211, 252, 0.18);
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.08), rgba(217, 70, 239, 0.06), rgba(255, 255, 255, 0.02));
-  color: rgba(207, 250, 254, 0.86);
+  border-color: rgba(34, 211, 238, 0.24);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.08), rgba(14, 165, 233, 0.12), rgba(255, 255, 255, 0.03));
+  color: rgba(224, 255, 255, 0.92);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 10px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(34, 211, 238, 0.1);
 }
 
 .user-account-screen--watch .user-account-screen__action--primary,
@@ -3791,54 +3785,54 @@ input[type="checkbox"]:checked {
 .user-account-screen--watch .user-account-screen__stat-tile,
 .user-account-screen--watch .user-account-screen__heatmap,
 .user-account-screen--watch .user-account-screen__logout {
-  clip-path: polygon(12px 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%, 0 12px);
+  clip-path: polygon(14px 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%, 0 14px);
   border-radius: 0;
 }
 
 .user-account-screen--watch .user-account-screen__action--primary {
-  border-color: rgba(125, 211, 252, 0.18);
-  background: linear-gradient(180deg, rgba(4, 16, 22, 0.9), rgba(0, 0, 0, 0.3));
-  color: rgba(207, 250, 254, 0.86);
+  border-color: rgba(34, 211, 238, 0.24);
+  background: linear-gradient(180deg, rgba(2, 23, 38, 0.96), rgba(1, 10, 18, 0.52));
+  color: rgba(224, 255, 255, 0.94);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 12px rgba(34, 211, 238, 0.05);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(34, 211, 238, 0.12);
 }
 
 .user-account-screen--watch .user-account-screen__action--primary:hover {
-  border-color: rgba(125, 211, 252, 0.32);
-  color: rgba(240, 249, 255, 0.98);
+  border-color: rgba(103, 232, 249, 0.4);
+  color: rgba(248, 250, 252, 0.98);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.04),
-    0 0 16px rgba(34, 211, 238, 0.08),
-    0 0 22px rgba(217, 70, 239, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 18px rgba(34, 211, 238, 0.16);
 }
 
 .user-account-screen--watch .user-account-screen__action--danger {
-  border-color: rgba(248, 113, 113, 0.18);
-  background: linear-gradient(180deg, rgba(72, 20, 28, 0.34), rgba(0, 0, 0, 0.24));
+  border-color: rgba(248, 113, 113, 0.16);
+  background: linear-gradient(180deg, rgba(56, 20, 24, 0.32), rgba(0, 0, 0, 0.22));
   box-shadow:
     inset 0 0 0 1px rgba(248, 113, 113, 0.03),
-    0 0 12px rgba(244, 114, 182, 0.05);
+    0 0 12px rgba(248, 113, 113, 0.04);
 }
 
 .user-account-screen--watch .user-account-screen__status {
-  border-color: rgba(125, 211, 252, 0.12);
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.06), rgba(217, 70, 239, 0.04), rgba(255, 255, 255, 0.02));
+  border-color: rgba(34, 211, 238, 0.2);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.08), rgba(14, 165, 233, 0.12), rgba(255, 255, 255, 0.03));
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.03),
-    0 0 12px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(34, 211, 238, 0.1);
 }
 
 .user-account-screen--watch .user-account-screen__stat-tile {
-  border-color: rgba(125, 211, 252, 0.11);
-  background: linear-gradient(180deg, rgba(5, 14, 20, 0.8), rgba(0, 0, 0, 0.18));
+  min-height: 4.15rem;
+  border-color: rgba(34, 211, 238, 0.18);
+  background: linear-gradient(180deg, rgba(2, 17, 30, 0.92), rgba(1, 9, 16, 0.34));
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.02),
-    0 0 12px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(34, 211, 238, 0.1);
 }
 
 .user-account-screen--watch .user-account-screen__stat-tile::before {
-  background: linear-gradient(90deg, rgba(34, 211, 238, 0.05), transparent 34%);
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.06), transparent 34%);
 }
 
 .user-account-screen--watch .user-account-screen__stat-tile::after {
@@ -3848,25 +3842,25 @@ input[type="checkbox"]:checked {
   right: 0.8rem;
   bottom: 0.58rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.24), transparent 84%);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.32), transparent 84%);
   pointer-events: none;
 }
 
 .user-account-screen--watch .user-account-screen__heatmap {
-  border-color: rgba(125, 211, 252, 0.12);
+  border-color: rgba(34, 211, 238, 0.18);
   background:
-    linear-gradient(180deg, rgba(4, 12, 18, 0.82), rgba(0, 0, 0, 0.26)),
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.05), transparent 42%),
-    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.04), transparent 30%);
+    linear-gradient(180deg, rgba(2, 14, 26, 0.92), rgba(1, 8, 15, 0.4)),
+    radial-gradient(circle at top left, rgba(103, 232, 249, 0.1), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(34, 211, 238, 0.12), transparent 30%);
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 238, 0.02),
-    0 0 14px rgba(34, 211, 238, 0.04);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 18px rgba(34, 211, 238, 0.12);
 }
 
 .user-account-screen--watch .user-account-screen__heatmap::before {
   background:
-    linear-gradient(90deg, rgba(34, 211, 238, 0.04), transparent 24%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 32%);
+    linear-gradient(90deg, rgba(103, 232, 249, 0.06), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%);
 }
 
 .user-account-screen--watch .user-account-screen__heatmap::after {
@@ -3876,50 +3870,801 @@ input[type="checkbox"]:checked {
   right: 1rem;
   bottom: 0.72rem;
   height: 1px;
-  background: linear-gradient(90deg, rgba(125, 211, 252, 0.18), transparent 84%);
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.3), transparent 84%);
   pointer-events: none;
 }
 
 .user-account-screen--watch .user-account-screen__section-head {
-  border-bottom-color: rgba(34, 211, 238, 0.06);
+  border-bottom-color: rgba(34, 211, 238, 0.12);
 }
 
 .user-account-screen--watch .user-account-screen__logout {
-  border-color: rgba(248, 113, 113, 0.22);
-  background: linear-gradient(180deg, rgba(72, 20, 28, 0.36), rgba(0, 0, 0, 0.24));
+  border-color: rgba(248, 113, 113, 0.18);
+  background: linear-gradient(180deg, rgba(92, 24, 32, 0.42), rgba(20, 4, 8, 0.26));
   box-shadow:
     inset 0 0 0 1px rgba(248, 113, 113, 0.03),
-    0 0 14px rgba(244, 114, 182, 0.05);
+    0 0 14px rgba(248, 113, 113, 0.08);
 }
 
 .user-account-screen--watch .user-account-screen__watch-grid {
   inset: 1rem;
-  opacity: 0.14;
+  opacity: 0.18;
 }
 
 .user-account-screen--watch .user-account-screen__watch-beam {
-  width: 5.4rem;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(34, 211, 238, 0.42), rgba(217, 70, 239, 0.16), transparent);
-  box-shadow:
-    0 0 12px rgba(34, 211, 238, 0.1),
-    0 0 18px rgba(217, 70, 239, 0.06);
+  width: 6rem;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(34, 211, 238, 0.62), rgba(56, 189, 248, 0.24), transparent);
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.16);
 }
 
-@keyframes home-user-reactor-link-grow {
+.user-account-screen--watch .user-account-screen__watch-projection {
+  opacity: 0.28;
+}
+
+.user-account-screen--watch .user-account-screen__watch-noise {
+  opacity: 0.08;
+}
+
+/* Neon Purple Overrides for Home Account Dock */
+.home-shuttle-dock,
+.home-user-command-panel,
+.home-user-command-dock,
+.user-account-screen--watch {
+  --home-dock-edge: rgba(192, 132, 252, 0.32);
+  --home-dock-edge-strong: rgba(232, 121, 249, 0.46);
+  --home-dock-ice: rgba(233, 213, 255, 0.98);
+  --home-dock-ice-soft: rgba(168, 85, 247, 0.36);
+  --home-dock-panel: rgba(26, 9, 40, 0.95);
+  --home-dock-panel-strong: rgba(12, 4, 22, 0.99);
+}
+
+.home-shuttle-dock {
+  filter: drop-shadow(0 0 14px rgba(217, 70, 239, 0.26));
+}
+
+.home-shuttle-dock__rail {
+  border-color: rgba(192, 132, 252, 0.28);
+  background:
+    linear-gradient(90deg, rgba(18, 7, 29, 0.9), rgba(56, 18, 76, 0.98) 36%, rgba(14, 5, 24, 0.98)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(217, 70, 239, 0.18) 40%, rgba(168, 85, 247, 0.2) 68%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 18px rgba(217, 70, 239, 0.16);
+}
+
+.home-shuttle-dock__rail::before,
+.home-shuttle-dock__rail::after {
+  background: linear-gradient(90deg, transparent, rgba(233, 213, 255, 0.82), transparent);
+}
+
+.home-shuttle-dock__bay {
+  border-color: rgba(192, 132, 252, 0.28);
+  background:
+    linear-gradient(180deg, rgba(62, 16, 84, 0.96), rgba(18, 6, 30, 0.96)),
+    radial-gradient(circle at 42% 42%, rgba(217, 70, 239, 0.24), transparent 42%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 14px rgba(217, 70, 239, 0.14);
+}
+
+.home-shuttle-dock__signal {
+  background: linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.22), rgba(255, 255, 255, 0.64), rgba(168, 85, 247, 0.36), transparent);
+}
+
+.home-shuttle-dock__mast {
+  border-color: rgba(192, 132, 252, 0.24);
+  background: linear-gradient(180deg, rgba(88, 28, 135, 0.94), rgba(29, 8, 46, 0.96));
+}
+
+.home-shuttle-dock__beacon {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.99), rgba(233, 213, 255, 0.82) 24%, rgba(217, 70, 239, 0.38) 58%, rgba(168, 85, 247, 0) 100%);
+  box-shadow:
+    0 0 20px rgba(233, 213, 255, 0.3),
+    0 0 30px rgba(217, 70, 239, 0.22);
+}
+
+.home-shuttle-dock__reflection {
+  background: linear-gradient(90deg, transparent, rgba(233, 213, 255, 0.24), rgba(168, 85, 247, 0.18), transparent);
+}
+
+.home-user-command-panel__backplate {
+  background:
+    radial-gradient(circle at 74% 28%, rgba(217, 70, 239, 0.24), transparent 40%),
+    linear-gradient(180deg, rgba(38, 11, 56, 0.48), rgba(4, 8, 12, 0));
+}
+
+.home-user-command-panel__tether {
+  background: linear-gradient(90deg, transparent, rgba(233, 213, 255, 0.16), rgba(217, 70, 239, 0.46), transparent);
+}
+
+.home-user-command-panel__tether::before {
+  background: linear-gradient(180deg, rgba(233, 213, 255, 0.3), rgba(217, 70, 239, 0.56), transparent);
+}
+
+.home-user-command-dock__halo {
+  background:
+    radial-gradient(circle at 20% 44%, rgba(217, 70, 239, 0.3), transparent 26%),
+    radial-gradient(circle at 78% 56%, rgba(168, 85, 247, 0.34), transparent 24%);
+}
+
+.home-user-command-dock__frame {
+  background:
+    linear-gradient(180deg, rgba(27, 9, 41, 0.84), rgba(11, 4, 19, 0.9)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(217, 70, 239, 0.14), rgba(168, 85, 247, 0.12) 76%, transparent 92%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 28px rgba(0, 0, 0, 0.28),
+    0 0 18px rgba(217, 70, 239, 0.16);
+}
+
+.home-user-command-dock__slab {
+  border-color: rgba(233, 213, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(56, 18, 76, 0.98), rgba(17, 6, 28, 0.99)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(217, 70, 239, 0.12) 24%, transparent 44%, rgba(168, 85, 247, 0.16) 84%, transparent 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+    0 0 20px rgba(217, 70, 239, 0.16);
+}
+
+.home-user-command-dock__slab::before {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.22), rgba(217, 70, 239, 0.64), transparent 72%);
+}
+
+.home-user-command-dock__slab::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), rgba(217, 70, 239, 0.22), transparent);
+}
+
+.home-user-command-dock__status-rail {
+  background: linear-gradient(90deg, rgba(217, 70, 239, 0.28), rgba(255, 255, 255, 0.82) 34%, rgba(168, 85, 247, 0.52) 68%, transparent);
+}
+
+.home-user-command-dock__status-dot {
+  background: rgba(250, 245, 255, 0.99);
+  box-shadow:
+    0 0 12px rgba(233, 213, 255, 0.36),
+    0 0 18px rgba(217, 70, 239, 0.22);
+}
+
+.home-user-command-dock__eyebrow {
+  color: rgba(216, 180, 254, 0.92);
+}
+
+.home-user-command-dock__meta {
+  color: rgba(252, 245, 255, 0.98);
+  text-shadow: 0 0 14px rgba(217, 70, 239, 0.22);
+}
+
+.home-user-command-dock__submeta {
+  color: rgba(233, 213, 255, 0.78);
+}
+
+.home-user-command-dock__signature {
+  border-color: rgba(233, 213, 255, 0.28);
+  background: linear-gradient(180deg, rgba(64, 18, 88, 0.92), rgba(16, 5, 28, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 0 16px rgba(217, 70, 239, 0.16);
+  color: rgba(252, 245, 255, 0.98);
+  text-shadow: 0 0 12px rgba(217, 70, 239, 0.22);
+}
+
+.home-user-command-dock:hover .home-user-command-dock__frame,
+.home-user-command-dock:focus-visible .home-user-command-dock__frame,
+.home-user-command-dock.is-active .home-user-command-dock__frame {
+  border-color: rgba(233, 213, 255, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 28px rgba(0, 0, 0, 0.3),
+    0 0 26px rgba(217, 70, 239, 0.22);
+}
+
+.home-user-command-dock:hover .home-user-command-dock__slab,
+.home-user-command-dock:focus-visible .home-user-command-dock__slab,
+.home-user-command-dock.is-active .home-user-command-dock__slab,
+.home-user-command-dock:hover .home-user-command-dock__signature,
+.home-user-command-dock:focus-visible .home-user-command-dock__signature,
+.home-user-command-dock.is-active .home-user-command-dock__signature {
+  border-color: rgba(233, 213, 255, 0.34);
+}
+
+.home-user-command-dock:hover .home-user-command-dock__status-rail,
+.home-user-command-dock:focus-visible .home-user-command-dock__status-rail,
+.home-user-command-dock.is-active .home-user-command-dock__status-rail {
+  background: linear-gradient(90deg, rgba(217, 70, 239, 0.38), rgba(255, 255, 255, 0.9) 34%, rgba(168, 85, 247, 0.6) 68%, transparent);
+}
+
+.user-account-screen--watch {
+  border-color: rgba(192, 132, 252, 0.28);
+  background:
+    linear-gradient(180deg, rgba(18, 7, 31, 0.988), rgba(8, 3, 16, 0.974)),
+    radial-gradient(circle at 18% 14%, rgba(217, 70, 239, 0.18), transparent 38%),
+    radial-gradient(circle at 82% 10%, rgba(168, 85, 247, 0.18), transparent 26%);
+  box-shadow:
+    0 30px 64px rgba(0, 0, 0, 0.46),
+    0 0 30px rgba(217, 70, 239, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.user-account-screen--watch::after {
+  background:
+    linear-gradient(135deg, rgba(217, 70, 239, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 18%),
+    linear-gradient(90deg, transparent 56%, rgba(168, 85, 247, 0.12) 86%, transparent 100%);
+}
+
+.user-account-screen--watch .user-account-screen__line--top {
+  background: linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.26), rgba(233, 213, 255, 0.78) 46%, rgba(168, 85, 247, 0.38) 78%, transparent);
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.2);
+}
+
+.user-account-screen--watch .user-account-screen__line--right {
+  background: linear-gradient(180deg, transparent, rgba(217, 70, 239, 0.22), rgba(168, 85, 247, 0.24), transparent);
+}
+
+.user-account-screen--watch .user-account-screen__corner--tl {
+  border-top-color: rgba(250, 245, 255, 0.36);
+  border-left-color: rgba(217, 70, 239, 0.34);
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.16);
+}
+
+.user-account-screen--watch .user-account-screen__corner--br {
+  border-right-color: rgba(168, 85, 247, 0.3);
+  border-bottom-color: rgba(217, 70, 239, 0.3);
+  box-shadow: 0 0 12px rgba(217, 70, 239, 0.14);
+}
+
+.user-account-screen--watch .user-account-screen__watch-grid {
+  background:
+    linear-gradient(rgba(217, 70, 239, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233, 213, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 46%, rgba(168, 85, 247, 0.05) 52%, transparent 58%);
+  opacity: 0.22;
+}
+
+.user-account-screen--watch .user-account-screen__watch-beam {
+  background: linear-gradient(90deg, transparent, rgba(233, 213, 255, 0.24), rgba(217, 70, 239, 0.72), transparent);
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.22);
+}
+
+.user-account-screen--watch .user-account-screen__watch-projection {
+  background:
+    radial-gradient(circle at 72% 42%, rgba(217, 70, 239, 0.24), transparent 36%),
+    linear-gradient(135deg, rgba(168, 85, 247, 0.14), transparent 28%, transparent 72%, rgba(217, 70, 239, 0.18));
+  opacity: 0.32;
+}
+
+.user-account-screen--watch .user-account-screen__watch-noise {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 12px, rgba(217, 70, 239, 0.03) 12px, rgba(217, 70, 239, 0.03) 13px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.022), transparent 18%, transparent 68%, rgba(168, 85, 247, 0.05));
+  opacity: 0.1;
+}
+
+.user-account-screen--watch .user-account-screen__header {
+  border-bottom-color: rgba(192, 132, 252, 0.22);
+  background:
+    linear-gradient(90deg, rgba(24, 8, 38, 0.99), rgba(15, 5, 24, 0.9) 56%, rgba(168, 85, 247, 0.16) 82%, transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 68%);
+}
+
+.user-account-screen--watch .user-account-screen__header::after {
+  background: linear-gradient(90deg, rgba(250, 245, 255, 0.82), rgba(217, 70, 239, 0.5), rgba(168, 85, 247, 0.28), transparent 88%);
+}
+
+.user-account-screen--watch .user-account-screen__header::before {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.24), rgba(217, 70, 239, 0.32), rgba(168, 85, 247, 0.24));
+}
+
+.user-account-screen--watch .user-account-screen__title-stack::before {
+  background: linear-gradient(135deg, rgba(250, 245, 255, 0.98), rgba(217, 70, 239, 0.46));
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.26);
+}
+
+.user-account-screen--watch .user-account-screen__title-stack::after {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.68), rgba(217, 70, 239, 0.3), transparent 88%);
+}
+
+.user-account-screen--watch .user-account-screen__header-status {
+  border-color: rgba(192, 132, 252, 0.28);
+  background: rgba(22, 7, 34, 0.86);
+  color: rgba(250, 245, 255, 0.92);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(217, 70, 239, 0.12);
+}
+
+.user-account-screen--watch .user-account-screen__header-status-dot {
+  background: rgba(250, 245, 255, 0.98);
+  box-shadow:
+    0 0 12px rgba(233, 213, 255, 0.32),
+    0 0 18px rgba(217, 70, 239, 0.18);
+}
+
+.user-account-screen--watch .user-account-screen__close {
+  border-color: rgba(192, 132, 252, 0.28);
+  background: linear-gradient(180deg, rgba(24, 8, 38, 0.98), rgba(10, 4, 18, 0.94));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 14px rgba(217, 70, 239, 0.14);
+}
+
+.user-account-screen--watch .user-account-screen__close:hover {
+  border-color: rgba(233, 213, 255, 0.44);
+}
+
+.user-account-screen--watch .user-account-screen__hero {
+  border-color: rgba(192, 132, 252, 0.24);
+  background:
+    linear-gradient(160deg, rgba(25, 8, 39, 0.96), rgba(10, 3, 18, 0.88)),
+    radial-gradient(circle at top left, rgba(233, 213, 255, 0.14), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.16), transparent 30%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 18px rgba(217, 70, 239, 0.16);
+}
+
+.user-account-screen--watch .user-account-screen__hero::before {
+  background:
+    linear-gradient(90deg, rgba(233, 213, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%);
+}
+
+.user-account-screen--watch .user-account-screen__hero::after {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.34), transparent 82%);
+}
+
+.user-account-screen--watch .user-account-screen__avatar-shell {
+  border-color: rgba(192, 132, 252, 0.3);
+  box-shadow:
+    0 0 18px rgba(217, 70, 239, 0.2),
+    0 0 24px rgba(168, 85, 247, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.user-account-screen--watch .user-account-screen__identity::after {
+  background: linear-gradient(90deg, transparent, rgba(217, 70, 239, 0.34));
+}
+
+.user-account-screen--watch .user-account-screen__role-chip {
+  border-color: rgba(192, 132, 252, 0.26);
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.08), rgba(168, 85, 247, 0.14), rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 12px rgba(217, 70, 239, 0.12);
+}
+
+.user-account-screen--watch .user-account-screen__action--primary {
+  border-color: rgba(192, 132, 252, 0.28);
+  background: linear-gradient(180deg, rgba(34, 10, 52, 0.96), rgba(14, 4, 22, 0.56));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(217, 70, 239, 0.14);
+}
+
+.user-account-screen--watch .user-account-screen__action--primary:hover {
+  border-color: rgba(233, 213, 255, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 18px rgba(217, 70, 239, 0.18);
+}
+
+.user-account-screen--watch .user-account-screen__status {
+  border-color: rgba(192, 132, 252, 0.24);
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.08), rgba(168, 85, 247, 0.14), rgba(255, 255, 255, 0.03));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(217, 70, 239, 0.12);
+}
+
+.user-account-screen--watch .user-account-screen__stat-tile {
+  border-color: rgba(192, 132, 252, 0.22);
+  background: linear-gradient(180deg, rgba(24, 8, 36, 0.92), rgba(10, 4, 16, 0.36));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 14px rgba(217, 70, 239, 0.12);
+}
+
+.user-account-screen--watch .user-account-screen__stat-tile::before {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.06), transparent 34%);
+}
+
+.user-account-screen--watch .user-account-screen__stat-tile::after {
+  background: linear-gradient(90deg, rgba(217, 70, 239, 0.34), transparent 84%);
+}
+
+.user-account-screen--watch .user-account-screen__heatmap {
+  border-color: rgba(192, 132, 252, 0.22);
+  background:
+    linear-gradient(180deg, rgba(21, 7, 33, 0.92), rgba(8, 3, 16, 0.44)),
+    radial-gradient(circle at top left, rgba(233, 213, 255, 0.1), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.14), transparent 30%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 0 18px rgba(217, 70, 239, 0.14);
+}
+
+.user-account-screen--watch .user-account-screen__heatmap::before {
+  background:
+    linear-gradient(90deg, rgba(233, 213, 255, 0.06), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 32%);
+}
+
+.user-account-screen--watch .user-account-screen__heatmap::after {
+  background: linear-gradient(90deg, rgba(217, 70, 239, 0.32), transparent 84%);
+}
+
+.user-account-screen--watch .user-account-screen__section-head {
+  border-bottom-color: rgba(192, 132, 252, 0.14);
+}
+
+.user-account-screen--watch .user-account-screen__logout {
+  border-color: rgba(244, 114, 182, 0.24);
+  background: linear-gradient(180deg, rgba(118, 22, 72, 0.42), rgba(24, 4, 16, 0.28));
+  box-shadow:
+    inset 0 0 0 1px rgba(244, 114, 182, 0.04),
+    0 0 14px rgba(217, 70, 239, 0.12);
+}
+
+.home-energy-battery {
+  position: relative;
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 0.18rem;
+  align-items: center;
+  padding: 0.24rem 0.48rem 0.24rem 0.5rem;
+  border: 1px solid rgba(105, 255, 148, 0.34);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(5, 28, 12, 0.94), rgba(2, 12, 6, 0.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 14px rgba(105, 255, 148, 0.14);
+  overflow: visible;
+}
+
+.home-energy-battery::after {
+  content: '';
+  position: absolute;
+  right: 0.08rem;
+  top: 50%;
+  width: 0.12rem;
+  height: 0.46rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: rgba(105, 255, 148, 0.56);
+  box-shadow: 0 0 8px rgba(105, 255, 148, 0.26);
+}
+
+.home-energy-battery__segment {
+  width: 0.26rem;
+  height: 0.54rem;
+  border-radius: 0.18rem;
+  background: linear-gradient(180deg, rgba(168, 255, 193, 0.98), rgba(105, 255, 148, 0.82));
+  box-shadow:
+    0 0 10px rgba(105, 255, 148, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.home-energy-battery.is-syncing .home-energy-battery__segment {
+  opacity: 0.28;
+  animation: home-energy-battery-scan 1.1s linear infinite;
+}
+
+.home-energy-battery.is-syncing .home-energy-battery__segment:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.home-energy-battery.is-syncing .home-energy-battery__segment:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.home-energy-battery.is-syncing .home-energy-battery__segment:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+.home-energy-battery--dock {
+  transform: scale(1.04);
+  transform-origin: left center;
+}
+
+.home-energy-battery--status {
+  transform: scale(0.92);
+  transform-origin: left center;
+}
+
+.home-user-command-dock {
+  width: 18.4rem;
+  height: 6.05rem;
+}
+
+.home-user-command-dock__frame {
+  right: 0.2rem;
+  bottom: 0.48rem;
+  width: 17.2rem;
+  height: 4.62rem;
+}
+
+.home-user-command-dock__slab {
+  right: 0.44rem;
+  bottom: 0.72rem;
+  width: 16.72rem;
+  height: 3.74rem;
+  overflow: visible;
+  border-color: rgba(233, 213, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(60, 20, 82, 0.98), rgba(18, 6, 30, 0.99)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(217, 70, 239, 0.12) 22%, transparent 40%, rgba(168, 85, 247, 0.18) 82%, transparent 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.36),
+    0 0 22px rgba(217, 70, 239, 0.18);
+}
+
+.home-user-command-dock__slab::before {
+  left: 1rem;
+  right: 1rem;
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.2), rgba(217, 70, 239, 0.68), transparent 72%);
+}
+
+.home-user-command-dock__content {
+  left: 1.1rem;
+  right: 4.65rem;
+  top: 0.66rem;
+  gap: 0.46rem;
+  overflow: visible;
+}
+
+.home-user-command-dock__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(252, 245, 255, 0.98);
+  text-shadow: 0 0 14px rgba(217, 70, 239, 0.24);
+}
+
+.home-user-command-dock__status-group {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 1rem;
+  overflow: visible;
+}
+
+.home-user-command-dock__status-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.18;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: rgba(240, 255, 245, 0.96);
+}
+
+.home-user-command-dock__avatar-shell {
+  position: absolute;
+  top: 0.58rem;
+  right: 0.94rem;
+  width: 2.62rem;
+  height: 2.62rem;
+  overflow: hidden;
+  border: 1px solid rgba(233, 213, 255, 0.3);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.14), transparent 38%),
+    linear-gradient(180deg, rgba(70, 24, 96, 0.94), rgba(18, 6, 30, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 18px rgba(217, 70, 239, 0.18);
+}
+
+.home-user-command-dock__avatar-fallback {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: rgba(250, 245, 255, 0.98);
+  background: radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.12), rgba(217, 70, 239, 0.18) 48%, transparent 86%);
+}
+
+.user-account-screen--watch {
+  clip-path: polygon(18px 0, calc(100% - 14px) 0, 100% 16px, 100% calc(100% - 18px), calc(100% - 20px) 100%, 0 100%, 0 18px);
+}
+
+.user-account-screen__body--watch {
+  padding-top: 1.1rem;
+  padding-bottom: 1.1rem;
+}
+
+.user-account-screen--watch .font-mono {
+  font-family: inherit;
+}
+
+.user-account-screen--watch .user-account-screen__title-stack {
+  display: flex;
+  align-items: center;
+  min-height: 1.86rem;
+  padding-left: 1.42rem;
+  padding-bottom: 0;
+  overflow: visible;
+}
+
+.user-account-screen--watch .user-account-screen__title-stack::before {
+  top: 50%;
+  left: 0.08rem;
+  transform: translateY(-50%);
+}
+
+.user-account-screen--watch .user-account-screen__title-stack::after {
+  bottom: -0.74rem;
+}
+
+.user-account-screen--watch .user-account-screen__header-status {
+  gap: 0.55rem;
+  min-height: 2rem;
+}
+
+.user-account-screen--watch .user-account-screen__header {
+  overflow: visible;
+}
+
+.user-account-screen__hero--watch-layout,
+.user-account-screen--watch .user-account-screen__hero--watch-layout {
+  min-height: 0;
+  align-items: center;
+  clip-path: none;
+  border-radius: 1.15rem;
+}
+
+.user-account-screen--watch .user-account-screen__hero--watch-layout::after {
+  background: linear-gradient(90deg, rgba(233, 213, 255, 0.26), transparent 82%);
+}
+
+.user-account-screen--watch .user-account-screen__hero--watch-layout .user-account-screen__avatar-shell {
+  clip-path: none;
+  border-radius: 999px;
+}
+
+.user-account-screen--watch .user-account-screen__hero--watch-layout .user-account-screen__identity::after {
+  display: none;
+}
+
+.user-account-screen--watch .user-account-screen__role-chip,
+.user-account-screen--watch .user-account-screen__action--primary,
+.user-account-screen--watch .user-account-screen__action--danger,
+.user-account-screen--watch .user-account-screen__status,
+.user-account-screen--watch .user-account-screen__stat-tile,
+.user-account-screen--watch .user-account-screen__heatmap,
+.user-account-screen--watch .user-account-screen__logout {
+  clip-path: none;
+  border-radius: 1rem;
+}
+
+.user-account-screen--watch .user-account-screen__role-chip {
+  border-radius: 999px;
+}
+
+.user-account-screen--watch .user-account-screen__status {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  overflow: visible;
+}
+
+.user-account-screen--watch .user-account-screen__stat-tile {
+  min-height: 5rem;
+  overflow: visible;
+  padding-top: 0.95rem;
+  padding-bottom: 0.95rem;
+}
+
+.user-account-screen--watch .user-account-screen__heatmap {
+  overflow: visible;
+}
+
+.user-account-screen--watch .user-account-screen__section-head {
+  overflow: visible;
+  padding-top: 0.08rem;
+}
+
+.user-account-screen__heatmap-grid--watch {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 0.28rem;
+}
+
+.user-account-screen__heatmap-cell {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+@keyframes home-energy-battery-scan {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-0.02rem);
+  }
+}
+
+@keyframes home-user-command-signal {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: translateX(-0.4rem);
+  }
+  50% {
+    opacity: 0.68;
+    transform: translateX(0.28rem);
+  }
+}
+
+@keyframes home-user-command-indicator {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.96;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes home-user-command-sheen {
+  0% {
+    transform: translateX(-140%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.16;
+  }
+  22% {
+    opacity: 0.08;
+  }
+  100% {
+    transform: translateX(180%);
+    opacity: 0;
+  }
+}
+
+@keyframes home-user-command-backplate-in {
   from {
     opacity: 0;
-    transform: scaleY(0);
+    transform: translateY(0.35rem);
   }
   to {
-    opacity: 0.9;
-    transform: scaleY(1);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes home-user-reactor-arm-grow {
+@keyframes home-user-command-backplate-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.2rem);
+  }
+}
+
+@keyframes home-user-command-tether-in {
   from {
     opacity: 0;
-    transform: scaleX(0);
+    transform: scaleX(0.16);
   }
   to {
     opacity: 1;
@@ -3927,154 +4672,114 @@ input[type="checkbox"]:checked {
   }
 }
 
-@keyframes home-user-reactor-console-unfold {
-  0% {
+@keyframes home-user-command-tether-out {
+  from {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  to {
     opacity: 0;
-    transform: translate3d(12px, 10px, 0) scale(0.95);
-    clip-path: polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%);
+    transform: scaleX(0.3);
+  }
+}
+
+@keyframes home-user-command-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0.55rem, 0.85rem, 0) scale(0.97);
     filter: blur(4px);
   }
-  55% {
-    opacity: 1;
-    transform: translate3d(3px, 2px, 0) scale(0.985);
-    filter: blur(0);
-  }
-  100% {
+  to {
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
-    clip-path: polygon(22px 0, calc(100% - 18px) 0, 100% 18px, 100% calc(100% - 18px), calc(100% - 24px) 100%, 0 100%, 0 22px);
     filter: blur(0);
   }
 }
 
-@keyframes home-user-reactor-arm-charge {
-  0%,
-  100% {
-    transform: translateX(0);
-    opacity: 0.34;
-  }
-  50% {
-    transform: translateX(0.32rem);
-    opacity: 0.62;
-  }
-}
-
-@keyframes home-user-reactor-core-pulse {
-  0% {
-    opacity: 0.52;
-    transform: scale(0.94);
-  }
-  50% {
-    opacity: 0.92;
-    transform: scale(1.04);
-  }
-  100% {
-    opacity: 0.52;
-    transform: scale(0.94);
-  }
-}
-
-@keyframes home-user-reactor-core-flicker {
-  0%,
-  100% {
-    opacity: 0.84;
-  }
-  16% {
-    opacity: 0.96;
-  }
-  18% {
-    opacity: 0.74;
-  }
-  52% {
+@keyframes home-user-command-panel-out {
+  from {
     opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
   }
-  54% {
-    opacity: 0.82;
+  to {
+    opacity: 0;
+    transform: translate3d(0.35rem, 0.5rem, 0) scale(0.98);
+    filter: blur(3px);
   }
 }
 
-@keyframes home-user-reactor-flicker {
+@keyframes home-user-command-flicker {
   0%,
   100% {
-    opacity: 0.78;
-  }
-  6% {
-    opacity: 0.58;
-  }
-  8% {
-    opacity: 0.92;
-  }
-  46% {
     opacity: 0.76;
   }
-  48% {
-    opacity: 1;
+  8% {
+    opacity: 0.58;
   }
-  50% {
-    opacity: 0.72;
+  11% {
+    opacity: 0.88;
   }
   52% {
-    opacity: 0.96;
+    opacity: 0.7;
   }
 }
 
 @media (max-width: 640px) {
-  .home-user-reactor-trigger {
-    height: 3.48rem;
-    width: 12rem;
+  .home-user-command-dock {
+    width: 15.1rem;
+    height: 5.38rem;
   }
 
-  .home-user-reactor-trigger__arm {
-    left: -0.1rem;
-    right: 8.05rem;
+  .home-user-command-dock__frame {
+    width: 14.14rem;
+    height: 4.08rem;
   }
 
-  .home-user-reactor-trigger__arm-glow {
-    left: 0.12rem;
-    right: 7.8rem;
+  .home-user-command-dock__slab {
+    width: 13.7rem;
+    height: 3.28rem;
+    bottom: 0.72rem;
   }
 
-  .home-user-reactor-trigger__brace {
-    left: 2.18rem;
+  .home-user-command-dock__content {
+    left: 0.94rem;
+    right: 3.95rem;
+    top: 0.56rem;
   }
 
-  .home-user-reactor-trigger__dock {
-    left: 2rem;
+  .home-user-command-dock__name {
+    font-size: 0.9rem;
   }
 
-  .home-user-reactor-trigger__microtag {
-    left: 0.92rem;
-    top: 0.8rem;
+  .home-user-command-dock__status-group {
+    gap: 0.52rem;
+    min-height: 0.92rem;
   }
 
-  .home-user-reactor-trigger__eyebrow {
-    font-size: 0.38rem;
+  .home-user-command-dock__status-text {
+    font-size: 0.56rem;
   }
 
-  .home-user-reactor-trigger__meta {
-    font-size: 0.44rem;
+  .home-user-command-dock__avatar-shell {
+    top: 0.54rem;
+    right: 0.8rem;
+    width: 2.28rem;
+    height: 2.28rem;
   }
 
-  .home-user-reactor-trigger__core {
-    right: 0.86rem;
-    width: 2.38rem;
-    height: 1.9rem;
+  .home-user-command-panel__tether {
+    right: 1.94rem;
+    width: 8.6rem;
   }
 
-  .home-user-reactor-panel {
-    width: min(92vw, 23.5rem);
+  .user-account-screen__hero--watch-layout,
+  .user-account-screen--watch .user-account-screen__hero--watch-layout {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .home-user-reactor-panel::before,
-  .home-user-reactor-panel::after {
-    right: 1.86rem;
-  }
-
-  .home-user-reactor-panel::after {
-    width: 5.25rem;
-  }
-
-  .user-account-screen--watch {
-    clip-path: polygon(18px 0, calc(100% - 14px) 0, 100% 16px, 100% calc(100% - 14px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+  .user-account-screen__heatmap-grid--watch {
+    gap: 0.2rem;
   }
 }

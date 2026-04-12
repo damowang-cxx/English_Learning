@@ -7,9 +7,25 @@ import UserAccountScreen from '@/components/UserAccountScreen'
 
 type SessionUser = Session['user']
 
-export default function UserAccountMenu({ sessionUser }: { sessionUser: SessionUser }) {
+type UserAccountMenuPanelPlacement = 'bottom' | 'top'
+
+interface UserAccountMenuProps {
+  sessionUser: SessionUser
+  buttonClassName?: string
+  panelPlacement?: UserAccountMenuPanelPlacement
+}
+
+export default function UserAccountMenu({
+  sessionUser,
+  buttonClassName = '',
+  panelPlacement = 'bottom',
+}: UserAccountMenuProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const panelClassName =
+    panelPlacement === 'top'
+      ? 'absolute right-0 bottom-full z-[120] mb-3 w-[min(92vw,380px)]'
+      : 'absolute right-0 top-full z-[120] mt-3 w-[min(92vw,380px)]'
 
   useEffect(() => {
     if (!isOpen) {
@@ -46,7 +62,7 @@ export default function UserAccountMenu({ sessionUser }: { sessionUser: SessionU
           isOpen
             ? 'border-cyan-300/55 bg-cyan-500/[0.12] text-cyan-100'
             : 'border-cyan-500/28 bg-black/25 text-cyan-300/72 hover:border-cyan-400/48 hover:text-cyan-100'
-        }`}
+        } ${buttonClassName}`.trim()}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
       >
@@ -55,7 +71,7 @@ export default function UserAccountMenu({ sessionUser }: { sessionUser: SessionU
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-[120] mt-3 w-[min(92vw,380px)]">
+        <div className={panelClassName}>
           <UserAccountScreen sessionUser={sessionUser} onClose={() => setIsOpen(false)} />
         </div>
       ) : null}

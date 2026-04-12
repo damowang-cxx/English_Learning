@@ -49,6 +49,7 @@ function DockButton({
   active = false,
   disabled = false,
   tone,
+  layout = 'dock',
 }: {
   label: string
   title: string
@@ -57,8 +58,10 @@ function DockButton({
   active?: boolean
   disabled?: boolean
   tone: DockTone
+  layout?: 'dock' | 'corner'
 }) {
   const toneClass = DOCK_TONE_CLASS[tone]
+  const isCornerLayout = layout === 'corner'
 
   return (
     <button
@@ -66,10 +69,16 @@ function DockButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className="training-dock-button group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-40"
+      className={`training-dock-button group disabled:cursor-not-allowed disabled:opacity-40 ${
+        isCornerLayout
+          ? 'flex w-[8.5rem] items-center gap-3 rounded-lg border border-cyan-500/16 bg-black/30 px-2.5 py-2 text-left transition-colors hover:border-cyan-400/36 hover:bg-cyan-500/[0.06]'
+          : 'flex flex-col items-center gap-2'
+      }`}
     >
       <span
-        className={`training-dock-button-shell inline-flex h-12 w-12 items-center justify-center rounded-full border text-sm transition-all duration-200 ${
+        className={`training-dock-button-shell inline-flex items-center justify-center rounded-full border text-sm transition-all duration-200 ${
+          isCornerLayout ? 'h-8 w-8 shrink-0' : 'h-12 w-12'
+        } ${
           toneClass.shell
         } ${
           active
@@ -81,7 +90,11 @@ function DockButton({
       >
         {icon}
       </span>
-      <span className={`training-dock-button-label font-mono text-[10px] tracking-[0.16em] ${toneClass.label}`}>
+      <span
+        className={`training-dock-button-label font-mono text-[10px] tracking-[0.16em] ${
+          isCornerLayout ? 'leading-none' : ''
+        } ${toneClass.label}`}
+      >
         {label}
       </span>
     </button>
@@ -232,6 +245,7 @@ export default function CockpitPanel() {
   const isListeningTrainingPage = /^\/training\/[^/]+$/.test(appPathname)
   const isVideoTrainingPage = /^\/video\/[^/]+$/.test(appPathname) && appPathname !== '/video/upload'
   const showTrainingDock = isListeningTrainingPage || isVideoTrainingPage
+  const useTrainingCornerNav = showTrainingDock
   const isTranslationToggleDisabled = isListeningTrainingPage && isDictationMode
 
   useEffect(() => {
@@ -320,15 +334,44 @@ export default function CockpitPanel() {
 
   return (
     <div className="cockpit-panel pointer-events-none fixed inset-0 z-30">
-      {!isHomePage ? (
-        <div className="pointer-events-auto fixed right-4 top-4 z-[80]">
+      {!isHomePage && !useTrainingCornerNav ? (
+        <div
+          className="pointer-events-auto fixed right-4 top-4 z-[90]"
+        >
           <TopActionNav />
         </div>
       ) : null}
 
       <TrainingMenuOverlay isVideoDomain={isVideoDomain} />
 
-      {showTrainingDock && dockButtons.length > 0 ? (
+      {useTrainingCornerNav ? (
+        <div className="pointer-events-auto fixed right-4 bottom-5 z-[90] flex w-[9.85rem] flex-col items-stretch gap-2.5 rounded-2xl border border-cyan-500/18 bg-black/72 p-2.5 shadow-[0_0_28px_rgba(0,0,0,0.24)] backdrop-blur-md">
+          <TopActionNav orientation="vertical" accountMenuPlacement="top" className="w-full" />
+
+          {dockButtons.length > 0 ? (
+            <>
+              <div className="h-px bg-gradient-to-r from-transparent via-cyan-400/22 to-transparent" />
+              <div className="flex flex-col items-end gap-2.5">
+                {dockButtons.map((button) => (
+                  <DockButton
+                    key={button.key}
+                    label={button.label}
+                    title={button.title}
+                    tone={button.tone}
+                    active={button.active}
+                    disabled={button.disabled}
+                    icon={button.icon}
+                    onClick={button.onClick}
+                    layout="corner"
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!useTrainingCornerNav && showTrainingDock && dockButtons.length > 0 ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[80] flex justify-center px-4">
           <div className="pointer-events-auto flex items-center gap-4 rounded-full border border-cyan-500/18 bg-black/72 px-4 py-2.5 shadow-[0_0_28px_rgba(0,0,0,0.24)] backdrop-blur-md">
             {dockButtons.map((button) => (
