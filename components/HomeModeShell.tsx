@@ -2,6 +2,8 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import HomeUploadAction from '@/components/HomeUploadAction'
 import TopActionNav from '@/components/TopActionNav'
+import HomeBottomHud from '@/components/HomeBottomHud'
+import HomeUserWatch from '@/components/HomeUserWatch'
 
 type HomeMode = 'listening' | 'video'
 
@@ -21,12 +23,15 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
   const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : 'UPLOAD LISTENING'
 
   return (
-    <div
-      className="container mx-auto py-8 cockpit-viewport"
+    <>
+      <HomeBottomHud />
+      <HomeUserWatch key={mode} />
+      <div
+        className="container mx-auto py-8 cockpit-viewport"
       style={{
         position: 'relative',
         zIndex: 10,
-        paddingTop: '8vh',
+        paddingTop: '5vh',
         paddingBottom: '14vh',
         paddingLeft: '2rem',
         paddingRight: '2rem',
@@ -61,7 +66,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
         </div>
 
         <div className="flex flex-wrap items-center gap-2 md:justify-end">
-          <TopActionNav />
+          <TopActionNav accountEntryMode="none" />
           <Link
             href="/vocabulary"
             className="home-global-vocab-button group inline-flex items-center gap-2 rounded-md px-3 py-2"
@@ -79,5 +84,6 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
 
       {children}
     </div>
+    </>
   )
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Menu as MenuIcon } from 'lucide-react'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
 import { isAdminRole } from '@/lib/auth-types'
 import { useCockpitUi } from '@/contexts/CockpitUiContext'
 import UserAccountMenu from '@/components/UserAccountMenu'
@@ -10,12 +11,16 @@ import UserAccountMenu from '@/components/UserAccountMenu'
 const BASE_BUTTON_CLASS =
   'inline-flex items-center gap-2 rounded-md border px-3 py-2 font-mono text-[11px] tracking-[0.18em] transition-colors'
 
+type AccountEntryMode = 'top-nav' | 'none'
+
 interface TopActionNavProps {
   className?: string
+  accountEntryMode?: AccountEntryMode
 }
 
-export default function TopActionNav({ className = '' }: TopActionNavProps) {
+export default function TopActionNav({ className = '', accountEntryMode = 'top-nav' }: TopActionNavProps) {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
   const { toggleMenu } = useCockpitUi()
   const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
@@ -44,7 +49,7 @@ export default function TopActionNav({ className = '' }: TopActionNavProps) {
         </Link>
       ) : (
         <>
-          <UserAccountMenu sessionUser={session.user} />
+          {accountEntryMode === 'top-nav' ? <UserAccountMenu key={pathname} sessionUser={session.user} /> : null}
           {isAdmin ? (
             <Link
               href="/admin/users"
