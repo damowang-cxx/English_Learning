@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, Keyboard, Languages, MoonStar, X } from 'lucide-react'
+import { ArrowLeft, Home, Keyboard, Languages, MoonStar, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import TopActionNav from '@/components/TopActionNav'
@@ -257,6 +257,7 @@ export default function CockpitPanel() {
   const { isFocusMode, toggleFocusMode, setIsFocusMode } = useFocusMode()
 
   const isHomePage = appPathname === '/' || appPathname === '/video'
+  const isAdminUsersPage = appPathname === '/admin/users'
   const isVideoDomain = appPathname === '/video' || appPathname.startsWith('/video/')
   const isListeningTrainingPage = /^\/training\/[^/]+$/.test(appPathname)
   const isVideoTrainingPage = /^\/video\/[^/]+$/.test(appPathname) && appPathname !== '/video/upload'
@@ -351,11 +352,40 @@ export default function CockpitPanel() {
   return (
     <div className="cockpit-panel pointer-events-none fixed inset-0 z-30">
       {!isHomePage && !useTrainingCornerNav ? (
-        <div
-          className="pointer-events-auto fixed right-4 top-4 z-[90]"
-        >
-          <TopActionNav />
-        </div>
+        isAdminUsersPage ? (
+          <div className="pointer-events-auto fixed right-4 top-4 z-[90] flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.history.length > 1) {
+                  router.back()
+                  return
+                }
+
+                router.push('/')
+              }}
+              className="inline-flex items-center gap-2 rounded-md border border-cyan-500/28 bg-black/25 px-3 py-2 font-mono text-[11px] tracking-[0.18em] text-cyan-300/72 transition-colors hover:border-cyan-400/48 hover:text-cyan-100"
+              aria-label="Go back"
+              title="Go back"
+            >
+              <ArrowLeft size={14} />
+              BACK
+            </button>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-md border border-cyan-500/28 bg-black/25 px-3 py-2 font-mono text-[11px] tracking-[0.18em] text-cyan-300/72 transition-colors hover:border-cyan-400/48 hover:text-cyan-100"
+            >
+              <Home size={14} />
+              HOME
+            </Link>
+          </div>
+        ) : (
+          <div
+            className="pointer-events-auto fixed right-4 top-4 z-[90]"
+          >
+            <TopActionNav />
+          </div>
+        )
       ) : null}
 
       <TrainingMenuOverlay isVideoDomain={isVideoDomain} />

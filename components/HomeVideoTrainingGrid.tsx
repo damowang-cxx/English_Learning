@@ -414,7 +414,7 @@ export default function HomeVideoTrainingGrid({
         </div>
       ) : null}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" style={{ padding: '16px', overflow: 'visible' }}>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" style={{ padding: '12px', overflow: 'visible' }}>
         {items.map((item, index) => {
           const coverSrc = getVideoCoverSrc(item.coverUrl)
           const naturalSize = coverSizesById[item.id]
@@ -423,9 +423,9 @@ export default function HomeVideoTrainingGrid({
             : null
 
           return (
-            <div key={item.id} className="group relative">
+            <div key={item.id} className="group relative min-w-0">
               {isAdmin ? (
-                <div className="absolute right-3 top-3 z-30 flex items-center gap-2">
+                <div className="absolute right-2.5 top-2.5 z-30 flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={(event) => {
@@ -434,7 +434,7 @@ export default function HomeVideoTrainingGrid({
                       setPositionError(null)
                       setPositioningId((current) => current === item.id ? null : item.id)
                     }}
-                    className="rounded-md border border-cyan-500/35 bg-black/65 px-2 py-1 font-mono text-[10px] text-cyan-300 opacity-80 transition-colors hover:border-cyan-300/70 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                    className="rounded-md border border-cyan-500/35 bg-black/65 px-1.5 py-1 font-mono text-[9px] text-cyan-300 opacity-80 transition-colors hover:border-cyan-300/70 hover:text-cyan-100 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                     disabled={!item.coverUrl}
                     aria-label={`Adjust card cover position for "${item.title}"`}
                     title={item.coverUrl ? `Adjust cover position for "${item.title}"` : 'No cover image'}
@@ -448,7 +448,7 @@ export default function HomeVideoTrainingGrid({
                       event.stopPropagation()
                       void handleDelete(item)
                     }}
-                    className="rounded-md border border-red-500/35 bg-black/65 px-2 py-1 font-mono text-[10px] text-red-300 opacity-80 transition-colors hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
+                    className="rounded-md border border-red-500/35 bg-black/65 px-1.5 py-1 font-mono text-[9px] text-red-300 opacity-80 transition-colors hover:border-red-400/70 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-40 md:opacity-0 md:group-hover:opacity-100"
                     disabled={deletingId === item.id}
                     aria-label={`Delete video training "${item.title}"`}
                     title={`Delete video training "${item.title}"`}
@@ -460,7 +460,7 @@ export default function HomeVideoTrainingGrid({
 
               {isAdmin && positioningId === item.id ? (
                 <div
-                  className="absolute right-3 top-12 z-30 w-44 rounded-lg border border-cyan-500/35 bg-black/92 p-3 shadow-[0_0_24px_rgba(34,211,238,0.14)] backdrop-blur-md"
+                  className="absolute right-2.5 top-10 z-30 w-40 rounded-lg border border-cyan-500/35 bg-black/92 p-3 shadow-[0_0_24px_rgba(34,211,238,0.14)] backdrop-blur-md"
                   onClick={(event) => {
                     event.preventDefault()
                     event.stopPropagation()
@@ -528,7 +528,7 @@ export default function HomeVideoTrainingGrid({
 
               <Link
                 href={`/video/${item.id}`}
-                className="block overflow-hidden rounded-lg border border-cyan-500/24 bg-black/45 shadow-[0_0_24px_rgba(34,211,238,0.08)] transition-all hover:-translate-y-0.5 hover:border-cyan-400/55 hover:shadow-[0_0_32px_rgba(34,211,238,0.18)]"
+                className="block overflow-hidden rounded-lg border border-cyan-500/24 bg-black/45 shadow-[0_0_20px_rgba(34,211,238,0.08)] transition-all hover:-translate-y-0.5 hover:border-cyan-400/55 hover:shadow-[0_0_28px_rgba(34,211,238,0.18)]"
               >
                 <div className="relative aspect-video overflow-hidden bg-slate-950">
                   <div
@@ -540,19 +540,19 @@ export default function HomeVideoTrainingGrid({
                     aria-hidden="true"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/18 to-transparent" />
-                  <div className="absolute left-3 top-3 rounded border border-cyan-300/35 bg-black/55 px-2 py-1 font-mono text-[10px] tracking-[0.18em] text-cyan-100">
+                  <div className="absolute left-2.5 top-2.5 rounded border border-cyan-300/35 bg-black/55 px-2 py-1 font-mono text-[9px] tracking-[0.16em] text-cyan-100">
                     {item.tag}
                   </div>
-                  <div className="absolute bottom-3 left-3 font-mono text-xs text-cyan-200/85">
+                  <div className="absolute bottom-2.5 left-2.5 font-mono text-[11px] text-cyan-200/85">
                     #{String(index + 1).padStart(3, '0')}
                   </div>
                 </div>
 
-                <div className="p-5">
-                  <h2 className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-lg font-bold text-cyan-200" title={item.title}>
+                <div className="p-4">
+                  <h2 className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-base font-bold text-cyan-200" title={item.title}>
                     {item.title}
                   </h2>
-                  <div className="mt-4 space-y-2 font-mono text-xs text-gray-300">
+                  <div className="mt-3 space-y-1.5 font-mono text-[11px] text-gray-300">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-cyan-400/70">[ CAPTIONS ]</span>
                       <span className="text-cyan-100">{item.captionsCount}</span>
@@ -562,7 +562,7 @@ export default function HomeVideoTrainingGrid({
                       <span className="text-cyan-100">{formatCreatedDate(item.createdAt)}</span>
                     </div>
                   </div>
-                  <div className="mt-5 border-t border-cyan-500/20 pt-4 font-mono text-xs text-cyan-400/80">
+                  <div className="mt-4 border-t border-cyan-500/20 pt-3 font-mono text-[11px] text-cyan-400/80">
                     [ ACCESS ] -&gt;
                   </div>
                 </div>

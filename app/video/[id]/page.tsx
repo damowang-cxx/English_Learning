@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import {
@@ -11,10 +11,11 @@ import {
 import VideoTrainingEditModal from '@/components/video/VideoTrainingEditModal'
 import { isAdminRole } from '@/lib/auth-types'
 import { getVideoCoverSrc, getVideoMediaSrc, withBasePath } from '@/lib/base-path'
+import { toLocalDateKey } from '@/lib/learning-stats'
 import { formatVideoTime, type VideoCaptionMode } from '@/lib/video-training'
 import {
   areVocabularyListsEqual,
-  formatVocabularyEntry,
+  buildVocabularyBook,
   getVocabularyEntryKey,
   mergeVocabularyWords,
   parseVocabularyWords,
@@ -72,6 +73,8 @@ interface VideoTrainingItem {
   phraseNotes: VideoPhraseNote[]
 }
 
+type VideoSidebarPanelMode = 'captions' | 'vocabulary' | 'phrases'
+
 function getActiveCaption(captions: VideoCaption[], currentTime: number) {
   return captions.find((caption) => currentTime >= caption.startTime && currentTime <= caption.endTime) || null
 }
@@ -105,6 +108,10 @@ function blurActiveElement() {
   }
 }
 
+const LEARNING_HEARTBEAT_INTERVAL_MS = 10000
+const REVIEW_ACTIVITY_WINDOW_MS = 30000
+const CONTINUOUS_STUDY_ACTIVITY_THROTTLE_MS = 1500
+
 export default function VideoTrainingDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -123,6 +130,7 @@ export default function VideoTrainingDetailPage() {
   const [repeatCaptionId, setRepeatCaptionId] = useState<string | null>(null)
   const [selectedSpeaker, setSelectedSpeaker] = useState('All')
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [sidebarPanelMode, setSidebarPanelMode] = useState<VideoSidebarPanelMode>('captions')
   const [isWindowFullscreen, setIsWindowFullscreen] = useState(false)
   const [isDisplayFullscreen, setIsDisplayFullscreen] = useState(false)
   const [phraseDraft, setPhraseDraft] = useState('')
@@ -131,7 +139,15 @@ export default function VideoTrainingDetailPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [removingVocabularyKey, setRemovingVocabularyKey] = useState<string | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const heartbeatLastTickAtRef = useRef<number | null>(null)
+  const heartbeatInFlightRef = useRef(false)
+  const isPlayingRef = useRef(false)
+  const lastStudyActivityAtRef = useRef(0)
+  const lastContinuousStudyActivityAtRef = useRef(0)
+  const windowFocusedRef = useRef(typeof document !== 'undefined' ? document.hasFocus() : true)
+  const isAuthenticated = authStatus === 'authenticated'
   const isAdmin = isAdminRole((session?.user as { role?: unknown } | undefined)?.role)
 
   useEffect(() => {
@@ -183,6 +199,10 @@ export default function VideoTrainingDetailPage() {
   }, [playbackRate])
 
   useEffect(() => {
+    isPlayingRef.current = isPlaying
+  }, [isPlaying])
+
+  useEffect(() => {
     const handleFullscreenChange = () => {
       setIsDisplayFullscreen(document.fullscreenElement === frameRef.current)
     }
@@ -198,6 +218,151 @@ export default function VideoTrainingDetailPage() {
       setVideoImmersiveChromeHidden(false)
     }
   }, [isDisplayFullscreen, isWindowFullscreen])
+
+  const markStudyActivity = useEffectEvent((mode: 'instant' | 'continuous' = 'instant') => {
+    if (!item || isEditModalOpen || document.hidden || !windowFocusedRef.current) {
+      return
+    }
+
+    const now = Date.now()
+
+    if (
+      mode === 'continuous'
+      && now - lastContinuousStudyActivityAtRef.current < CONTINUOUS_STUDY_ACTIVITY_THROTTLE_MS
+    ) {
+      return
+    }
+
+    if (mode === 'continuous') {
+      lastContinuousStudyActivityAtRef.current = now
+    }
+
+    lastStudyActivityAtRef.current = now
+  })
+
+  const pushLearningHeartbeat = useEffectEvent(async () => {
+    if (!item || !isAuthenticated || isEditModalOpen || heartbeatInFlightRef.current) {
+      return
+    }
+
+    const now = Date.now()
+    const lastTickAt = heartbeatLastTickAtRef.current ?? now
+    const elapsedSeconds = Math.floor((now - lastTickAt) / 1000)
+    heartbeatLastTickAtRef.current = now
+
+    if (elapsedSeconds <= 0 || document.hidden || !windowFocusedRef.current) {
+      return
+    }
+
+    const isVideoActive = isPlayingRef.current
+    const isReviewActive =
+      (now - lastStudyActivityAtRef.current) <= REVIEW_ACTIVITY_WINDOW_MS
+
+    if (!isVideoActive && !isReviewActive) {
+      return
+    }
+
+    heartbeatInFlightRef.current = true
+    try {
+      await fetch(withBasePath('/api/learning-stats/heartbeat'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dateKey: toLocalDateKey(new Date()),
+          studyDeltaSec: elapsedSeconds,
+          audioDeltaSec: 0,
+          dictationDeltaSec: 0,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to push video learning heartbeat:', error)
+    } finally {
+      heartbeatInFlightRef.current = false
+    }
+  })
+
+  useEffect(() => {
+    if (!item || isEditModalOpen) {
+      return
+    }
+
+    const initializeActivityWindow = () => {
+      const now = Date.now()
+      heartbeatLastTickAtRef.current = now
+      lastStudyActivityAtRef.current = now
+      lastContinuousStudyActivityAtRef.current = now
+    }
+
+    initializeActivityWindow()
+    windowFocusedRef.current = document.hasFocus()
+
+    const timer = window.setInterval(() => {
+      void pushLearningHeartbeat()
+    }, LEARNING_HEARTBEAT_INTERVAL_MS)
+
+    const handleVisibilityChange = () => {
+      heartbeatLastTickAtRef.current = Date.now()
+
+      if (!document.hidden && document.hasFocus()) {
+        windowFocusedRef.current = true
+        lastStudyActivityAtRef.current = heartbeatLastTickAtRef.current
+      }
+    }
+
+    const handleWindowFocus = () => {
+      windowFocusedRef.current = true
+      initializeActivityWindow()
+    }
+
+    const handleWindowBlur = () => {
+      windowFocusedRef.current = false
+      heartbeatLastTickAtRef.current = Date.now()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleWindowFocus)
+    window.addEventListener('blur', handleWindowBlur)
+
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleWindowFocus)
+      window.removeEventListener('blur', handleWindowBlur)
+      heartbeatLastTickAtRef.current = null
+      lastStudyActivityAtRef.current = 0
+      lastContinuousStudyActivityAtRef.current = 0
+    }
+  }, [item, isEditModalOpen])
+
+  useEffect(() => {
+    if (!item || isEditModalOpen) {
+      return
+    }
+
+    const handleContinuousActivity = () => {
+      markStudyActivity('continuous')
+    }
+
+    const handleInstantActivity = () => {
+      markStudyActivity('instant')
+    }
+
+    window.addEventListener('pointermove', handleContinuousActivity, { passive: true })
+    window.addEventListener('wheel', handleContinuousActivity, { passive: true })
+    window.addEventListener('touchstart', handleInstantActivity, { passive: true })
+    window.addEventListener('click', handleInstantActivity, true)
+    window.addEventListener('keydown', handleInstantActivity, true)
+
+    return () => {
+      window.removeEventListener('pointermove', handleContinuousActivity)
+      window.removeEventListener('wheel', handleContinuousActivity)
+      window.removeEventListener('touchstart', handleInstantActivity)
+      window.removeEventListener('click', handleInstantActivity, true)
+      window.removeEventListener('keydown', handleInstantActivity, true)
+    }
+  }, [item, isEditModalOpen])
 
   const speakerOptions = useMemo(() => {
     const names = new Set(item?.characters.map((character) => character.name) || [])
@@ -229,6 +394,10 @@ export default function VideoTrainingDetailPage() {
   useEffect(() => {
     setWordLookup(null)
   }, [activeCaption?.id])
+
+  useEffect(() => {
+    setSidebarPanelMode('captions')
+  }, [item?.id])
 
   const jumpToCaption = useCallback((caption: VideoCaption, shouldPlay = true) => {
     if (!videoRef.current) {
@@ -427,7 +596,8 @@ export default function VideoTrainingDetailPage() {
   const persistCaptionVocabulary = async (
     captionId: string,
     currentEntries: VocabularyEntry[],
-    nextEntries: VocabularyEntry[]
+    nextEntries: VocabularyEntry[],
+    options?: { suppressStatus?: boolean }
   ) => {
     if (!item || areVocabularyListsEqual(currentEntries, nextEntries)) {
       return
@@ -474,13 +644,19 @@ export default function VideoTrainingDetailPage() {
           }),
         }
       })
-      setStatus(null)
+      if (!options?.suppressStatus) {
+        setStatus(null)
+      }
     } catch (error) {
       setCaptionVocabulary((prev) => ({
         ...prev,
         [captionId]: currentEntries,
       }))
-      setStatus(error instanceof Error ? error.message : 'Save video vocabulary failed.')
+
+      if (!options?.suppressStatus) {
+        setStatus(error instanceof Error ? error.message : 'Save video vocabulary failed.')
+      }
+
       throw error
     }
   }
@@ -497,12 +673,42 @@ export default function VideoTrainingDetailPage() {
     await persistCaptionVocabulary(captionId, currentEntries, mergedEntries)
   }
 
-  const handleRemoveVideoVocabulary = async (captionId: string, entry: VocabularyEntry) => {
-    const currentEntries = captionVocabulary[captionId] || []
-    const entryKey = getVocabularyEntryKey(entry)
-    const nextEntries = currentEntries.filter((savedEntry) => getVocabularyEntryKey(savedEntry) !== entryKey)
+  const handleRemoveVideoVocabularyBookEntry = async (entryKey: string) => {
+    const captionUpdates = Object.entries(captionVocabulary)
+      .map(([captionId, currentEntries]) => ({
+        captionId,
+        currentEntries,
+        nextEntries: currentEntries.filter((entry) => getVocabularyEntryKey(entry) !== entryKey),
+      }))
+      .filter(({ currentEntries, nextEntries }) => currentEntries.length !== nextEntries.length)
 
-    await persistCaptionVocabulary(captionId, currentEntries, nextEntries)
+    if (captionUpdates.length === 0) {
+      return
+    }
+
+    setRemovingVocabularyKey(entryKey)
+
+    try {
+      const results = await Promise.allSettled(
+        captionUpdates.map(({ captionId, currentEntries, nextEntries }) => (
+          persistCaptionVocabulary(captionId, currentEntries, nextEntries, { suppressStatus: true })
+        ))
+      )
+      const failedCount = results.filter((result) => result.status === 'rejected').length
+
+      if (failedCount > 0) {
+        setStatus(
+          failedCount === captionUpdates.length
+            ? 'Delete video vocabulary failed.'
+            : `Deleted from ${captionUpdates.length - failedCount} captions, ${failedCount} failed.`
+        )
+        return
+      }
+
+      setStatus(null)
+    } finally {
+      setRemovingVocabularyKey((current) => (current === entryKey ? null : current))
+    }
   }
 
   const handleDeletePhraseNote = async (noteId: string) => {
@@ -596,27 +802,28 @@ export default function VideoTrainingDetailPage() {
   }
 
   const isImmersive = isWindowFullscreen || isDisplayFullscreen
+  const captionById = new Map(item.captions.map((caption) => [caption.id, caption] as const))
   const wordLookupSavedKeys = new Set(
     wordLookup ? (captionVocabulary[wordLookup.contextId] || []).map(getVocabularyEntryKey) : []
   )
-  const vocabularyPanelCaptionId = wordLookup?.contextId || activeCaption?.id || null
-  const vocabularyPanelCaption = vocabularyPanelCaptionId
-    ? item.captions.find((caption) => caption.id === vocabularyPanelCaptionId) || null
+  const activeVocabularyCaptionId = wordLookup?.contextId || activeCaption?.id || null
+  const activeVocabularyCaption = activeVocabularyCaptionId
+    ? captionById.get(activeVocabularyCaptionId) || null
     : null
-  const vocabularyPanelEntries = vocabularyPanelCaption
-    ? (captionVocabulary[vocabularyPanelCaption.id] || [])
-    : []
-  const vocabularyTotals = Object.values(captionVocabulary).reduce(
-    (summary, entries) => {
-      summary.total += entries.length
-      entries.forEach((entry) => summary.uniqueKeys.add(getVocabularyEntryKey(entry)))
-      return summary
-    },
-    {
-      total: 0,
-      uniqueKeys: new Set<string>(),
-    }
+  const vocabularyBookItems = buildVocabularyBook(
+    item.captions.map((caption) => ({
+      id: caption.id,
+      order: caption.order,
+      text: caption.enText,
+    })),
+    Object.fromEntries(
+      Object.entries(captionVocabulary).map(([captionId, entries]) => [
+        captionId,
+        { items: entries },
+      ])
+    )
   )
+  const vocabularyTotalCount = Object.values(captionVocabulary).reduce((total, entries) => total + entries.length, 0)
 
   return (
     <div
@@ -846,7 +1053,7 @@ export default function VideoTrainingDetailPage() {
             >
               &gt;
             </button>
-            <section style={{ flex: 0.9 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
+            <section className="shrink-0 border-b border-cyan-500/25 p-4">
               <div className="mb-3 h-28 rounded-md border border-cyan-500/20 bg-cover bg-center opacity-85" style={{ backgroundImage: `url("${getVideoCoverSrc(item.coverUrl)}")` }} />
               <div className="text-xs cyber-label text-cyan-400/70">{item.tag}</div>
               <h2 className="mt-1 text-lg font-semibold text-cyan-100">{item.sourceTitle || item.title}</h2>
@@ -869,176 +1076,317 @@ export default function VideoTrainingDetailPage() {
               </div>
             </section>
 
-            <section style={{ flex: 1.65 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm cyber-title text-cyan-300">CAPTIONS</h3>
-                <span className="font-mono text-xs text-cyan-300/60">{filteredCaptions.length}</span>
-              </div>
-              <div className="space-y-2">
-                {filteredCaptions.map((caption) => {
-                  const isActive = activeCaption?.id === caption.id
-
-                  return (
-                    <button
-                      key={caption.id}
-                      type="button"
-                      onClick={() => jumpToCaption(caption)}
-                      className={`w-full rounded-md border p-3 text-left transition-colors ${
-                        isActive
-                          ? 'border-cyan-300/65 bg-cyan-400/[0.12]'
-                          : 'border-cyan-500/18 bg-black/35 hover:border-cyan-400/40'
-                      }`}
-                    >
-                      <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-cyan-300/60">
-                        <span>{formatVideoTime(caption.startTime)}</span>
-                        <span>{caption.speaker || 'Line'}</span>
-                      </div>
-                      <div className="text-sm leading-6 text-cyan-50">{caption.enText}</div>
-                      {caption.zhText ? <div className="mt-1 text-xs leading-5 text-cyan-200/65">{caption.zhText}</div> : null}
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section style={{ flex: 1.05 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm cyber-title text-cyan-300">VOCABULARY BOOK</h3>
-                  <div className="mt-1 text-[11px] text-cyan-300/55">
-                    {vocabularyTotals.uniqueKeys.size} UNIQUE / {vocabularyTotals.total} TOTAL
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="relative min-h-0 flex-1 overflow-hidden">
+                <section
+                  id="video-sidebar-panel-captions"
+                  role="tabpanel"
+                  aria-labelledby="video-sidebar-tab-captions"
+                  aria-hidden={sidebarPanelMode !== 'captions'}
+                  hidden={sidebarPanelMode !== 'captions'}
+                  className="h-full overflow-y-auto p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm cyber-title text-cyan-300">CAPTIONS</h3>
+                    <span className="font-mono text-xs text-cyan-300/60">{filteredCaptions.length}</span>
                   </div>
-                </div>
-                {vocabularyPanelCaption ? (
-                  <button
-                    type="button"
-                    onClick={() => jumpToCaption(vocabularyPanelCaption, false)}
-                    className="rounded border border-cyan-500/25 px-2 py-1 text-[10px] text-cyan-300/70 transition-colors hover:border-cyan-300/60 hover:text-cyan-100"
-                    title={`Jump to caption #${vocabularyPanelCaption.order + 1}`}
-                  >
-                    #{vocabularyPanelCaption.order + 1}
-                  </button>
-                ) : null}
-              </div>
+                  <div className="space-y-2">
+                    {filteredCaptions.map((caption) => {
+                      const isActive = activeCaption?.id === caption.id
 
-              {vocabularyPanelCaption ? (
-                <>
-                  <div className="rounded-md border border-cyan-500/18 bg-black/35 p-3">
-                    <div className="text-[10px] cyber-label tracking-[0.2em] text-cyan-400/65">CURRENT CAPTION</div>
-                    <div className="mt-1 font-mono text-[11px] text-cyan-300/60">
-                      {formatVideoTime(vocabularyPanelCaption.startTime)} - {formatVideoTime(vocabularyPanelCaption.endTime)}
-                    </div>
-                    <div className="mt-2 text-sm leading-6 text-cyan-50">{vocabularyPanelCaption.enText}</div>
-                  </div>
-
-                  {vocabularyPanelEntries.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      {vocabularyPanelEntries.map((entry) => {
-                        const entryLabel = formatVocabularyEntry(entry)
-
-                        return (
-                          <div
-                            key={`${vocabularyPanelCaption.id}-${getVocabularyEntryKey(entry)}`}
-                            className="rounded-md border border-cyan-500/18 bg-black/35 p-3"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="break-words text-sm leading-6 text-cyan-50">{entryLabel}</div>
-                                {entry.phonetic ? (
-                                  <div className="mt-1 text-[11px] text-cyan-300/65">{entry.phonetic}</div>
-                                ) : null}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => void handleRemoveVideoVocabulary(vocabularyPanelCaption.id, entry)}
-                                className="shrink-0 text-[10px] text-red-300/78 transition-colors hover:text-red-200"
-                                aria-label={`Remove ${entryLabel}`}
-                                title={`Remove ${entryLabel}`}
-                              >
-                                DEL
-                              </button>
-                            </div>
+                      return (
+                        <button
+                          key={caption.id}
+                          type="button"
+                          onClick={() => jumpToCaption(caption)}
+                          className={`w-full rounded-md border p-3 text-left transition-colors ${
+                            isActive
+                              ? 'border-cyan-300/65 bg-cyan-400/[0.12]'
+                              : 'border-cyan-500/18 bg-black/35 hover:border-cyan-400/40'
+                          }`}
+                        >
+                          <div className="mb-1 flex items-center justify-between gap-2 text-[11px] text-cyan-300/60">
+                            <span>{formatVideoTime(caption.startTime)}</span>
+                            <span>{caption.speaker || 'Line'}</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div className="mt-3 rounded-md border border-dashed border-cyan-500/18 bg-black/25 px-3 py-4 text-sm leading-6 text-cyan-300/65">
-                      Select a word in the subtitle and add it to save it in this caption notebook.
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="rounded-md border border-dashed border-cyan-500/18 bg-black/25 px-3 py-4 text-sm leading-6 text-cyan-300/65">
-                  Play the video or jump to a caption to inspect its saved vocabulary.
-                </div>
-              )}
-            </section>
+                          <div className="text-sm leading-6 text-cyan-50">{caption.enText}</div>
+                          {caption.zhText ? <div className="mt-1 text-xs leading-5 text-cyan-200/65">{caption.zhText}</div> : null}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
 
-            <section style={{ flex: 1 }} className="min-h-0 overflow-y-auto p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm cyber-title text-cyan-300">PHRASE NOTES</h3>
-                <button
-                  type="button"
-                  onClick={handleDubbingAssessment}
-                  className="rounded border border-yellow-500/35 px-2 py-1 text-[10px] text-yellow-200"
+                <section
+                  id="video-sidebar-panel-vocabulary"
+                  role="tabpanel"
+                  aria-labelledby="video-sidebar-tab-vocabulary"
+                  aria-hidden={sidebarPanelMode !== 'vocabulary'}
+                  hidden={sidebarPanelMode !== 'vocabulary'}
+                  className="h-full overflow-y-auto p-4"
                 >
-                  DUBBING API
-                </button>
-              </div>
-              <div className="space-y-2">
-                <input
-                  value={phraseDraft}
-                  onChange={(event) => setPhraseDraft(event.target.value)}
-                  className="w-full rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                  placeholder="Phrase"
-                />
-                <textarea
-                  value={noteDraft}
-                  onChange={(event) => setNoteDraft(event.target.value)}
-                  rows={2}
-                  className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                  placeholder="Note"
-                />
-                <select
-                  value={selectedNoteCaptionId}
-                  onChange={(event) => setSelectedNoteCaptionId(event.target.value)}
-                  className="w-full rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
-                >
-                  <option value="">No caption link</option>
-                  {item.captions.map((caption) => (
-                    <option key={caption.id} value={caption.id}>
-                      #{caption.order + 1} {caption.enText.slice(0, 48)}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleSavePhraseNote}
-                  disabled={isSavingNote || !phraseDraft.trim()}
-                  className="w-full rounded-md border border-cyan-500/45 bg-cyan-500/[0.1] px-3 py-2 text-xs text-cyan-200 transition-colors hover:border-cyan-300/70 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {isSavingNote ? 'SAVING...' : 'SAVE NOTE'}
-                </button>
-              </div>
-              <div className="mt-4 space-y-2">
-                {item.phraseNotes.map((note) => (
-                  <div key={note.id} className="rounded-md border border-cyan-500/18 bg-black/35 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="font-semibold text-cyan-100">{note.phrase}</div>
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm cyber-title text-cyan-300">VOCABULARY BOOK</h3>
+                      <div className="mt-1 text-[11px] text-cyan-300/55">
+                        {vocabularyBookItems.length} UNIQUE / {vocabularyTotalCount} TOTAL
+                      </div>
+                    </div>
+                    {activeVocabularyCaption ? (
                       <button
                         type="button"
-                        onClick={() => void handleDeletePhraseNote(note.id)}
-                        className="text-[10px] text-red-300/80 hover:text-red-200"
+                        onClick={() => jumpToCaption(activeVocabularyCaption, false)}
+                        className="rounded border border-cyan-500/25 px-2 py-1 text-[10px] text-cyan-300/70 transition-colors hover:border-cyan-300/60 hover:text-cyan-100"
+                        title={`Jump to caption #${activeVocabularyCaption.order + 1}`}
                       >
-                        DEL
+                        #{activeVocabularyCaption.order + 1}
                       </button>
-                    </div>
-                    {note.note ? <div className="mt-1 text-sm leading-6 text-cyan-100/70">{note.note}</div> : null}
+                    ) : null}
                   </div>
-                ))}
+
+                  {vocabularyBookItems.length > 0 ? (
+                    <>
+                      {activeVocabularyCaption ? (
+                        <div className="rounded-md border border-cyan-500/18 bg-black/35 px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-[10px] cyber-label tracking-[0.2em] text-cyan-400/65">
+                              ACTIVE CAPTION
+                            </div>
+                            <div className="font-mono text-[11px] text-cyan-300/60">
+                              {formatVideoTime(activeVocabularyCaption.startTime)} - {formatVideoTime(activeVocabularyCaption.endTime)}
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 space-y-2">
+                        {vocabularyBookItems.map((bookItem) => {
+                          const isRemoving = removingVocabularyKey === bookItem.normalizedKey
+                          const isFromActiveCaption = activeVocabularyCaption
+                            ? bookItem.sentences.some((source) => source.sentenceId === activeVocabularyCaption.id)
+                            : false
+
+                          return (
+                            <div
+                              key={bookItem.normalizedKey}
+                              className={`rounded-md border bg-black/35 p-3 ${
+                                isFromActiveCaption
+                                  ? 'border-cyan-300/35 shadow-[0_0_16px_rgba(34,211,238,0.08)]'
+                                  : 'border-cyan-500/18'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="break-words text-base font-semibold leading-6 text-cyan-50">
+                                    {bookItem.headword}
+                                  </div>
+                                  {bookItem.phonetic ? (
+                                    <div className="mt-1 text-[11px] text-cyan-300/65">{bookItem.phonetic}</div>
+                                  ) : null}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRemoveVideoVocabularyBookEntry(bookItem.normalizedKey)}
+                                  disabled={isRemoving}
+                                  className="shrink-0 rounded border border-red-500/28 px-2 py-1 text-[10px] text-red-300/78 transition-colors hover:border-red-400/55 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-45"
+                                  aria-label={`Remove ${bookItem.headword}`}
+                                  title={`Remove ${bookItem.headword}`}
+                                >
+                                  {isRemoving ? '...' : 'DEL'}
+                                </button>
+                              </div>
+
+                              {bookItem.senses.length > 0 ? (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {bookItem.senses.map((sense, index) => (
+                                    <div
+                                      key={`${bookItem.normalizedKey}-${sense.pos}-${sense.meaning}-${index}`}
+                                      className="rounded-md border border-cyan-500/14 bg-cyan-950/18 px-2.5 py-1.5 text-xs leading-5 text-cyan-100/88"
+                                    >
+                                      <span className="mr-1.5 font-mono text-[10px] text-cyan-300/65">{sense.pos}</span>
+                                      <span>{sense.meaning}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              <div className="mt-3 flex items-center justify-between gap-3 text-[10px]">
+                                <div className="font-mono tracking-[0.18em] text-cyan-300/58">
+                                  {bookItem.sentences.length} CAPTIONS / {bookItem.count} SAVES
+                                </div>
+                                {isFromActiveCaption ? (
+                                  <div className="cyber-label tracking-[0.18em] text-cyan-200/72">ACTIVE</div>
+                                ) : null}
+                              </div>
+
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {bookItem.sentences.map((source) => {
+                                  const sourceCaption = captionById.get(source.sentenceId)
+                                  const isActiveSource = source.sentenceId === activeVocabularyCaption?.id
+
+                                  return (
+                                    <button
+                                      key={`${bookItem.normalizedKey}-${source.sentenceId}`}
+                                      type="button"
+                                      onClick={() => {
+                                        if (sourceCaption) {
+                                          jumpToCaption(sourceCaption, false)
+                                        }
+                                      }}
+                                      className={`rounded border px-2 py-1 text-[10px] transition-colors ${
+                                        isActiveSource
+                                          ? 'border-cyan-300/60 bg-cyan-400/[0.14] text-cyan-100'
+                                          : 'border-cyan-500/20 text-cyan-300/68 hover:border-cyan-300/60 hover:text-cyan-100'
+                                      }`}
+                                      title={source.sentenceText}
+                                    >
+                                      #{source.sentenceOrder}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="rounded-md border border-dashed border-cyan-500/18 bg-black/25 px-3 py-4 text-sm leading-6 text-cyan-300/65">
+                      Select a word in the subtitle and add it to build this vocabulary book.
+                    </div>
+                  )}
+                </section>
+
+                <section
+                  id="video-sidebar-panel-phrases"
+                  role="tabpanel"
+                  aria-labelledby="video-sidebar-tab-phrases"
+                  aria-hidden={sidebarPanelMode !== 'phrases'}
+                  hidden={sidebarPanelMode !== 'phrases'}
+                  className="h-full overflow-y-auto p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm cyber-title text-cyan-300">PHRASE NOTES</h3>
+                    <button
+                      type="button"
+                      onClick={handleDubbingAssessment}
+                      className="rounded border border-yellow-500/35 px-2 py-1 text-[10px] text-yellow-200"
+                    >
+                      DUBBING API
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <input
+                      value={phraseDraft}
+                      onChange={(event) => setPhraseDraft(event.target.value)}
+                      className="w-full rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                      placeholder="Phrase"
+                    />
+                    <textarea
+                      value={noteDraft}
+                      onChange={(event) => setNoteDraft(event.target.value)}
+                      rows={2}
+                      className="w-full resize-y rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                      placeholder="Note"
+                    />
+                    <select
+                      value={selectedNoteCaptionId}
+                      onChange={(event) => setSelectedNoteCaptionId(event.target.value)}
+                      className="w-full rounded-md border border-cyan-500/25 bg-black/45 px-3 py-2 text-sm text-gray-100 focus:border-cyan-300/60 focus:outline-none"
+                    >
+                      <option value="">No caption link</option>
+                      {item.captions.map((caption) => (
+                        <option key={caption.id} value={caption.id}>
+                          #{caption.order + 1} {caption.enText.slice(0, 48)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleSavePhraseNote}
+                      disabled={isSavingNote || !phraseDraft.trim()}
+                      className="w-full rounded-md border border-cyan-500/45 bg-cyan-500/[0.1] px-3 py-2 text-xs text-cyan-200 transition-colors hover:border-cyan-300/70 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {isSavingNote ? 'SAVING...' : 'SAVE NOTE'}
+                    </button>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    {item.phraseNotes.map((note) => (
+                      <div key={note.id} className="rounded-md border border-cyan-500/18 bg-black/35 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="font-semibold text-cyan-100">{note.phrase}</div>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeletePhraseNote(note.id)}
+                            className="text-[10px] text-red-300/80 hover:text-red-200"
+                          >
+                            DEL
+                          </button>
+                        </div>
+                        {note.note ? <div className="mt-1 text-sm leading-6 text-cyan-100/70">{note.note}</div> : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
-            </section>
+
+              <div className="shrink-0 border-t border-cyan-500/25 p-3">
+                <div
+                  role="tablist"
+                  aria-label="Video sidebar panels"
+                  className="flex flex-nowrap items-center gap-2"
+                >
+                  <button
+                    id="video-sidebar-tab-captions"
+                    type="button"
+                    role="tab"
+                    aria-selected={sidebarPanelMode === 'captions'}
+                    aria-controls="video-sidebar-panel-captions"
+                    onClick={() => setSidebarPanelMode('captions')}
+                    className={`flex min-w-0 flex-1 items-center justify-center rounded-md border px-2 py-2 text-[10px] font-mono tracking-[0.16em] transition-colors ${
+                      sidebarPanelMode === 'captions'
+                        ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]'
+                        : 'border-cyan-500/25 bg-black/25 text-cyan-300/72 hover:border-cyan-400/45 hover:text-cyan-100'
+                    }`}
+                  >
+                    <span className="sm:hidden">LINES</span>
+                    <span className="hidden sm:inline">CAPTIONS</span>
+                  </button>
+                  <button
+                    id="video-sidebar-tab-vocabulary"
+                    type="button"
+                    role="tab"
+                    aria-selected={sidebarPanelMode === 'vocabulary'}
+                    aria-controls="video-sidebar-panel-vocabulary"
+                    onClick={() => setSidebarPanelMode('vocabulary')}
+                    className={`flex min-w-0 flex-1 items-center justify-center rounded-md border px-2 py-2 text-[10px] font-mono tracking-[0.16em] transition-colors ${
+                      sidebarPanelMode === 'vocabulary'
+                        ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]'
+                        : 'border-cyan-500/25 bg-black/25 text-cyan-300/72 hover:border-cyan-400/45 hover:text-cyan-100'
+                    }`}
+                  >
+                    <span className="sm:hidden">VOCAB</span>
+                    <span className="hidden sm:inline">VOCABULARY</span>
+                  </button>
+                  <button
+                    id="video-sidebar-tab-phrases"
+                    type="button"
+                    role="tab"
+                    aria-selected={sidebarPanelMode === 'phrases'}
+                    aria-controls="video-sidebar-panel-phrases"
+                    onClick={() => setSidebarPanelMode('phrases')}
+                    className={`flex min-w-0 flex-1 items-center justify-center rounded-md border px-2 py-2 text-[10px] font-mono tracking-[0.16em] transition-colors ${
+                      sidebarPanelMode === 'phrases'
+                        ? 'border-cyan-300/70 bg-cyan-400/[0.14] text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.12)]'
+                        : 'border-cyan-500/25 bg-black/25 text-cyan-300/72 hover:border-cyan-400/45 hover:text-cyan-100'
+                    }`}
+                  >
+                    <span className="sm:hidden">PHRASES</span>
+                    <span className="hidden sm:inline">PHRASE NOTES</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </aside>
         ) : null}
       </div>

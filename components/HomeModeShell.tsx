@@ -22,6 +22,37 @@ const MODE_LINKS = [
 export default function HomeModeShell({ mode, isAdmin = false, children }: HomeModeShellProps) {
   const uploadHref = mode === 'video' ? '/video/upload' : '/upload'
   const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : 'UPLOAD LISTENING'
+  const viewportStyle = mode === 'video'
+    ? {
+        position: 'relative' as const,
+        zIndex: 10,
+        paddingTop: 'clamp(6.4rem, 12vh, 8rem)',
+        paddingBottom: 'clamp(8.5rem, 18vh, 11rem)',
+        paddingLeft: '1.5rem',
+        paddingRight: '1.5rem',
+        maxHeight: '86vh',
+        overflowY: 'auto' as const,
+        overflowX: 'visible' as const,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: 'min(92vw, 1480px)',
+        maxWidth: '1480px',
+      }
+    : {
+        position: 'relative' as const,
+        zIndex: 10,
+        paddingTop: 'clamp(6.4rem, 12vh, 8rem)',
+        paddingBottom: '14vh',
+        paddingLeft: '2rem',
+        paddingRight: '2rem',
+        maxHeight: '84vh',
+        overflowY: 'auto' as const,
+        overflowX: 'visible' as const,
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: '75%',
+        maxWidth: '1100px',
+      }
 
   return (
     <>
@@ -30,21 +61,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
       <HomeUserWatch key={mode} />
       <div
         className="container mx-auto py-8 cockpit-viewport"
-      style={{
-        position: 'relative',
-        zIndex: 10,
-        paddingTop: 'clamp(6.4rem, 12vh, 8rem)',
-        paddingBottom: '14vh',
-        paddingLeft: '2rem',
-        paddingRight: '2rem',
-        maxHeight: '84vh',
-        overflowY: 'auto',
-        overflowX: 'visible',
-        marginLeft: 'auto',
-        marginRight: 'auto',
-        width: '75%',
-        maxWidth: '1100px',
-      }}
+      style={viewportStyle}
     >
       <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap items-center gap-2">

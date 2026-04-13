@@ -84,6 +84,7 @@ export default function TopActionNav({
               buttonClassName={actionClassName}
               panelPlacement={accountMenuPlacement}
               iconOnly={isIconOnly}
+              panelVariant="watch"
             />
           ) : null}
           {isAdmin ? (

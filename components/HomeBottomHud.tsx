@@ -1,6 +1,6 @@
 export default function HomeBottomHud() {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-20 w-full overflow-hidden px-4 py-2 pb-3 md:px-8 md:pb-5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] w-full overflow-visible">
       <div className="absolute bottom-0 inset-x-0 h-1.5 w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent blur-[2px]" />
       <div className="absolute bottom-[2px] inset-x-1/4 h-px w-2/4 bg-gradient-to-r from-cyan-900/0 via-cyan-400/60 to-cyan-900/0 shadow-[0_-2px_14px_rgba(34,211,238,0.5)]" />
       <div className="home-shuttle-dock hidden md:block" aria-hidden="true">
