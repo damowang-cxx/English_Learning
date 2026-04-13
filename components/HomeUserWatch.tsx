@@ -169,6 +169,8 @@ export default function HomeUserWatch({ placement = 'bottom' }: HomeUserWatchPro
   const isPanelMounted = isOpen || isClosing
   const isTopBridgePlacement = placement === 'top-bridge'
   const isBottomKeelPlacement = placement === 'bottom-keel'
+  const shouldHideBottomKeelDock = isBottomKeelPlacement && isPanelMounted
+  const shouldRenderDock = !shouldHideBottomKeelDock
   let containerClassName =
     'home-user-command-anchor pointer-events-none fixed bottom-3 right-4 z-[96] md:bottom-4 md:right-6'
   let dockWrapClassName = 'pointer-events-auto relative flex items-end justify-end'
@@ -198,7 +200,10 @@ export default function HomeUserWatch({ placement = 'bottom' }: HomeUserWatchPro
   }
 
   return (
-    <div ref={containerRef} className={containerClassName}>
+    <div
+      ref={containerRef}
+      className={`${containerClassName}${shouldHideBottomKeelDock ? ' is-panel-mounted' : ''}`}
+    >
       <div className={dockWrapClassName}>
         {isPanelMounted ? (
           <div className={panelClassName}>
@@ -216,54 +221,58 @@ export default function HomeUserWatch({ placement = 'bottom' }: HomeUserWatchPro
           </div>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => {
-            if (isOpen) {
-              closePanel()
-              return
-            }
+        {shouldRenderDock ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (isOpen) {
+                closePanel()
+                return
+              }
 
-            openPanel()
-          }}
-          className={`${FUTURE_TECH_FONT_CLASSNAME} home-user-command-dock ${isDockActive ? 'is-active' : ''} ${
-            isClosing ? 'is-closing' : ''
-          } ${isBottomKeelPlacement ? 'home-user-command-dock--bottom-keel' : ''}`}
-          aria-expanded={isOpen}
-          aria-haspopup="dialog"
-          aria-label="Open personal profile console"
-        >
-          <span className="home-user-command-dock__halo" aria-hidden="true" />
-          <span className="home-user-command-dock__frame" aria-hidden="true" />
-          <span className="home-user-command-dock__slab" aria-hidden="true">
-            <span className="home-user-command-dock__content">
-              <span className="home-user-command-dock__name">{dockDisplayName}</span>
-              <span className="home-user-command-dock__status-group">
-                <span className="home-energy-battery home-energy-battery--dock" aria-hidden="true">
-                  <span className="home-energy-battery__segment" />
-                  <span className="home-energy-battery__segment" />
-                  <span className="home-energy-battery__segment" />
-                  <span className="home-energy-battery__segment" />
+              openPanel()
+            }}
+            className={`${FUTURE_TECH_FONT_CLASSNAME} home-user-command-dock ${
+              isDockActive ? 'is-active' : ''
+            } ${isClosing ? 'is-closing' : ''} ${
+              isBottomKeelPlacement ? 'home-user-command-dock--bottom-keel' : ''
+            }`}
+            aria-expanded={isOpen}
+            aria-haspopup="dialog"
+            aria-label="Open personal profile console"
+          >
+            <span className="home-user-command-dock__halo" aria-hidden="true" />
+            <span className="home-user-command-dock__frame" aria-hidden="true" />
+            <span className="home-user-command-dock__slab" aria-hidden="true">
+              <span className="home-user-command-dock__content">
+                <span className="home-user-command-dock__name">{dockDisplayName}</span>
+                <span className="home-user-command-dock__status-group">
+                  <span className="home-energy-battery home-energy-battery--dock" aria-hidden="true">
+                    <span className="home-energy-battery__segment" />
+                    <span className="home-energy-battery__segment" />
+                    <span className="home-energy-battery__segment" />
+                    <span className="home-energy-battery__segment" />
+                  </span>
+                  <span className="home-user-command-dock__status-text">{dockStatus}</span>
                 </span>
-                <span className="home-user-command-dock__status-text">{dockStatus}</span>
+              </span>
+              <span className="home-user-command-dock__avatar-shell">
+                {dockAvatarSrc ? (
+                  <Image
+                    src={dockAvatarSrc}
+                    alt={dockDisplayName}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="home-user-command-dock__avatar-fallback">{dockGlyph}</span>
+                )}
               </span>
             </span>
-            <span className="home-user-command-dock__avatar-shell">
-              {dockAvatarSrc ? (
-                <Image
-                  src={dockAvatarSrc}
-                  alt={dockDisplayName}
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <span className="home-user-command-dock__avatar-fallback">{dockGlyph}</span>
-              )}
-            </span>
-          </span>
-        </button>
+          </button>
+        ) : null}
       </div>
     </div>
   )

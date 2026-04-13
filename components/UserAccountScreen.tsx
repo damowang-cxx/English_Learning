@@ -145,15 +145,23 @@ function StatTile({ label, value, variant = 'menu' }: { label: string; value: st
   const isWatch = variant === 'watch'
 
   return (
-    <div className="user-account-screen__stat-tile rounded-lg border px-3 py-3">
+    <div
+      className={`user-account-screen__stat-tile ${
+        isWatch ? 'user-account-screen__stat-tile--watch' : ''
+      } rounded-lg border px-3 py-3`}
+    >
       <div
-        className={`text-[10px] font-mono tracking-[0.18em] ${
+        className={`user-account-screen__stat-label text-[10px] font-mono tracking-[0.18em] ${
           isWatch ? 'text-[11px] leading-[1.2] tracking-[0.14em] text-fuchsia-200/84' : 'text-cyan-400/70'
         }`}
       >
         {label}
       </div>
-      <div className={`mt-2 font-mono ${isWatch ? 'text-[1.2rem] leading-[1.12] text-violet-50' : 'text-sm text-cyan-100'}`}>
+      <div
+        className={`user-account-screen__stat-value mt-2 font-mono ${
+          isWatch ? 'text-[1.2rem] leading-[1.12] text-violet-50' : 'text-sm text-cyan-100'
+        }`}
+      >
         {value}
       </div>
     </div>

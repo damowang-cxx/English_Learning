@@ -1,9 +1,11 @@
+import HomeCockpitChronometer from '@/components/HomeCockpitChronometer'
+
 const SIDE_TICKS = Array.from({ length: 7 }, (_, index) => index)
 const SPEED_LINES = Array.from({ length: 5 }, (_, index) => index)
 
 export default function HomeCockpitFrame() {
   return (
-    <div className="home-cockpit-frame fixed inset-0 z-[4] pointer-events-none" aria-hidden="true">
+    <div className="home-cockpit-frame fixed inset-0 z-[4] pointer-events-none">
       <span className="home-cockpit-frame__backwash" />
       <span className="home-cockpit-frame__top-glow" />
 
@@ -11,6 +13,7 @@ export default function HomeCockpitFrame() {
         <span className="home-cockpit-frame__top-core" />
         <span className="home-cockpit-frame__top-runway home-cockpit-frame__top-runway--left" />
         <span className="home-cockpit-frame__top-runway home-cockpit-frame__top-runway--right" />
+        <HomeCockpitChronometer />
       </div>
 
       <span className="home-cockpit-frame__corner home-cockpit-frame__corner--tl" />
