@@ -6172,3 +6172,1466 @@ input[type="checkbox"]:checked {
     gap: 0.2rem;
   }
 }
+
+/* Home full cockpit frame */
+.home-cockpit-frame {
+  --home-cockpit-cyan: 34, 211, 238;
+  --home-cockpit-cyan-hot: 103, 232, 249;
+  --home-cockpit-magenta: 236, 72, 153;
+  --home-cockpit-green: 163, 230, 53;
+  --home-cockpit-amber: 251, 191, 36;
+  --home-cockpit-white: 245, 253, 255;
+  --home-cockpit-ink: 2, 8, 17;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.home-cockpit-frame::before,
+.home-cockpit-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.home-cockpit-frame::before {
+  inset: -8vh -8vw;
+  background:
+    linear-gradient(112deg, transparent 6%, rgba(var(--home-cockpit-cyan), 0.055) 17%, transparent 29%, rgba(var(--home-cockpit-magenta), 0.05) 43%, transparent 58%, rgba(var(--home-cockpit-green), 0.036) 72%, transparent 86%),
+    radial-gradient(ellipse 44% 24% at 14% 68%, rgba(var(--home-cockpit-cyan), 0.12), transparent 72%),
+    radial-gradient(ellipse 38% 22% at 83% 34%, rgba(var(--home-cockpit-magenta), 0.1), transparent 74%),
+    radial-gradient(ellipse 32% 18% at 62% 78%, rgba(var(--home-cockpit-amber), 0.048), transparent 70%);
+  filter: blur(24px);
+  opacity: 0.58;
+  transform: translate3d(0, 0, 0);
+  mask-image: radial-gradient(ellipse at 50% 54%, black 0%, rgba(0, 0, 0, 0.74) 58%, transparent 100%);
+  animation: home-cockpit-neon-haze-drift 22s ease-in-out infinite alternate;
+}
+
+.home-cockpit-frame::after {
+  inset: 7vh 4vw 10vh;
+  background:
+    linear-gradient(78deg, transparent 0%, rgba(var(--home-cockpit-cyan-hot), 0.032) 18%, transparent 36%, rgba(var(--home-cockpit-magenta), 0.034) 52%, transparent 70%, rgba(var(--home-cockpit-green), 0.025) 86%, transparent 100%),
+    conic-gradient(from 218deg at 50% 52%, transparent 0deg, rgba(var(--home-cockpit-cyan), 0.04) 34deg, transparent 78deg, rgba(var(--home-cockpit-magenta), 0.036) 138deg, transparent 196deg, rgba(var(--home-cockpit-amber), 0.028) 252deg, transparent 330deg);
+  filter: blur(34px);
+  opacity: 0.34;
+  mask-image: linear-gradient(180deg, transparent 0%, black 18%, rgba(0, 0, 0, 0.82) 72%, transparent 100%);
+  animation: home-cockpit-neon-haze-breathe 18s ease-in-out infinite;
+}
+
+.home-cockpit-frame span {
+  position: absolute;
+}
+
+.home-cockpit-frame__backwash {
+  inset: -4rem -8vw auto;
+  height: clamp(11rem, 22vh, 17rem);
+  background:
+    radial-gradient(ellipse at 72% 22%, rgba(var(--home-cockpit-magenta), 0.26), transparent 44%),
+    radial-gradient(ellipse at 30% 28%, rgba(var(--home-cockpit-cyan), 0.28), transparent 44%),
+    radial-gradient(ellipse at 50% 58%, rgba(var(--home-cockpit-white), 0.1), transparent 34%),
+    linear-gradient(90deg, transparent, rgba(var(--home-cockpit-cyan), 0.11), rgba(var(--home-cockpit-magenta), 0.1), transparent);
+  filter: blur(18px);
+  opacity: 0.72;
+  mask-image: linear-gradient(180deg, black 0%, black 54%, transparent 100%);
+  animation: home-cockpit-glow-drift 14s ease-in-out infinite alternate;
+}
+
+.home-cockpit-frame__top-glow {
+  top: 0;
+  left: 8vw;
+  right: 8vw;
+  height: 5.2rem;
+  background:
+    linear-gradient(90deg, transparent, rgba(var(--home-cockpit-cyan), 0.2) 24%, rgba(var(--home-cockpit-white), 0.24) 50%, rgba(var(--home-cockpit-magenta), 0.18) 76%, transparent),
+    repeating-linear-gradient(90deg, transparent 0 3.2rem, rgba(var(--home-cockpit-green), 0.08) 3.2rem 3.28rem, transparent 3.28rem 5.6rem);
+  filter: blur(0.2px);
+  opacity: 0.72;
+  mask-image: linear-gradient(180deg, black 0%, black 48%, transparent 100%);
+}
+
+.home-cockpit-frame__top-beam {
+  position: absolute;
+  top: 0.18rem;
+  left: clamp(1rem, 7vw, 6.2rem);
+  right: clamp(1rem, 7vw, 6.2rem);
+  height: clamp(3.9rem, 6.6vw, 5.25rem);
+  clip-path: polygon(0 0, 31% 0, 35% 18%, 65% 18%, 69% 0, 100% 0, 100% 48%, 90% 86%, 62% 100%, 38% 100%, 10% 86%, 0 48%);
+  border-top: 2px solid rgba(var(--home-cockpit-cyan-hot), 0.34);
+  border-bottom: 1px solid rgba(var(--home-cockpit-magenta), 0.22);
+  background:
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.14), transparent 20%, transparent 80%, rgba(var(--home-cockpit-magenta), 0.13)),
+    linear-gradient(180deg, rgba(var(--home-cockpit-white), 0.07), rgba(var(--home-cockpit-ink), 0.1) 54%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--home-cockpit-white), 0.1),
+    inset 0 -1px 0 rgba(var(--home-cockpit-cyan), 0.11),
+    0 0 26px rgba(var(--home-cockpit-cyan), 0.1);
+}
+
+.home-cockpit-frame__top-core {
+  left: 21%;
+  right: 21%;
+  top: 0.6rem;
+  height: 0.48rem;
+  clip-path: polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%);
+  background:
+    linear-gradient(90deg, transparent, rgba(var(--home-cockpit-cyan), 0.6) 23%, rgba(var(--home-cockpit-white), 0.78) 50%, rgba(var(--home-cockpit-magenta), 0.52) 77%, transparent),
+    repeating-linear-gradient(90deg, transparent 0 1.7rem, rgba(var(--home-cockpit-green), 0.3) 1.7rem 1.76rem, transparent 1.76rem 3.6rem);
+  box-shadow:
+    0 0 12px rgba(var(--home-cockpit-cyan), 0.22),
+    0 0 18px rgba(var(--home-cockpit-magenta), 0.14);
+  animation: home-cockpit-soft-pulse 7.2s ease-in-out infinite;
+}
+
+.home-cockpit-frame__top-runway {
+  top: 1.64rem;
+  width: min(28vw, 18rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--home-cockpit-white), 0.72), rgba(var(--home-cockpit-cyan), 0.26), transparent);
+  box-shadow: 0 0 12px rgba(var(--home-cockpit-cyan), 0.18);
+}
+
+.home-cockpit-frame__top-runway--left {
+  left: 2.5%;
+}
+
+.home-cockpit-frame__top-runway--right {
+  right: 2.5%;
+  background: linear-gradient(90deg, transparent, rgba(var(--home-cockpit-magenta), 0.34), rgba(var(--home-cockpit-white), 0.7), transparent);
+}
+
+.home-cockpit-frame__corner {
+  width: clamp(2.8rem, 4.8vw, 4.6rem);
+  height: clamp(2.8rem, 4.8vw, 4.6rem);
+  opacity: 0.92;
+  filter: drop-shadow(0 0 10px rgba(var(--home-cockpit-cyan), 0.18));
+}
+
+.home-cockpit-frame__corner--tl {
+  top: 1.05rem;
+  left: 1.1rem;
+  border-top: 2px solid rgba(var(--home-cockpit-cyan-hot), 0.48);
+  border-left: 2px solid rgba(var(--home-cockpit-cyan), 0.34);
+  clip-path: polygon(0 0, 100% 0, 100% 22%, 24% 22%, 24% 100%, 0 100%);
+}
+
+.home-cockpit-frame__corner--tr {
+  top: 1.05rem;
+  right: 1.1rem;
+  border-top: 2px solid rgba(var(--home-cockpit-magenta), 0.46);
+  border-right: 2px solid rgba(var(--home-cockpit-cyan-hot), 0.34);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 76% 100%, 76% 22%, 0 22%);
+}
+
+.home-cockpit-frame__corner--bl {
+  bottom: 1.15rem;
+  left: 1.15rem;
+  border-bottom: 2px solid rgba(var(--home-cockpit-cyan), 0.42);
+  border-left: 2px solid rgba(var(--home-cockpit-green), 0.26);
+  clip-path: polygon(0 0, 24% 0, 24% 78%, 100% 78%, 100% 100%, 0 100%);
+}
+
+.home-cockpit-frame__corner--br {
+  right: 1.15rem;
+  bottom: 1.15rem;
+  border-right: 2px solid rgba(var(--home-cockpit-magenta), 0.38);
+  border-bottom: 2px solid rgba(var(--home-cockpit-amber), 0.32);
+  clip-path: polygon(76% 0, 100% 0, 100% 100%, 0 100%, 0 78%, 76% 78%);
+}
+
+.home-cockpit-frame__side {
+  position: absolute;
+  top: clamp(4.8rem, 10vh, 6.8rem);
+  bottom: clamp(5.1rem, 10vh, 7.2rem);
+  width: clamp(4.4rem, 7.2vw, 7.1rem);
+  opacity: 0.86;
+}
+
+.home-cockpit-frame__side--left {
+  left: 0.35rem;
+}
+
+.home-cockpit-frame__side--right {
+  right: 0.35rem;
+}
+
+.home-cockpit-frame__side-shell {
+  inset: 0;
+  clip-path: polygon(0 0, 76% 6%, 100% 18%, 78% 50%, 100% 82%, 76% 94%, 0 100%);
+  border-left: 2px solid rgba(var(--home-cockpit-cyan-hot), 0.44);
+  background:
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.2), rgba(var(--home-cockpit-ink), 0.02) 62%, transparent),
+    linear-gradient(180deg, transparent, rgba(var(--home-cockpit-cyan), 0.08) 18%, transparent 50%, rgba(var(--home-cockpit-green), 0.06) 82%, transparent);
+  box-shadow:
+    inset 2px 0 0 rgba(var(--home-cockpit-white), 0.1),
+    inset 9px 0 22px rgba(var(--home-cockpit-cyan), 0.08),
+    0 0 20px rgba(var(--home-cockpit-cyan), 0.1);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-shell {
+  clip-path: polygon(24% 6%, 100% 0, 100% 100%, 24% 94%, 0 82%, 22% 50%, 0 18%);
+  border-left: none;
+  border-right: 2px solid rgba(var(--home-cockpit-magenta), 0.42);
+  background:
+    linear-gradient(270deg, rgba(var(--home-cockpit-magenta), 0.18), rgba(var(--home-cockpit-ink), 0.02) 62%, transparent),
+    linear-gradient(180deg, transparent, rgba(var(--home-cockpit-magenta), 0.08) 18%, transparent 50%, rgba(var(--home-cockpit-amber), 0.055) 82%, transparent);
+  box-shadow:
+    inset -2px 0 0 rgba(var(--home-cockpit-white), 0.08),
+    inset -9px 0 22px rgba(var(--home-cockpit-magenta), 0.08),
+    0 0 20px rgba(var(--home-cockpit-magenta), 0.09);
+}
+
+.home-cockpit-frame__side-inner {
+  top: 8%;
+  bottom: 8%;
+  left: 1.05rem;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(var(--home-cockpit-white), 0.56), rgba(var(--home-cockpit-cyan), 0.22), transparent);
+  box-shadow: 0 0 10px rgba(var(--home-cockpit-cyan), 0.22);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-inner {
+  right: 1.05rem;
+  left: auto;
+  background: linear-gradient(180deg, transparent, rgba(var(--home-cockpit-white), 0.5), rgba(var(--home-cockpit-magenta), 0.25), transparent);
+}
+
+.home-cockpit-frame__side-valve {
+  top: 45%;
+  left: 0.58rem;
+  width: clamp(2rem, 3vw, 3.1rem);
+  height: 2.1rem;
+  clip-path: polygon(0 0, 76% 0, 100% 50%, 76% 100%, 0 100%, 12% 50%);
+  border: 1px solid rgba(var(--home-cockpit-cyan-hot), 0.25);
+  background:
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.16), transparent),
+    repeating-linear-gradient(0deg, transparent 0 0.46rem, rgba(var(--home-cockpit-green), 0.14) 0.46rem 0.52rem);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-valve {
+  right: 0.58rem;
+  left: auto;
+  clip-path: polygon(24% 0, 100% 0, 88% 50%, 100% 100%, 24% 100%, 0 50%);
+  border-color: rgba(var(--home-cockpit-magenta), 0.26);
+  background:
+    linear-gradient(270deg, rgba(var(--home-cockpit-magenta), 0.16), transparent),
+    repeating-linear-gradient(0deg, transparent 0 0.46rem, rgba(var(--home-cockpit-amber), 0.13) 0.46rem 0.52rem);
+}
+
+.home-cockpit-frame__side-anchor {
+  left: 0.74rem;
+  width: 1.8rem;
+  height: 0.36rem;
+  background: linear-gradient(90deg, rgba(var(--home-cockpit-white), 0.72), rgba(var(--home-cockpit-cyan), 0.28), transparent);
+  box-shadow: 0 0 12px rgba(var(--home-cockpit-cyan), 0.18);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-anchor {
+  right: 0.74rem;
+  left: auto;
+  background: linear-gradient(270deg, rgba(var(--home-cockpit-white), 0.7), rgba(var(--home-cockpit-magenta), 0.3), transparent);
+}
+
+.home-cockpit-frame__side-anchor--top {
+  top: 12%;
+}
+
+.home-cockpit-frame__side-anchor--bottom {
+  bottom: 12%;
+}
+
+.home-cockpit-frame__tick-bank {
+  top: 18%;
+  bottom: 18%;
+  left: 1.86rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__tick-bank {
+  right: 1.86rem;
+  left: auto;
+}
+
+.home-cockpit-frame__tick {
+  position: relative;
+  display: block;
+  width: 1.2rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(var(--home-cockpit-green), 0.68), transparent);
+  box-shadow: 0 0 8px rgba(var(--home-cockpit-green), 0.16);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__tick {
+  background: linear-gradient(270deg, rgba(var(--home-cockpit-amber), 0.58), transparent);
+  box-shadow: 0 0 8px rgba(var(--home-cockpit-amber), 0.14);
+}
+
+.home-cockpit-frame__speed-field {
+  top: 3%;
+  bottom: 3%;
+  left: calc(100% - 0.1rem);
+  width: clamp(12rem, 22vw, 24rem);
+  opacity: 0.34;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.55) 52%, transparent 100%);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__speed-field {
+  right: calc(100% - 0.1rem);
+  left: auto;
+  mask-image: linear-gradient(270deg, black 0%, rgba(0, 0, 0, 0.55) 52%, transparent 100%);
+}
+
+.home-cockpit-frame__speed-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(var(--home-cockpit-cyan-hot), 0.46), transparent 64%);
+  animation: home-cockpit-speed-drift 8.8s ease-in-out infinite;
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__speed-line {
+  right: 0;
+  left: auto;
+  transform-origin: right center;
+  background: linear-gradient(270deg, rgba(var(--home-cockpit-magenta), 0.42), transparent 64%);
+}
+
+.home-cockpit-frame__speed-line:nth-child(1) {
+  top: 12%;
+  animation-delay: -1.4s;
+}
+
+.home-cockpit-frame__speed-line:nth-child(2) {
+  top: 31%;
+  animation-delay: -3.2s;
+}
+
+.home-cockpit-frame__speed-line:nth-child(3) {
+  top: 49%;
+  animation-delay: -5.1s;
+}
+
+.home-cockpit-frame__speed-line:nth-child(4) {
+  top: 68%;
+  animation-delay: -2.3s;
+}
+
+.home-cockpit-frame__speed-line:nth-child(5) {
+  top: 84%;
+  animation-delay: -6.6s;
+}
+
+.home-cockpit-frame__bottom-rail {
+  position: absolute;
+  left: clamp(1rem, 5vw, 4.5rem);
+  right: clamp(1rem, 5vw, 4.5rem);
+  bottom: 0;
+  height: clamp(5rem, 9vh, 6.9rem);
+  clip-path: polygon(0 55%, 12% 25%, 36% 12%, 64% 12%, 88% 25%, 100% 55%, 100% 100%, 0 100%);
+  border-top: 2px solid rgba(var(--home-cockpit-cyan-hot), 0.28);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(var(--home-cockpit-cyan), 0.18), transparent 62%),
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.12), transparent 32%, transparent 68%, rgba(var(--home-cockpit-magenta), 0.12)),
+    linear-gradient(180deg, transparent, rgba(var(--home-cockpit-ink), 0.58));
+  box-shadow:
+    inset 0 1px 0 rgba(var(--home-cockpit-white), 0.08),
+    0 -12px 34px rgba(var(--home-cockpit-cyan), 0.08);
+}
+
+.home-cockpit-frame__bottom-core {
+  left: 28%;
+  right: 28%;
+  top: 1.22rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(var(--home-cockpit-cyan), 0.72), rgba(var(--home-cockpit-white), 0.82), rgba(var(--home-cockpit-magenta), 0.46), transparent);
+  box-shadow:
+    0 0 12px rgba(var(--home-cockpit-cyan), 0.22),
+    0 0 18px rgba(var(--home-cockpit-magenta), 0.12);
+}
+
+.home-cockpit-frame__bottom-ridge {
+  top: 2.15rem;
+  width: min(24vw, 18rem);
+  height: 0.52rem;
+  border-top: 1px solid rgba(var(--home-cockpit-cyan-hot), 0.25);
+  background: repeating-linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.14) 0 0.12rem, transparent 0.12rem 1.15rem);
+}
+
+.home-cockpit-frame__bottom-ridge--left {
+  left: 5%;
+}
+
+.home-cockpit-frame__bottom-ridge--right {
+  right: 5%;
+  border-color: rgba(var(--home-cockpit-magenta), 0.24);
+  background: repeating-linear-gradient(90deg, rgba(var(--home-cockpit-amber), 0.12) 0 0.12rem, transparent 0.12rem 1.15rem);
+}
+
+.home-cockpit-frame__bottom-keel {
+  left: 50%;
+  bottom: 0.8rem;
+  width: min(24vw, 16rem);
+  height: 1.25rem;
+  transform: translateX(-50%);
+  clip-path: polygon(0 18%, 38% 0, 62% 0, 100% 18%, 86% 100%, 14% 100%);
+  border: 1px solid rgba(var(--home-cockpit-cyan-hot), 0.2);
+  background:
+    radial-gradient(ellipse at 50% 32%, rgba(var(--home-cockpit-white), 0.16), transparent 46%),
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.12), rgba(var(--home-cockpit-magenta), 0.1));
+}
+
+.home-cockpit-frame__bottom-scan {
+  left: 12%;
+  right: 12%;
+  bottom: 0.26rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--home-cockpit-green), 0.34), rgba(var(--home-cockpit-cyan), 0.5), rgba(var(--home-cockpit-amber), 0.26), transparent);
+  animation: home-cockpit-bottom-scan 11s ease-in-out infinite;
+}
+
+.home-user-command-anchor {
+  isolation: isolate;
+}
+
+.home-user-command-anchor--top-bridge {
+  right: clamp(0.45rem, 1.8vw, 1.6rem);
+  top: clamp(0.35rem, 1vw, 0.78rem);
+}
+
+.home-user-command-anchor--top-bridge::before {
+  content: '';
+  position: absolute;
+  top: 0.42rem;
+  right: 0.1rem;
+  width: min(26vw, 18rem);
+  height: 4.25rem;
+  clip-path: polygon(8% 0, 100% 0, 100% 76%, 88% 100%, 0 100%, 0 30%);
+  border-top: 1px solid rgba(236, 72, 153, 0.26);
+  border-right: 2px solid rgba(236, 72, 153, 0.3);
+  background:
+    radial-gradient(circle at 82% 30%, rgba(236, 72, 153, 0.18), transparent 42%),
+    linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.08), rgba(236, 72, 153, 0.08));
+  filter: drop-shadow(0 0 16px rgba(236, 72, 153, 0.12));
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock {
+  width: 16.2rem;
+  height: 4.82rem;
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock:hover,
+.home-user-command-anchor--top-bridge .home-user-command-dock:focus-visible {
+  transform: translate3d(0, 1px, 0);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__halo {
+  inset: 0.4rem 0.2rem 0.22rem 4.2rem;
+  background:
+    radial-gradient(circle at 20% 46%, rgba(34, 211, 238, 0.26), transparent 28%),
+    radial-gradient(circle at 78% 50%, rgba(236, 72, 153, 0.34), transparent 32%),
+    radial-gradient(circle at 50% 78%, rgba(163, 230, 53, 0.1), transparent 40%);
+  opacity: 0.74;
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__frame {
+  right: 0.16rem;
+  bottom: 0.34rem;
+  width: 15.42rem;
+  height: 3.74rem;
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 28px) 100%, 0 100%, 0 18px);
+  border-color: rgba(236, 72, 153, 0.3);
+  background:
+    linear-gradient(180deg, rgba(32, 10, 40, 0.9), rgba(4, 18, 28, 0.88)),
+    linear-gradient(100deg, rgba(34, 211, 238, 0.12), transparent 35%, rgba(236, 72, 153, 0.16) 84%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 253, 255, 0.08),
+    0 12px 28px rgba(0, 0, 0, 0.28),
+    0 0 22px rgba(236, 72, 153, 0.15),
+    0 0 16px rgba(34, 211, 238, 0.08);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__slab {
+  right: 0.46rem;
+  bottom: 0.66rem;
+  width: 14.82rem;
+  height: 2.92rem;
+  border-color: rgba(103, 232, 249, 0.24);
+  background:
+    linear-gradient(180deg, rgba(28, 10, 40, 0.94), rgba(4, 16, 27, 0.98)),
+    linear-gradient(135deg, rgba(245, 253, 255, 0.05), rgba(34, 211, 238, 0.12) 23%, transparent 42%, rgba(236, 72, 153, 0.17) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 253, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(236, 72, 153, 0.15);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__slab::before {
+  background: linear-gradient(90deg, rgba(103, 232, 249, 0.24), rgba(34, 211, 238, 0.58), rgba(236, 72, 153, 0.36), transparent 76%);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__name,
+.home-user-command-anchor--top-bridge .home-user-command-dock__status-text,
+.home-user-command-anchor--top-bridge .home-user-command-dock__avatar-fallback {
+  letter-spacing: 0;
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__content {
+  left: 1rem;
+  right: 4.1rem;
+  top: 0.54rem;
+  gap: 0.38rem;
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__name {
+  font-size: 0.98rem;
+  color: rgba(245, 253, 255, 0.98);
+  text-shadow:
+    0 0 12px rgba(34, 211, 238, 0.18),
+    0 0 14px rgba(236, 72, 153, 0.14);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__status-group {
+  gap: 0.55rem;
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__status-text {
+  font-size: 0.62rem;
+  color: rgba(217, 249, 255, 0.92);
+}
+
+.home-user-command-anchor--top-bridge .home-user-command-dock__avatar-shell {
+  top: 0.5rem;
+  right: 0.78rem;
+  width: 2.28rem;
+  height: 2.28rem;
+  border-color: rgba(236, 72, 153, 0.32);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 253, 255, 0.08),
+    0 0 16px rgba(236, 72, 153, 0.18),
+    0 0 12px rgba(34, 211, 238, 0.1);
+}
+
+.home-user-command-panel--top-bridge {
+  max-height: min(78vh, 42rem);
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.46));
+}
+
+.home-user-command-panel--top-bridge .home-user-command-panel__backplate {
+  inset: -0.45rem 0.45rem 0.5rem;
+  background:
+    radial-gradient(circle at 78% 16%, rgba(236, 72, 153, 0.24), transparent 40%),
+    radial-gradient(circle at 36% 18%, rgba(34, 211, 238, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(6, 18, 30, 0.34), rgba(4, 8, 12, 0));
+}
+
+.home-user-command-panel--top-bridge .home-user-command-panel__tether {
+  top: -0.58rem;
+  right: 2.05rem;
+  bottom: auto;
+  width: 9.6rem;
+  background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.24), rgba(34, 211, 238, 0.44), transparent);
+  transform-origin: right center;
+}
+
+.home-user-command-panel--top-bridge .home-user-command-panel__tether::before {
+  top: 0;
+  bottom: auto;
+  height: 1rem;
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.55), rgba(236, 72, 153, 0.24), transparent);
+}
+
+.home-user-command-panel--top-bridge.is-open .user-account-screen--watch {
+  max-height: min(76vh, 40rem);
+  display: flex;
+  flex-direction: column;
+  transform-origin: top right;
+  animation: home-user-command-panel-drop-in 0.34s cubic-bezier(0.18, 0.9, 0.24, 1) both;
+}
+
+.home-user-command-panel--top-bridge.is-closing .user-account-screen--watch {
+  transform-origin: top right;
+  animation: home-user-command-panel-drop-out 0.22s ease-in both;
+}
+
+.home-user-command-panel--top-bridge .user-account-screen__body--watch {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.home-user-command-panel--top-bridge .user-account-screen__body--watch::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes home-cockpit-glow-drift {
+  from {
+    opacity: 0.62;
+    transform: translate3d(-1.2vw, -0.2rem, 0) scaleX(0.98);
+  }
+  to {
+    opacity: 0.82;
+    transform: translate3d(1.2vw, 0.15rem, 0) scaleX(1.02);
+  }
+}
+
+@keyframes home-cockpit-soft-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes home-cockpit-speed-drift {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translate3d(0, 0, 0) scaleX(0.72);
+  }
+  48% {
+    opacity: 0.48;
+    transform: translate3d(1.2rem, 0, 0) scaleX(1);
+  }
+}
+
+@keyframes home-cockpit-bottom-scan {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: translate3d(-4%, 0, 0);
+  }
+  50% {
+    opacity: 0.78;
+    transform: translate3d(4%, 0, 0);
+  }
+}
+
+@keyframes home-cockpit-neon-haze-drift {
+  from {
+    opacity: 0.44;
+    transform: translate3d(-1.4vw, 0.6vh, 0) scale(0.98);
+  }
+  to {
+    opacity: 0.62;
+    transform: translate3d(1.4vw, -0.6vh, 0) scale(1.02);
+  }
+}
+
+@keyframes home-cockpit-neon-haze-breathe {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.38;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes home-user-command-panel-drop-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0.45rem, -0.45rem, 0) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes home-user-command-panel-drop-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0.3rem, -0.32rem, 0) scale(0.98);
+    filter: blur(3px);
+  }
+}
+
+@media (max-width: 900px) {
+  .home-cockpit-frame__side {
+    width: 3.4rem;
+    opacity: 0.62;
+  }
+
+  .home-cockpit-frame__speed-field {
+    width: 14rem;
+    opacity: 0.24;
+  }
+
+  .home-cockpit-frame__top-beam {
+    left: 0.85rem;
+    right: 0.85rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock {
+    width: 14.8rem;
+    height: 4.52rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__frame {
+    width: 14.05rem;
+    height: 3.48rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__slab {
+    width: 13.44rem;
+    height: 2.7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-cockpit-frame__top-beam {
+    left: 0.45rem;
+    right: 0.45rem;
+    height: 4.15rem;
+    clip-path: polygon(0 0, 100% 0, 100% 48%, 88% 82%, 60% 100%, 40% 100%, 12% 82%, 0 48%);
+  }
+
+  .home-cockpit-frame__top-core {
+    left: 18%;
+    right: 18%;
+    top: 0.48rem;
+  }
+
+  .home-cockpit-frame__top-runway {
+    top: 1.36rem;
+    width: 30vw;
+  }
+
+  .home-cockpit-frame__side {
+    top: 4.4rem;
+    bottom: 4.8rem;
+    width: 1.62rem;
+    opacity: 0.42;
+  }
+
+  .home-cockpit-frame__side-shell {
+    border-left-width: 1px;
+  }
+
+  .home-cockpit-frame__side--right .home-cockpit-frame__side-shell {
+    border-right-width: 1px;
+  }
+
+  .home-cockpit-frame__side-inner,
+  .home-cockpit-frame__side-valve,
+  .home-cockpit-frame__side-anchor,
+  .home-cockpit-frame__tick-bank,
+  .home-cockpit-frame__speed-field {
+    display: none;
+  }
+
+  .home-cockpit-frame__corner {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .home-cockpit-frame__corner--tl,
+  .home-cockpit-frame__corner--tr {
+    top: 0.68rem;
+  }
+
+  .home-cockpit-frame__corner--tl,
+  .home-cockpit-frame__corner--bl {
+    left: 0.55rem;
+  }
+
+  .home-cockpit-frame__corner--tr,
+  .home-cockpit-frame__corner--br {
+    right: 0.55rem;
+  }
+
+  .home-cockpit-frame__corner--bl,
+  .home-cockpit-frame__corner--br {
+    bottom: 0.75rem;
+  }
+
+  .home-cockpit-frame__bottom-rail {
+    left: 0.45rem;
+    right: 0.45rem;
+    height: 4.7rem;
+  }
+
+  .home-cockpit-frame__bottom-ridge {
+    display: none;
+  }
+
+  .home-cockpit-frame__bottom-keel {
+    width: 42vw;
+    height: 1rem;
+  }
+
+  .home-user-command-anchor--top-bridge {
+    top: 0.34rem;
+    right: 0.35rem;
+  }
+
+  .home-user-command-anchor--top-bridge::before {
+    display: none;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock {
+    width: 12.85rem;
+    height: 4.18rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__frame {
+    width: 12.2rem;
+    height: 3.22rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__slab {
+    width: 11.68rem;
+    height: 2.48rem;
+    right: 0.36rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__content {
+    left: 0.82rem;
+    right: 3.35rem;
+    top: 0.48rem;
+    gap: 0.28rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__name {
+    font-size: 0.82rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__status-group {
+    gap: 0.42rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-energy-battery--dock {
+    transform: scale(0.86);
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__status-text {
+    font-size: 0.5rem;
+  }
+
+  .home-user-command-anchor--top-bridge .home-user-command-dock__avatar-shell {
+    top: 0.48rem;
+    right: 0.64rem;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .home-user-command-panel--top-bridge {
+    width: min(94vw, 24rem);
+    max-height: 72vh;
+  }
+
+  .home-user-command-panel--top-bridge.is-open .user-account-screen--watch {
+    max-height: 70vh;
+  }
+
+  .home-user-command-panel--top-bridge .home-user-command-panel__tether {
+    right: 1.62rem;
+    width: 7.2rem;
+  }
+}
+
+/* Home cockpit frame fade refinement */
+.home-cockpit-frame__top-glow {
+  opacity: 0.58;
+  mask-image: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.72) 44%, transparent 100%);
+}
+
+.home-cockpit-frame__top-beam {
+  opacity: 0.78;
+  border-top-color: rgba(var(--home-cockpit-cyan-hot), 0.26);
+  border-bottom-color: rgba(var(--home-cockpit-magenta), 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--home-cockpit-white), 0.07),
+    inset 0 -1px 0 rgba(var(--home-cockpit-cyan), 0.07),
+    0 0 30px rgba(var(--home-cockpit-cyan), 0.08);
+  mask-image: radial-gradient(ellipse at 50% 0%, black 0%, rgba(0, 0, 0, 0.92) 38%, rgba(0, 0, 0, 0.55) 72%, transparent 100%);
+}
+
+.home-cockpit-frame__top-core {
+  opacity: 0.74;
+  mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.home-cockpit-frame__top-runway {
+  opacity: 0.54;
+  mask-image: linear-gradient(90deg, transparent 0%, black 28%, rgba(0, 0, 0, 0.72) 68%, transparent 100%);
+}
+
+.home-cockpit-frame__corner {
+  opacity: 0.58;
+  filter:
+    blur(0.12px)
+    drop-shadow(0 0 14px rgba(var(--home-cockpit-cyan), 0.12));
+}
+
+.home-cockpit-frame__corner--tr,
+.home-cockpit-frame__corner--br {
+  filter:
+    blur(0.12px)
+    drop-shadow(0 0 14px rgba(var(--home-cockpit-magenta), 0.11));
+}
+
+.home-cockpit-frame__side {
+  opacity: 0.72;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.42) 7%, black 19%, black 81%, rgba(0, 0, 0, 0.42) 93%, transparent 100%);
+}
+
+.home-cockpit-frame__side::after {
+  content: '';
+  position: absolute;
+  top: 4%;
+  bottom: 4%;
+  width: clamp(9rem, 17vw, 22rem);
+  opacity: 0.34;
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.home-cockpit-frame__side--left::after {
+  left: 32%;
+  background:
+    radial-gradient(ellipse at 0% 50%, rgba(var(--home-cockpit-cyan), 0.18), transparent 58%),
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.12), rgba(var(--home-cockpit-green), 0.045), transparent 86%);
+  mask-image: linear-gradient(90deg, black 0%, rgba(0, 0, 0, 0.62) 42%, transparent 100%);
+}
+
+.home-cockpit-frame__side--right::after {
+  right: 32%;
+  background:
+    radial-gradient(ellipse at 100% 50%, rgba(var(--home-cockpit-magenta), 0.18), transparent 58%),
+    linear-gradient(270deg, rgba(var(--home-cockpit-magenta), 0.12), rgba(var(--home-cockpit-amber), 0.04), transparent 86%);
+  mask-image: linear-gradient(270deg, black 0%, rgba(0, 0, 0, 0.62) 42%, transparent 100%);
+}
+
+.home-cockpit-frame__side-shell {
+  border-left-color: rgba(var(--home-cockpit-cyan-hot), 0.26);
+  background:
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.14), rgba(var(--home-cockpit-ink), 0.025) 48%, transparent 84%),
+    linear-gradient(180deg, transparent, rgba(var(--home-cockpit-cyan), 0.055) 18%, transparent 50%, rgba(var(--home-cockpit-green), 0.04) 82%, transparent);
+  box-shadow:
+    inset 2px 0 0 rgba(var(--home-cockpit-white), 0.07),
+    inset 8px 0 24px rgba(var(--home-cockpit-cyan), 0.07),
+    0 0 22px rgba(var(--home-cockpit-cyan), 0.08);
+  mask-image: linear-gradient(180deg, transparent 0%, black 13%, black 87%, transparent 100%);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-shell {
+  border-right-color: rgba(var(--home-cockpit-magenta), 0.25);
+  background:
+    linear-gradient(270deg, rgba(var(--home-cockpit-magenta), 0.13), rgba(var(--home-cockpit-ink), 0.025) 48%, transparent 84%),
+    linear-gradient(180deg, transparent, rgba(var(--home-cockpit-magenta), 0.052) 18%, transparent 50%, rgba(var(--home-cockpit-amber), 0.035) 82%, transparent);
+  box-shadow:
+    inset -2px 0 0 rgba(var(--home-cockpit-white), 0.06),
+    inset -8px 0 24px rgba(var(--home-cockpit-magenta), 0.07),
+    0 0 22px rgba(var(--home-cockpit-magenta), 0.075);
+}
+
+.home-cockpit-frame__side-inner {
+  opacity: 0.62;
+  mask-image: linear-gradient(180deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.home-cockpit-frame__side-valve {
+  opacity: 0.62;
+  mask-image: radial-gradient(ellipse at 24% 50%, black 0%, rgba(0, 0, 0, 0.82) 54%, transparent 100%);
+}
+
+.home-cockpit-frame__side--right .home-cockpit-frame__side-valve {
+  mask-image: radial-gradient(ellipse at 76% 50%, black 0%, rgba(0, 0, 0, 0.82) 54%, transparent 100%);
+}
+
+.home-cockpit-frame__side-anchor,
+.home-cockpit-frame__tick-bank {
+  opacity: 0.6;
+}
+
+.home-cockpit-frame__speed-field {
+  opacity: 0.28;
+}
+
+.home-cockpit-frame__bottom-rail {
+  opacity: 0.78;
+  border-top-color: rgba(var(--home-cockpit-cyan-hot), 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(var(--home-cockpit-white), 0.055),
+    0 -14px 38px rgba(var(--home-cockpit-cyan), 0.065);
+  mask-image: radial-gradient(ellipse at 50% 100%, black 0%, rgba(0, 0, 0, 0.88) 34%, rgba(0, 0, 0, 0.54) 68%, transparent 100%);
+}
+
+.home-cockpit-frame__bottom-core,
+.home-cockpit-frame__bottom-ridge,
+.home-cockpit-frame__bottom-keel,
+.home-cockpit-frame__bottom-scan {
+  opacity: 0.66;
+}
+
+.home-cockpit-frame__bottom-ridge {
+  mask-image: linear-gradient(90deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.home-user-command-anchor--top-bridge::before {
+  opacity: 0.72;
+  mask-image: radial-gradient(ellipse at 100% 0%, black 0%, rgba(0, 0, 0, 0.82) 48%, transparent 100%);
+}
+
+@media (max-width: 640px) {
+  .home-cockpit-frame__top-beam {
+    opacity: 0.62;
+    mask-image: radial-gradient(ellipse at 50% 0%, black 0%, rgba(0, 0, 0, 0.74) 52%, transparent 100%);
+  }
+
+  .home-cockpit-frame__side {
+    opacity: 0.3;
+  }
+
+  .home-cockpit-frame__corner {
+    opacity: 0.42;
+  }
+
+  .home-cockpit-frame__bottom-rail {
+    opacity: 0.62;
+  }
+}
+
+/* Home user keel avatar dock */
+.home-cockpit-frame__bottom-socket {
+  left: 50%;
+  bottom: 0.34rem;
+  width: clamp(6rem, 8vw, 7.4rem);
+  height: clamp(2.7rem, 4vw, 3.45rem);
+  transform: translateX(-50%);
+  border-top: 1px solid rgba(var(--home-cockpit-cyan-hot), 0.26);
+  border-right: 1px solid rgba(var(--home-cockpit-magenta), 0.14);
+  border-left: 1px solid rgba(var(--home-cockpit-cyan), 0.14);
+  border-radius: 999px 999px 0 0;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(var(--home-cockpit-white), 0.16), transparent 24%),
+    radial-gradient(ellipse at 50% 62%, rgba(var(--home-cockpit-cyan), 0.22), transparent 58%),
+    linear-gradient(90deg, rgba(var(--home-cockpit-cyan), 0.11), rgba(var(--home-cockpit-magenta), 0.09));
+  box-shadow:
+    inset 0 1px 0 rgba(var(--home-cockpit-white), 0.08),
+    inset 0 0 24px rgba(var(--home-cockpit-cyan), 0.08),
+    0 0 24px rgba(var(--home-cockpit-cyan), 0.1),
+    0 0 28px rgba(var(--home-cockpit-magenta), 0.07);
+  opacity: 0.84;
+  mask-image: radial-gradient(ellipse at 50% 100%, black 0%, rgba(0, 0, 0, 0.78) 54%, transparent 100%);
+}
+
+.home-cockpit-frame__bottom-orbit {
+  bottom: 1.82rem;
+  width: clamp(4.8rem, 9vw, 9.5rem);
+  height: 1px;
+  opacity: 0.6;
+  filter: drop-shadow(0 0 10px rgba(var(--home-cockpit-cyan), 0.16));
+}
+
+.home-cockpit-frame__bottom-orbit--left {
+  right: calc(50% + clamp(2.2rem, 3.6vw, 3.2rem));
+  background: linear-gradient(90deg, transparent, rgba(var(--home-cockpit-cyan), 0.48), rgba(var(--home-cockpit-white), 0.64));
+  mask-image: linear-gradient(90deg, transparent 0%, black 42%, black 100%);
+}
+
+.home-cockpit-frame__bottom-orbit--right {
+  left: calc(50% + clamp(2.2rem, 3.6vw, 3.2rem));
+  background: linear-gradient(90deg, rgba(var(--home-cockpit-white), 0.62), rgba(var(--home-cockpit-magenta), 0.42), transparent);
+  mask-image: linear-gradient(90deg, black 0%, black 58%, transparent 100%);
+}
+
+.home-user-command-anchor--bottom-keel {
+  left: 50%;
+  bottom: clamp(0.38rem, 1.2vh, 0.75rem);
+  transform: translateX(-50%);
+  isolation: isolate;
+}
+
+.home-user-command-anchor--bottom-keel::before,
+.home-user-command-anchor--bottom-keel::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.home-user-command-anchor--bottom-keel::before {
+  bottom: 0.12rem;
+  width: clamp(6.2rem, 8.4vw, 7.8rem);
+  height: clamp(2.3rem, 3.4vw, 3rem);
+  border-radius: 999px 999px 0 0;
+  background:
+    radial-gradient(ellipse at 50% 15%, rgba(245, 253, 255, 0.18), transparent 32%),
+    radial-gradient(ellipse at 50% 72%, rgba(34, 211, 238, 0.3), transparent 64%),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.15), rgba(236, 72, 153, 0.11));
+  filter: blur(0.2px);
+  opacity: 0.74;
+  mask-image: radial-gradient(ellipse at 50% 100%, black 0%, rgba(0, 0, 0, 0.74) 58%, transparent 100%);
+}
+
+.home-user-command-anchor--bottom-keel::after {
+  bottom: -0.06rem;
+  width: clamp(7rem, 10vw, 9rem);
+  height: 1.05rem;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(34, 211, 238, 0.24), rgba(236, 72, 153, 0.08) 42%, transparent 76%);
+  filter: blur(14px);
+  opacity: 0.82;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock {
+  width: clamp(4.82rem, 6.8vw, 5.55rem);
+  height: clamp(4.82rem, 6.8vw, 5.55rem);
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border-radius: 999px;
+  filter:
+    drop-shadow(0 0 16px rgba(34, 211, 238, 0.16))
+    drop-shadow(0 0 18px rgba(236, 72, 153, 0.09));
+  transform: translate3d(0, 0.1rem, 0);
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock:hover,
+.home-user-command-anchor--bottom-keel .home-user-command-dock:focus-visible,
+.home-user-command-anchor--bottom-keel .home-user-command-dock.is-active {
+  transform: translate3d(0, -0.08rem, 0);
+  filter:
+    brightness(1.08)
+    drop-shadow(0 0 20px rgba(34, 211, 238, 0.2))
+    drop-shadow(0 0 20px rgba(236, 72, 153, 0.12));
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__halo {
+  inset: -0.72rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(245, 253, 255, 0.18), transparent 18%),
+    radial-gradient(circle at 38% 32%, rgba(34, 211, 238, 0.28), transparent 42%),
+    radial-gradient(circle at 68% 62%, rgba(236, 72, 153, 0.26), transparent 44%),
+    radial-gradient(circle at 50% 86%, rgba(163, 230, 53, 0.12), transparent 42%);
+  filter: blur(16px);
+  opacity: 0.86;
+  animation: home-user-keel-orbit-pulse 7.6s ease-in-out infinite;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__frame {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 1px solid rgba(103, 232, 249, 0.38);
+  border-radius: 999px;
+  clip-path: circle(50% at 50% 50%);
+  background:
+    conic-gradient(from 210deg, rgba(34, 211, 238, 0.16), rgba(245, 253, 255, 0.22), rgba(236, 72, 153, 0.18), rgba(163, 230, 53, 0.1), rgba(34, 211, 238, 0.16)),
+    radial-gradient(circle at 50% 52%, rgba(2, 8, 17, 0.42), rgba(2, 8, 17, 0.8) 72%);
+  box-shadow:
+    inset 0 0 0 1px rgba(245, 253, 255, 0.08),
+    inset 0 0 18px rgba(34, 211, 238, 0.12),
+    0 0 22px rgba(34, 211, 238, 0.14),
+    0 0 24px rgba(236, 72, 153, 0.1);
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__frame::before,
+.home-user-command-anchor--bottom-keel .home-user-command-dock__frame::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__frame::before {
+  inset: 0.34rem;
+  border: 1px solid rgba(245, 253, 255, 0.16);
+  border-top-color: rgba(103, 232, 249, 0.46);
+  border-right-color: rgba(236, 72, 153, 0.28);
+  border-bottom-color: rgba(163, 230, 53, 0.16);
+  animation: home-user-keel-ring-drift 13s linear infinite;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__frame::after {
+  inset: 0.82rem;
+  border: 1px solid rgba(103, 232, 249, 0.12);
+  box-shadow: inset 0 0 12px rgba(245, 253, 255, 0.06);
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__slab {
+  inset: 0.56rem;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  border: 1px solid rgba(245, 253, 255, 0.16);
+  border-radius: 999px;
+  clip-path: circle(50% at 50% 50%);
+  background:
+    radial-gradient(circle at 32% 24%, rgba(245, 253, 255, 0.18), transparent 36%),
+    radial-gradient(circle at 50% 68%, rgba(34, 211, 238, 0.16), transparent 62%),
+    rgba(2, 8, 17, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(245, 253, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+    0 0 16px rgba(34, 211, 238, 0.12);
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__slab::before {
+  inset: 0;
+  height: auto;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(245, 253, 255, 0.18), transparent 34%),
+    linear-gradient(315deg, rgba(236, 72, 153, 0.12), transparent 42%);
+  opacity: 0.78;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__slab::after {
+  top: -8%;
+  bottom: auto;
+  left: -38%;
+  width: 36%;
+  height: 118%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(245, 253, 255, 0.2), rgba(34, 211, 238, 0.16), transparent);
+  opacity: 0.36;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__content {
+  display: none;
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__avatar-shell {
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  width: clamp(3.05rem, 4.35vw, 3.58rem);
+  height: clamp(3.05rem, 4.35vw, 3.58rem);
+  overflow: hidden;
+  border: 1px solid rgba(245, 253, 255, 0.22);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(245, 253, 255, 0.14), transparent 38%),
+    linear-gradient(180deg, rgba(8, 34, 55, 0.94), rgba(18, 6, 30, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(245, 253, 255, 0.08),
+    inset 0 0 14px rgba(34, 211, 238, 0.1),
+    0 0 16px rgba(34, 211, 238, 0.16),
+    0 0 16px rgba(236, 72, 153, 0.1);
+  transform: translate(-50%, -50%);
+}
+
+.home-user-command-anchor--bottom-keel .home-user-command-dock__avatar-fallback {
+  letter-spacing: 0;
+  color: rgba(245, 253, 255, 0.98);
+  background:
+    radial-gradient(circle at 32% 22%, rgba(245, 253, 255, 0.16), transparent 36%),
+    radial-gradient(circle at 50% 58%, rgba(34, 211, 238, 0.24), rgba(236, 72, 153, 0.12) 58%, transparent 90%);
+}
+
+.home-user-command-panel--bottom-keel {
+  left: 50%;
+  max-height: min(72vh, 40rem);
+  transform: translateX(-50%);
+  filter: drop-shadow(0 24px 52px rgba(0, 0, 0, 0.48));
+}
+
+.home-user-command-panel--bottom-keel .home-user-command-panel__backplate {
+  inset: 0.8rem 1rem -0.5rem;
+  border-radius: 1.15rem;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.24), transparent 42%),
+    radial-gradient(circle at 62% 74%, rgba(236, 72, 153, 0.18), transparent 46%),
+    linear-gradient(180deg, rgba(6, 23, 38, 0.36), rgba(4, 8, 12, 0));
+}
+
+.home-user-command-panel--bottom-keel .home-user-command-panel__tether {
+  right: auto;
+  bottom: -0.74rem;
+  left: 50%;
+  width: 1px;
+  height: 2.1rem;
+  background: linear-gradient(180deg, transparent, rgba(103, 232, 249, 0.66), rgba(236, 72, 153, 0.24), transparent);
+  opacity: 0;
+  transform: translateX(-50%) scaleY(0.22);
+  transform-origin: bottom center;
+}
+
+.home-user-command-panel--bottom-keel .home-user-command-panel__tether::before {
+  right: auto;
+  bottom: -0.16rem;
+  left: 50%;
+  width: 4.6rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(103, 232, 249, 0.48), rgba(236, 72, 153, 0.22), transparent);
+  transform: translateX(-50%);
+}
+
+.home-user-command-panel--bottom-keel.is-open .home-user-command-panel__tether {
+  animation: home-user-keel-tether-in 0.28s 0.05s ease-out both;
+}
+
+.home-user-command-panel--bottom-keel.is-closing .home-user-command-panel__tether {
+  animation: home-user-keel-tether-out 0.18s ease-in both;
+}
+
+.home-user-command-panel--bottom-keel.is-open .user-account-screen--watch {
+  max-height: min(70vh, 38rem);
+  display: flex;
+  flex-direction: column;
+  transform-origin: bottom center;
+  animation: home-user-keel-panel-in 0.34s cubic-bezier(0.18, 0.9, 0.24, 1) both;
+}
+
+.home-user-command-panel--bottom-keel.is-closing .user-account-screen--watch {
+  transform-origin: bottom center;
+  animation: home-user-keel-panel-out 0.22s ease-in both;
+}
+
+.home-user-command-panel--bottom-keel .user-account-screen__body--watch {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.home-user-command-panel--bottom-keel .user-account-screen__body--watch::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes home-user-keel-orbit-pulse {
+  0%,
+  100% {
+    opacity: 0.64;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes home-user-keel-ring-drift {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes home-user-keel-tether-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.18);
+  }
+  to {
+    opacity: 0.86;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
+
+@keyframes home-user-keel-tether-out {
+  from {
+    opacity: 0.86;
+    transform: translateX(-50%) scaleY(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.26);
+  }
+}
+
+@keyframes home-user-keel-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0.72rem, 0) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes home-user-keel-panel-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 0.46rem, 0) scale(0.98);
+    filter: blur(3px);
+  }
+}
+
+@media (max-width: 640px) {
+  .home-cockpit-frame::before {
+    opacity: 0.36;
+    filter: blur(28px);
+  }
+
+  .home-cockpit-frame::after {
+    opacity: 0.22;
+    filter: blur(38px);
+  }
+
+  .home-cockpit-frame__bottom-socket {
+    width: 5.7rem;
+    height: 2.45rem;
+    bottom: 0.28rem;
+  }
+
+  .home-cockpit-frame__bottom-orbit {
+    bottom: 1.48rem;
+    width: 4rem;
+    opacity: 0.44;
+  }
+
+  .home-cockpit-frame__bottom-orbit--left {
+    right: calc(50% + 2.25rem);
+  }
+
+  .home-cockpit-frame__bottom-orbit--right {
+    left: calc(50% + 2.25rem);
+  }
+
+  .home-user-command-anchor--bottom-keel {
+    bottom: 0.32rem;
+  }
+
+  .home-user-command-anchor--bottom-keel .home-user-command-dock {
+    width: 4.36rem;
+    height: 4.36rem;
+  }
+
+  .home-user-command-anchor--bottom-keel .home-user-command-dock__avatar-shell {
+    width: 2.76rem;
+    height: 2.76rem;
+  }
+
+  .home-user-command-panel--bottom-keel {
+    width: min(94vw, 24rem);
+    max-height: 72vh;
+  }
+
+  .home-user-command-panel--bottom-keel.is-open .user-account-screen--watch {
+    max-height: 70vh;
+  }
+}

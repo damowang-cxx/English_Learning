@@ -2,8 +2,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import HomeUploadAction from '@/components/HomeUploadAction'
 import TopActionNav from '@/components/TopActionNav'
-import HomeBottomHud from '@/components/HomeBottomHud'
-import HomeTopHud from '@/components/HomeTopHud'
+import HomeCockpitFrame from '@/components/HomeCockpitFrame'
 import HomeUserWatch from '@/components/HomeUserWatch'
 
 type HomeMode = 'listening' | 'video'
@@ -56,9 +55,8 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
 
   return (
     <>
-      <HomeTopHud />
-      <HomeBottomHud />
-      <HomeUserWatch key={mode} />
+      <HomeCockpitFrame />
+      <HomeUserWatch key={mode} placement="bottom-keel" />
       <div
         className="container mx-auto py-8 cockpit-viewport"
       style={viewportStyle}

@@ -7,6 +7,12 @@ import UserAccountScreen from '@/components/UserAccountScreen'
 import { withBasePath } from '@/lib/base-path'
 import { FUTURE_TECH_FONT_CLASSNAME } from '@/lib/training-fonts'
 
+type HomeUserWatchPlacement = 'bottom' | 'top-bridge' | 'bottom-keel'
+
+interface HomeUserWatchProps {
+  placement?: HomeUserWatchPlacement
+}
+
 function getDockDisplayName(name: string | null | undefined, email: string | null | undefined) {
   const trimmedName = name?.trim()
   if (trimmedName) {
@@ -37,7 +43,7 @@ function getDockGlyph(name: string | null | undefined, email: string | null | un
   return 'U'
 }
 
-export default function HomeUserWatch() {
+export default function HomeUserWatch({ placement = 'bottom' }: HomeUserWatchProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const closeTimerRef = useRef<number | null>(null)
   const { data: session, status } = useSession()
@@ -161,20 +167,41 @@ export default function HomeUserWatch() {
   const dockStatus = isOpen ? 'CONSOLE ACTIVE' : 'LINK READY'
   const isDockActive = isOpen || isClosing
   const isPanelMounted = isOpen || isClosing
+  const isTopBridgePlacement = placement === 'top-bridge'
+  const isBottomKeelPlacement = placement === 'bottom-keel'
+  let containerClassName =
+    'home-user-command-anchor pointer-events-none fixed bottom-3 right-4 z-[96] md:bottom-4 md:right-6'
+  let dockWrapClassName = 'pointer-events-auto relative flex items-end justify-end'
+  let panelPlacementClassName =
+    'absolute bottom-[calc(100%+1rem)] right-0 w-[min(92vw,560px)] origin-bottom-right'
+
+  if (isTopBridgePlacement) {
+    containerClassName =
+      'home-user-command-anchor home-user-command-anchor--top-bridge pointer-events-none fixed right-2 top-2 z-[96] md:right-5 md:top-3'
+    dockWrapClassName = 'pointer-events-auto relative flex items-start justify-end'
+    panelPlacementClassName =
+      'home-user-command-panel--top-bridge absolute right-0 top-[calc(100%+0.68rem)] w-[min(92vw,520px)] origin-top-right'
+  } else if (isBottomKeelPlacement) {
+    containerClassName =
+      'home-user-command-anchor home-user-command-anchor--bottom-keel pointer-events-none fixed bottom-0 left-1/2 z-[96]'
+    dockWrapClassName = 'pointer-events-auto relative flex items-end justify-center'
+    panelPlacementClassName =
+      'home-user-command-panel--bottom-keel absolute bottom-[calc(100%+0.78rem)] w-[min(92vw,520px)] origin-bottom'
+  }
+
+  const panelClassName = `home-user-command-panel ${panelPlacementClassName} ${
+    isClosing ? 'is-closing' : 'is-open'
+  }`
 
   if (status === 'loading' || !sessionUser?.id) {
     return null
   }
 
   return (
-    <div ref={containerRef} className="pointer-events-none fixed bottom-3 right-4 z-[96] md:bottom-4 md:right-6">
-      <div className="pointer-events-auto relative flex items-end justify-end">
+    <div ref={containerRef} className={containerClassName}>
+      <div className={dockWrapClassName}>
         {isPanelMounted ? (
-          <div
-            className={`home-user-command-panel absolute bottom-[calc(100%+1rem)] right-0 w-[min(92vw,560px)] origin-bottom-right ${
-              isClosing ? 'is-closing' : 'is-open'
-            }`}
-          >
+          <div className={panelClassName}>
             <span className="home-user-command-panel__backplate" aria-hidden="true" />
             <span className="home-user-command-panel__tether" aria-hidden="true" />
             <UserAccountScreen
@@ -201,7 +228,7 @@ export default function HomeUserWatch() {
           }}
           className={`${FUTURE_TECH_FONT_CLASSNAME} home-user-command-dock ${isDockActive ? 'is-active' : ''} ${
             isClosing ? 'is-closing' : ''
-          }`}
+          } ${isBottomKeelPlacement ? 'home-user-command-dock--bottom-keel' : ''}`}
           aria-expanded={isOpen}
           aria-haspopup="dialog"
           aria-label="Open personal profile console"
