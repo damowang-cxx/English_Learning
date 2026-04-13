@@ -14,6 +14,7 @@ import { getVideoCoverSrc, getVideoMediaSrc, withBasePath } from '@/lib/base-pat
 import { formatVideoTime, type VideoCaptionMode } from '@/lib/video-training'
 import {
   areVocabularyListsEqual,
+  formatVocabularyEntry,
   getVocabularyEntryKey,
   mergeVocabularyWords,
   parseVocabularyWords,
@@ -423,22 +424,18 @@ export default function VideoTrainingDetailPage() {
     }
   }
 
-  const handleSaveVideoLookupVocabulary = async (entry: VocabularyEntry) => {
-    if (!item || !wordLookup) {
-      return
-    }
-
-    const captionId = wordLookup.contextId
-    const currentEntries = captionVocabulary[captionId] || []
-    const mergedEntries = mergeVocabularyWords(currentEntries, [entry])
-
-    if (areVocabularyListsEqual(currentEntries, mergedEntries)) {
+  const persistCaptionVocabulary = async (
+    captionId: string,
+    currentEntries: VocabularyEntry[],
+    nextEntries: VocabularyEntry[]
+  ) => {
+    if (!item || areVocabularyListsEqual(currentEntries, nextEntries)) {
       return
     }
 
     setCaptionVocabulary((prev) => ({
       ...prev,
-      [captionId]: mergedEntries,
+      [captionId]: nextEntries,
     }))
 
     try {
@@ -448,7 +445,7 @@ export default function VideoTrainingDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           captionId,
-          words: serializeVocabularyWords(mergedEntries),
+          words: serializeVocabularyWords(nextEntries),
           notes: existingNote?.notes || '',
         }),
       })
@@ -477,6 +474,7 @@ export default function VideoTrainingDetailPage() {
           }),
         }
       })
+      setStatus(null)
     } catch (error) {
       setCaptionVocabulary((prev) => ({
         ...prev,
@@ -485,6 +483,26 @@ export default function VideoTrainingDetailPage() {
       setStatus(error instanceof Error ? error.message : 'Save video vocabulary failed.')
       throw error
     }
+  }
+
+  const handleSaveVideoLookupVocabulary = async (entry: VocabularyEntry) => {
+    if (!wordLookup) {
+      return
+    }
+
+    const captionId = wordLookup.contextId
+    const currentEntries = captionVocabulary[captionId] || []
+    const mergedEntries = mergeVocabularyWords(currentEntries, [entry])
+
+    await persistCaptionVocabulary(captionId, currentEntries, mergedEntries)
+  }
+
+  const handleRemoveVideoVocabulary = async (captionId: string, entry: VocabularyEntry) => {
+    const currentEntries = captionVocabulary[captionId] || []
+    const entryKey = getVocabularyEntryKey(entry)
+    const nextEntries = currentEntries.filter((savedEntry) => getVocabularyEntryKey(savedEntry) !== entryKey)
+
+    await persistCaptionVocabulary(captionId, currentEntries, nextEntries)
   }
 
   const handleDeletePhraseNote = async (noteId: string) => {
@@ -580,6 +598,24 @@ export default function VideoTrainingDetailPage() {
   const isImmersive = isWindowFullscreen || isDisplayFullscreen
   const wordLookupSavedKeys = new Set(
     wordLookup ? (captionVocabulary[wordLookup.contextId] || []).map(getVocabularyEntryKey) : []
+  )
+  const vocabularyPanelCaptionId = wordLookup?.contextId || activeCaption?.id || null
+  const vocabularyPanelCaption = vocabularyPanelCaptionId
+    ? item.captions.find((caption) => caption.id === vocabularyPanelCaptionId) || null
+    : null
+  const vocabularyPanelEntries = vocabularyPanelCaption
+    ? (captionVocabulary[vocabularyPanelCaption.id] || [])
+    : []
+  const vocabularyTotals = Object.values(captionVocabulary).reduce(
+    (summary, entries) => {
+      summary.total += entries.length
+      entries.forEach((entry) => summary.uniqueKeys.add(getVocabularyEntryKey(entry)))
+      return summary
+    },
+    {
+      total: 0,
+      uniqueKeys: new Set<string>(),
+    }
   )
 
   return (
@@ -801,7 +837,7 @@ export default function VideoTrainingDetailPage() {
         </main>
 
         {!isSidebarCollapsed && !isImmersive ? (
-          <aside className="relative grid h-full min-h-0 grid-rows-[1fr_2fr_1fr] overflow-hidden rounded-lg border border-cyan-500/35 bg-black/82 shadow-[0_0_28px_rgba(34,211,238,0.12)]">
+          <aside className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-cyan-500/35 bg-black/82 shadow-[0_0_28px_rgba(34,211,238,0.12)]">
               <button
                 type="button"
                 aria-label="Close side panel"
@@ -810,7 +846,7 @@ export default function VideoTrainingDetailPage() {
             >
               &gt;
             </button>
-            <section className="overflow-y-auto border-b border-cyan-500/25 p-4">
+            <section style={{ flex: 0.9 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
               <div className="mb-3 h-28 rounded-md border border-cyan-500/20 bg-cover bg-center opacity-85" style={{ backgroundImage: `url("${getVideoCoverSrc(item.coverUrl)}")` }} />
               <div className="text-xs cyber-label text-cyan-400/70">{item.tag}</div>
               <h2 className="mt-1 text-lg font-semibold text-cyan-100">{item.sourceTitle || item.title}</h2>
@@ -833,7 +869,7 @@ export default function VideoTrainingDetailPage() {
               </div>
             </section>
 
-            <section className="overflow-y-auto border-b border-cyan-500/25 p-4">
+            <section style={{ flex: 1.65 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm cyber-title text-cyan-300">CAPTIONS</h3>
                 <span className="font-mono text-xs text-cyan-300/60">{filteredCaptions.length}</span>
@@ -865,7 +901,81 @@ export default function VideoTrainingDetailPage() {
               </div>
             </section>
 
-            <section className="overflow-y-auto p-4">
+            <section style={{ flex: 1.05 }} className="min-h-0 overflow-y-auto border-b border-cyan-500/25 p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm cyber-title text-cyan-300">VOCABULARY BOOK</h3>
+                  <div className="mt-1 text-[11px] text-cyan-300/55">
+                    {vocabularyTotals.uniqueKeys.size} UNIQUE / {vocabularyTotals.total} TOTAL
+                  </div>
+                </div>
+                {vocabularyPanelCaption ? (
+                  <button
+                    type="button"
+                    onClick={() => jumpToCaption(vocabularyPanelCaption, false)}
+                    className="rounded border border-cyan-500/25 px-2 py-1 text-[10px] text-cyan-300/70 transition-colors hover:border-cyan-300/60 hover:text-cyan-100"
+                    title={`Jump to caption #${vocabularyPanelCaption.order + 1}`}
+                  >
+                    #{vocabularyPanelCaption.order + 1}
+                  </button>
+                ) : null}
+              </div>
+
+              {vocabularyPanelCaption ? (
+                <>
+                  <div className="rounded-md border border-cyan-500/18 bg-black/35 p-3">
+                    <div className="text-[10px] cyber-label tracking-[0.2em] text-cyan-400/65">CURRENT CAPTION</div>
+                    <div className="mt-1 font-mono text-[11px] text-cyan-300/60">
+                      {formatVideoTime(vocabularyPanelCaption.startTime)} - {formatVideoTime(vocabularyPanelCaption.endTime)}
+                    </div>
+                    <div className="mt-2 text-sm leading-6 text-cyan-50">{vocabularyPanelCaption.enText}</div>
+                  </div>
+
+                  {vocabularyPanelEntries.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {vocabularyPanelEntries.map((entry) => {
+                        const entryLabel = formatVocabularyEntry(entry)
+
+                        return (
+                          <div
+                            key={`${vocabularyPanelCaption.id}-${getVocabularyEntryKey(entry)}`}
+                            className="rounded-md border border-cyan-500/18 bg-black/35 p-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="break-words text-sm leading-6 text-cyan-50">{entryLabel}</div>
+                                {entry.phonetic ? (
+                                  <div className="mt-1 text-[11px] text-cyan-300/65">{entry.phonetic}</div>
+                                ) : null}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => void handleRemoveVideoVocabulary(vocabularyPanelCaption.id, entry)}
+                                className="shrink-0 text-[10px] text-red-300/78 transition-colors hover:text-red-200"
+                                aria-label={`Remove ${entryLabel}`}
+                                title={`Remove ${entryLabel}`}
+                              >
+                                DEL
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-md border border-dashed border-cyan-500/18 bg-black/25 px-3 py-4 text-sm leading-6 text-cyan-300/65">
+                      Select a word in the subtitle and add it to save it in this caption notebook.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-md border border-dashed border-cyan-500/18 bg-black/25 px-3 py-4 text-sm leading-6 text-cyan-300/65">
+                  Play the video or jump to a caption to inspect its saved vocabulary.
+                </div>
+              )}
+            </section>
+
+            <section style={{ flex: 1 }} className="min-h-0 overflow-y-auto p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm cyber-title text-cyan-300">PHRASE NOTES</h3>
                 <button
