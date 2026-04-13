@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { FUTURE_TECH_FONT_CLASSNAME } from '@/lib/training-fonts'
 
 function formatClockTime(date: Date) {
   return [date.getHours(), date.getMinutes(), date.getSeconds()]
@@ -24,23 +25,30 @@ export default function HomeTopHud() {
 
   return (
     <div className="home-top-hud pointer-events-none fixed inset-x-0 top-0 z-[5] overflow-hidden">
-      <span className="home-top-hud__nebula home-top-hud__nebula--left" />
-      <span className="home-top-hud__nebula home-top-hud__nebula--right" />
+      <span className="home-top-hud__backwash" aria-hidden="true" />
+      <span className="home-top-hud__ambient home-top-hud__ambient--left" aria-hidden="true" />
+      <span className="home-top-hud__ambient home-top-hud__ambient--right" aria-hidden="true" />
 
       <div className="home-top-hud__plaque">
-        <span className="home-top-hud__plaque-arc home-top-hud__plaque-arc--top" />
-        <span className="home-top-hud__plaque-arc home-top-hud__plaque-arc--bottom" />
-        <span className="home-top-hud__plaque-wing home-top-hud__plaque-wing--left" />
-        <span className="home-top-hud__plaque-wing home-top-hud__plaque-wing--right" />
-        <span className="home-top-hud__plaque-shell" />
-        <span className="home-top-hud__plaque-bloom" />
-        <span className="home-top-hud__plaque-core" />
-        <time className="home-top-hud__clock" dateTime={clockTime} aria-label={`Current time ${clockTime}`}>
+        <span className="home-top-hud__viewport" aria-hidden="true" />
+        <span className="home-top-hud__glass" aria-hidden="true" />
+        <span className="home-top-hud__frame home-top-hud__frame--top" aria-hidden="true" />
+        <span className="home-top-hud__frame home-top-hud__frame--bottom" aria-hidden="true" />
+        <span className="home-top-hud__side-panel home-top-hud__side-panel--left" aria-hidden="true" />
+        <span className="home-top-hud__side-panel home-top-hud__side-panel--right" aria-hidden="true" />
+        <span className="home-top-hud__corner home-top-hud__corner--tl" aria-hidden="true" />
+        <span className="home-top-hud__corner home-top-hud__corner--tr" aria-hidden="true" />
+        <span className="home-top-hud__corner home-top-hud__corner--bl" aria-hidden="true" />
+        <span className="home-top-hud__corner home-top-hud__corner--br" aria-hidden="true" />
+        <span className="home-top-hud__horizon" aria-hidden="true" />
+        <time
+          className={`${FUTURE_TECH_FONT_CLASSNAME} home-top-hud__clock`}
+          dateTime={clockTime}
+          aria-label={`Current time ${clockTime}`}
+        >
           {clockTime}
         </time>
-        <span className="home-top-hud__plaque-sheen" />
-        <span className="home-top-hud__plaque-notch home-top-hud__plaque-notch--left" />
-        <span className="home-top-hud__plaque-notch home-top-hud__plaque-notch--right" />
+        <span className="home-top-hud__scan" aria-hidden="true" />
       </div>
     </div>
   )
