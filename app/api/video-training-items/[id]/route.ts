@@ -15,6 +15,7 @@ import {
   parseBooleanFormField,
   parseJsonFormField,
 } from '@/lib/video-training-admin'
+import { isUploadValidationError } from '@/lib/upload-validation'
 import {
   deletePublicFile,
   inferPublicVideoMediaType,
@@ -206,7 +207,7 @@ export async function PUT(
 
     let nextCoverUrl = existingItem.coverUrl
     if (coverFile) {
-      nextCoverUrl = await savePublicUploadFile(coverFile, 'video-covers')
+      nextCoverUrl = await savePublicUploadFile(coverFile, 'video-covers', 'cover')
       newFilesToCleanup.add(nextCoverUrl)
       if (existingItem.coverUrl) {
         oldFilesToDelete.add(existingItem.coverUrl)
@@ -232,7 +233,7 @@ export async function PUT(
       let avatarUrl = existingCharacter?.avatarUrl || null
 
       if (avatarFile) {
-        avatarUrl = await savePublicUploadFile(avatarFile, 'video-covers')
+        avatarUrl = await savePublicUploadFile(avatarFile, 'video-covers', 'avatar')
         newFilesToCleanup.add(avatarUrl)
         if (existingCharacter?.avatarUrl) {
           oldFilesToDelete.add(existingCharacter.avatarUrl)
@@ -378,7 +379,7 @@ export async function PUT(
   } catch (error) {
     newFilesToCleanup.forEach((filePath) => deletePublicFile(filePath))
     console.error('Error updating video training item:', error)
-    return buildErrorResponse(error, 'Failed to update video training item')
+    return buildErrorResponse(error, 'Failed to update video training item', isUploadValidationError(error) ? 400 : 500)
   }
 }
 

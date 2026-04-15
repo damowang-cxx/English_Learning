@@ -17,12 +17,27 @@ export interface HomeVideoTrainingCardItem {
   captionsCount: number
 }
 
+export type HomeVideoTrainingSortMode = 'created-desc' | 'created-asc' | 'title-asc' | 'title-desc'
+
 interface HomeVideoTrainingGridProps {
   items: HomeVideoTrainingCardItem[]
   isAdmin?: boolean
   availableTags?: string[]
   selectedTag?: string | null
+  selectedSort?: HomeVideoTrainingSortMode
 }
+
+const DEFAULT_VIDEO_SORT: HomeVideoTrainingSortMode = 'created-desc'
+
+const VIDEO_SORT_OPTIONS = [
+  { value: 'created-desc', label: 'UPLOAD NEWEST' },
+  { value: 'created-asc', label: 'UPLOAD OLDEST' },
+  { value: 'title-asc', label: 'TITLE A-Z' },
+  { value: 'title-desc', label: 'TITLE Z-A' },
+] satisfies Array<{ value: HomeVideoTrainingSortMode; label: string }>
+
+const CREATED_SORT_MODES = new Set<HomeVideoTrainingSortMode>(['created-desc', 'created-asc'])
+const TITLE_SORT_MODES = new Set<HomeVideoTrainingSortMode>(['title-asc', 'title-desc'])
 
 interface CoverNaturalSizeState {
   src: string
@@ -56,6 +71,30 @@ function formatCreatedDate(value: string) {
     month: '2-digit',
     day: '2-digit',
   })
+}
+
+function buildVideoHomeHref(tag: string | null, sortMode: HomeVideoTrainingSortMode) {
+  const params = new URLSearchParams()
+
+  if (tag) {
+    params.set('tag', tag)
+  }
+
+  if (sortMode !== DEFAULT_VIDEO_SORT) {
+    params.set('sort', sortMode)
+  }
+
+  const query = params.toString()
+
+  return query ? `/video?${query}` : '/video'
+}
+
+function getNextCreatedSortMode(selectedSort: HomeVideoTrainingSortMode): HomeVideoTrainingSortMode {
+  return selectedSort === 'created-desc' ? 'created-asc' : 'created-desc'
+}
+
+function getNextTitleSortMode(selectedSort: HomeVideoTrainingSortMode): HomeVideoTrainingSortMode {
+  return selectedSort === 'title-asc' ? 'title-desc' : 'title-asc'
 }
 
 function getPreviewMetrics(
@@ -95,6 +134,7 @@ export default function HomeVideoTrainingGrid({
   isAdmin = false,
   availableTags = [],
   selectedTag = null,
+  selectedSort = DEFAULT_VIDEO_SORT,
 }: HomeVideoTrainingGridProps) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -108,6 +148,12 @@ export default function HomeVideoTrainingGrid({
 
   const dragStateRef = useRef<CoverDragState | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const selectedSortLabel =
+    VIDEO_SORT_OPTIONS.find((option) => option.value === selectedSort)?.label ?? VIDEO_SORT_OPTIONS[0].label
+  const isCreatedSortActive = CREATED_SORT_MODES.has(selectedSort)
+  const isTitleSortActive = TITLE_SORT_MODES.has(selectedSort)
+  const createdSortLabel = selectedSort === 'created-asc' ? 'UPLOAD OLDEST' : 'UPLOAD NEWEST'
+  const titleSortLabel = selectedSort === 'title-desc' ? 'TITLE Z-A' : 'TITLE A-Z'
 
   useEffect(() => {
     setItems(initialItems)
@@ -369,7 +415,7 @@ export default function HomeVideoTrainingGrid({
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/18 bg-black/32 px-4 py-3 shadow-[0_0_20px_rgba(34,211,238,0.08)]">
           <span className="mr-2 font-mono text-[11px] tracking-[0.2em] text-cyan-400/72">TAG FILTER</span>
           <Link
-            href="/video"
+            href={buildVideoHomeHref(null, selectedSort)}
             className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
               !selectedTag
                 ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
@@ -381,7 +427,7 @@ export default function HomeVideoTrainingGrid({
           {availableTags.map((tag) => (
             <Link
               key={tag}
-              href={`/video?tag=${encodeURIComponent(tag)}`}
+              href={buildVideoHomeHref(tag, selectedSort)}
               className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
                 selectedTag === tag
                   ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
@@ -394,12 +440,41 @@ export default function HomeVideoTrainingGrid({
         </div>
       ) : null}
 
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-cyan-500/18 bg-black/32 px-4 py-3 shadow-[0_0_20px_rgba(34,211,238,0.08)]">
+        <span className="mr-2 font-mono text-[11px] tracking-[0.2em] text-cyan-400/72">SORT BY</span>
+        <Link
+          href={buildVideoHomeHref(selectedTag, getNextCreatedSortMode(selectedSort))}
+          className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
+            isCreatedSortActive
+              ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
+              : 'border-cyan-500/24 bg-black/20 text-cyan-300/72 hover:border-cyan-400/42 hover:text-cyan-100'
+          }`}
+          title={isCreatedSortActive ? 'Toggle upload time order' : 'Sort by upload time'}
+        >
+          {createdSortLabel}
+        </Link>
+        <Link
+          href={buildVideoHomeHref(selectedTag, getNextTitleSortMode(selectedSort))}
+          className={`rounded-md border px-3 py-1.5 font-mono text-[11px] tracking-[0.18em] transition-colors ${
+            isTitleSortActive
+              ? 'border-cyan-300/60 bg-cyan-500/[0.12] text-cyan-100'
+              : 'border-cyan-500/24 bg-black/20 text-cyan-300/72 hover:border-cyan-400/42 hover:text-cyan-100'
+          }`}
+          title={isTitleSortActive ? 'Toggle title order' : 'Sort by title'}
+        >
+          {titleSortLabel}
+        </Link>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-cyan-500/14 bg-black/24 px-4 py-3">
         <div className="font-mono text-[11px] tracking-[0.18em] text-cyan-300/72">
           {selectedTag ? `FILTERED BY ${selectedTag}` : 'ALL VIDEO TRAINING ITEMS'}
         </div>
-        <div className="font-mono text-[11px] text-cyan-100/78">
-          {items.length} ITEM{items.length === 1 ? '' : 'S'}
+        <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] text-cyan-100/78">
+          <span>SORT: {selectedSortLabel}</span>
+          <span>
+            {items.length} ITEM{items.length === 1 ? '' : 'S'}
+          </span>
         </div>
       </div>
 

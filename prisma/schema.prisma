@@ -15,6 +15,7 @@ model User {
   passwordHash String
   role         String   @default("USER")
   isActive     Boolean  @default(true)
+  userGuideSeenAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireApiUser } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { getUploadFile, parseBooleanFormField } from '@/lib/upload-form'
+import { isUploadValidationError } from '@/lib/upload-validation'
 import { deletePublicFile, savePublicUploadFile } from '@/lib/video-training-storage'
 
 export async function GET() {
@@ -43,7 +44,7 @@ export async function PATCH(request: Request) {
 
   try {
     if (avatarFile) {
-      newAvatarUrl = await savePublicUploadFile(avatarFile, 'user-avatars')
+      newAvatarUrl = await savePublicUploadFile(avatarFile, 'user-avatars', 'avatar')
       nextAvatarUrl = newAvatarUrl
     } else if (removeAvatar) {
       nextAvatarUrl = null
@@ -76,6 +77,9 @@ export async function PATCH(request: Request) {
     }
 
     console.error('Failed to update account avatar:', error)
-    return NextResponse.json({ error: 'Failed to update account avatar.' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to update account avatar.' },
+      { status: isUploadValidationError(error) ? 400 : 500 }
+    )
   }
 }

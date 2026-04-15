@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import HomeBackupAction from '@/components/HomeBackupAction'
 import HomeUploadAction from '@/components/HomeUploadAction'
 import TopActionNav from '@/components/TopActionNav'
 import HomeCockpitFrame from '@/components/HomeCockpitFrame'
@@ -95,6 +96,7 @@ export default function HomeModeShell({ mode, isAdmin = false, children }: HomeM
               GLOBAL VOCAB
             </span>
           </Link>
+          <HomeBackupAction isAdmin={isAdmin} />
           <HomeUploadAction href={uploadHref} label={uploadLabel} isAdmin={isAdmin} />
         </div>
       </div>

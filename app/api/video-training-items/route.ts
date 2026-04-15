@@ -13,6 +13,7 @@ import {
   normalizeCharacters,
   parseJsonFormField,
 } from '@/lib/video-training-admin'
+import { isUploadValidationError } from '@/lib/upload-validation'
 import {
   deletePublicFile,
   inferPublicVideoMediaType,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
 
     const mediaType = inferPublicVideoMediaType(mediaUrl)
 
-    const coverUrl = coverFile ? await savePublicUploadFile(coverFile, 'video-covers') : null
+    const coverUrl = coverFile ? await savePublicUploadFile(coverFile, 'video-covers', 'cover') : null
 
     if (coverUrl) {
       savedFiles.push(coverUrl)
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     for (const [index, character] of characters.entries()) {
       const avatarFile = character.avatarField ? getUploadFile(formData, character.avatarField) : null
-      const avatarUrl = avatarFile ? await savePublicUploadFile(avatarFile, 'video-covers') : null
+      const avatarUrl = avatarFile ? await savePublicUploadFile(avatarFile, 'video-covers', 'avatar') : null
 
       if (avatarUrl) {
         savedFiles.push(avatarUrl)
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating video training item:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create video training item' },
-      { status: 500 }
+      { status: isUploadValidationError(error) ? 400 : 500 }
     )
   }
 }

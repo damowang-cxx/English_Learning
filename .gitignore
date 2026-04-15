@@ -48,6 +48,7 @@ next-env.d.ts
 # database
 # *.db
 # *.db-journal
+storage/training-backups/
 public/video/*.mp4
 public/video/*.mp4
 public/video/*.mp4

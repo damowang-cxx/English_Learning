@@ -258,6 +258,7 @@ export default function CockpitPanel() {
 
   const isHomePage = appPathname === '/' || appPathname === '/video'
   const isAdminUsersPage = appPathname === '/admin/users'
+  const isUploadPage = appPathname === '/upload' || appPathname === '/video/upload'
   const isVideoDomain = appPathname === '/video' || appPathname.startsWith('/video/')
   const isListeningTrainingPage = /^\/training\/[^/]+$/.test(appPathname)
   const isVideoTrainingPage = /^\/video\/[^/]+$/.test(appPathname) && appPathname !== '/video/upload'
@@ -383,7 +384,7 @@ export default function CockpitPanel() {
           <div
             className="pointer-events-auto fixed right-4 top-4 z-[90]"
           >
-            <TopActionNav />
+            <TopActionNav accountEntryMode={isUploadPage ? 'none' : 'top-nav'} />
           </div>
         )
       ) : null}

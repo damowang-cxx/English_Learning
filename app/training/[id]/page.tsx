@@ -594,7 +594,7 @@ export default function TrainingDetailPage() {
     window.localStorage.setItem(TRAINING_SENTENCE_FONT_STORAGE_KEY, selectedSentenceFontId)
   }, [selectedSentenceFontId])
 
-  // 鍏ㄥ睆妯″紡涓嬮殣钘忎华琛ㄧ洏
+  // 全屏模式下隐藏仪表盘
   useEffect(() => {
     const cockpitPanel = document.querySelector('.cockpit-panel') as HTMLElement
     if (cockpitPanel) {
@@ -639,7 +639,7 @@ export default function TrainingDetailPage() {
     document.documentElement.style.overflow = 'hidden'
     
     return () => {
-      // 鎭㈠鍘熷鏍峰紡
+      // 恢复原始样式
       document.body.style.overflow = originalOverflow
       document.documentElement.style.overflow = originalHtmlOverflow
     }
@@ -742,7 +742,7 @@ export default function TrainingDetailPage() {
     return () => window.removeEventListener('keydown', handleTrainingShortcut)
   }, [])
 
-  // 鎾斁閫熷害鎺у埗
+  // 播放速度控制
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackRate
@@ -750,7 +750,7 @@ export default function TrainingDetailPage() {
   }, [playbackRate])
 
 
-  // 鑷姩婊氬姩鍒板綋鍓嶆挱鏀剧殑鍙ュ瓙
+  // 自动滚动到当前播放的句子
   useEffect(() => {
     if (isDictationMode) {
       return
@@ -769,7 +769,7 @@ export default function TrainingDetailPage() {
     }
   }, [currentSentenceIndex, isDictationMode])
 
-  // 閫氱煡鑷姩娑堝け
+  // 通知自动消失
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -877,7 +877,7 @@ export default function TrainingDetailPage() {
     }
     
     if (editingSentenceIndex !== null) {
-      // 鏇存柊宸插瓨鍦ㄧ殑鍙ュ瓙
+      // 更新已存在的句子
       const updatedSentences = [...editSentences]
       updatedSentences[editingSentenceIndex] = { ...editCurrentSentence }
       setEditSentences(updatedSentences)
@@ -886,7 +886,7 @@ export default function TrainingDetailPage() {
       // Sentence draft is appended below so the reset uses the current end time.
     }
     
-    // 娓呯┖琛ㄥ崟
+    // 清空表单
     if (editingSentenceIndex === null) {
       setEditSentences((prev) => [...prev, { ...editCurrentSentence }])
     }
@@ -2226,14 +2226,14 @@ export default function TrainingDetailPage() {
       }`}
       style={isFullscreen ? {} : { paddingBottom: 'clamp(1.5rem, 4vh, 2.75rem)', paddingTop: 'clamp(4.5rem, 8vh, 6.5rem)' }}
     >
-        {/* HUD灞忓箷瀹瑰櫒 - 璧涘崥鏈嬪厠缁胯壊涓婚 */}
+        {/* HUD屏幕容器 - 赛博朋克绿色主题 */}
         <div 
           className={`mx-auto relative transition-all duration-300 ${
             isFullscreen ? 'w-[98%] h-[98vh]' : 'flex h-full min-h-0 w-[95%] max-w-6xl flex-col'
           }`}
           style={{ zIndex: isFullscreen ? 100 : 50 }}
         >
-          {/* 涓籋UD灞忓箷 - 鍗婇€忔槑 */}
+          {/* 主HUD屏幕 - 半透明 */}
           <div
             data-training-frame
             className={`relative rounded-lg overflow-hidden transition-all duration-300 ${
@@ -2253,18 +2253,18 @@ export default function TrainingDetailPage() {
           >
             {!isFocusMode && (
               <>
-                {/* 杈规鍙戝厜鏁堟灉 */}
+                {/* 边框发光效果 */}
                 <div className="absolute inset-0 border-2 border-green-400/20 rounded-lg pointer-events-none animate-pulse" style={{
                   boxShadow: 'inset 0 0 15px rgba(10,255,10,0.2), 0 0 20px rgba(10,255,10,0.15)'
                 }}></div>
                 
-                {/* 鑳介噺娉㈠姩鏁堟灉 */}
+                {/* 能量波动效果 */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(10,255,10,0.04)_40%,transparent_70%)] animate-pulse" style={{ animationDuration: '3s' }}></div>
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_70%,transparent_0%,rgba(10,255,10,0.03)_30%,transparent_60%)] animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }}></div>
                 </div>
 
-                {/* 绮掑瓙鑳屾櫙鏁堟灉 */}
+                {/* 粒子背景效果 */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                   {[...Array(15)].map((_, i) => (
                     <div
@@ -2280,10 +2280,10 @@ export default function TrainingDetailPage() {
                     ></div>
                   ))}
                 </div>
-                {/* HUD缃戞牸鑳屾櫙 - 澧炲己鐗?*/}
+                {/* HUD网格背景 - 增强版 */}
                 <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
                 
-                {/* 缃戞牸鍏夌偣鏁堟灉 */}
+                {/* 网格光点效果 */}
                 <div className="absolute inset-0 pointer-events-none">
                   {[...Array(20)].map((_, i) => {
                     const x = (i % 5) * 25 + 12.5
@@ -2304,17 +2304,17 @@ export default function TrainingDetailPage() {
                   })}
                 </div>
 
-                {/* 鎵弿绾挎晥鏋?- 澶氬眰 */}
+                {/* 扫描线效果 - 多层 */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.02),rgba(10,255,10,0.01),rgba(10,255,10,0.02))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-30"></div>
                 
-                {/* 鍨傜洿鎵弿绾?*/}
+                {/* 垂直扫描线 */}
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(10,255,10,0.05)_50%,transparent_100%)] bg-[length:100%_4px] pointer-events-none opacity-20 animate-scan-vertical" style={{ animationDuration: '3s' }}></div>
                 
-                {/* 姘村钩鎵弿绾?*/}
+                {/* 水平扫描线 */}
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(10,255,10,0.04)_50%,transparent_100%)] bg-[length:4px_100%] pointer-events-none opacity-15 animate-shimmer" style={{ animationDuration: '4s' }}></div>
 
-                {/* 瑙掕惤瑁呴グ - 澧炲己鐗?*/}
-                {/* 宸︿笂瑙?*/}
+                {/* 角落装饰 - 增强版 */}
+                {/* 左上角 */}
                 <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50 pointer-events-none">
                   <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-green-400/40"></div>
                   <div className="absolute top-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
@@ -2322,7 +2322,7 @@ export default function TrainingDetailPage() {
                   <div className="absolute top-0 left-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
                 </div>
                 
-                {/* 鍙充笂瑙?*/}
+                {/* 右上角 */}
                 <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50 pointer-events-none">
                   <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-green-400/40"></div>
                   <div className="absolute top-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
@@ -2330,7 +2330,7 @@ export default function TrainingDetailPage() {
                   <div className="absolute top-0 right-0 w-[2px] h-12 bg-gradient-to-b from-green-500/50 to-transparent"></div>
                 </div>
                 
-                {/* 宸︿笅瑙?*/}
+                {/* 左下角 */}
                 <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50 pointer-events-none">
                   <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-green-400/40"></div>
                   <div className="absolute bottom-1 left-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
@@ -2338,7 +2338,7 @@ export default function TrainingDetailPage() {
                   <div className="absolute bottom-0 left-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
                 </div>
                 
-                {/* 鍙充笅瑙?*/}
+                {/* 右下角 */}
                 <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50 pointer-events-none">
                   <div className="absolute bottom-0 right-0 w-6 h-6 border-b border-r border-green-400/40"></div>
                   <div className="absolute bottom-1 right-1 w-2 h-2 bg-green-400/25 rounded-full animate-pulse" style={{ boxShadow: '0 0 4px rgba(10,255,10,0.5)' }}></div>
@@ -2346,7 +2346,7 @@ export default function TrainingDetailPage() {
                   <div className="absolute bottom-0 right-0 w-[2px] h-12 bg-gradient-to-t from-green-500/50 to-transparent"></div>
                 </div>
                 
-                {/* 杈圭紭鍏夋晥 */}
+                {/* 边缘光效 */}
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
                 <div className="absolute top-0 bottom-0 left-0 w-[1px] bg-gradient-to-b from-transparent via-green-500/40 to-transparent pointer-events-none"></div>
@@ -2354,7 +2354,7 @@ export default function TrainingDetailPage() {
               </>
             )}
 
-          {/* 閫氱煡鎻愮ず */}
+          {/* 通知提示 */}
           {notification && (
             <div className={`fixed top-4 right-4 z-[300] px-6 py-4 rounded-lg border-2 shadow-lg backdrop-blur-md transition-all ${
               notification.type === 'success' 
@@ -2542,7 +2542,7 @@ export default function TrainingDetailPage() {
               </div>
             </div>
 
-            {/* 鍐呭鍖哄煙 - 甯﹁嚜瀹氫箟婊氬姩鏉★紙浠呭湪HUD灞忓箷鍙充晶锛?*/}
+            {/* 内容区域 - 带自定义滚动条（仅在HUD屏幕右侧） */}
             <div
               ref={contentRef}
               className={`${contentPanelClassName} relative`}
@@ -3571,7 +3571,7 @@ export default function TrainingDetailPage() {
     </div>
   </div>
 
-      {/* 缂栬緫妯℃€佹 */}
+      {/* 词汇编辑模态框 */}
       <WordLookupPopover
         request={wordLookup}
         savedEntryKeys={wordLookupSavedKeys}
@@ -3857,7 +3857,7 @@ export default function TrainingDetailPage() {
       {isAdmin && isEditing && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setIsEditing(false)}>
           <div className="w-[95%] max-w-5xl mx-auto relative bg-black/90 border-2 border-green-500/50 rounded-lg overflow-hidden shadow-[0_0_40px_rgba(10,255,10,0.3),inset_0_0_30px_rgba(10,255,10,0.1)] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* 椤堕儴瑁呴グ鏍?*/}
+            {/* 顶部装饰栏 */}
             <div className="relative border-b-2 border-green-500/50 bg-gradient-to-r from-green-900/30 via-transparent to-transparent p-4 sticky top-0 bg-black/90 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -3878,22 +3878,22 @@ export default function TrainingDetailPage() {
               </div>
             </div>
 
-            {/* HUD缃戞牸鑳屾櫙 */}
+            {/* HUD网格背景 */}
             <div className="absolute inset-0 bg-[linear-gradient(0deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent),linear-gradient(90deg,transparent_24%,rgba(10,255,10,.05)_25%,rgba(10,255,10,.05)_26%,transparent_27%,transparent_74%,rgba(10,255,10,.05)_75%,rgba(10,255,10,.05)_76%,transparent_77%,transparent)] bg-[length:40px_40px] pointer-events-none opacity-30"></div>
 
-            {/* 鎵弿绾挎晥鏋?*/}
+            {/* 扫描线效果 */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(10,255,10,0.03),rgba(10,255,10,0.01),rgba(10,255,10,0.03))] bg-[length:100%_3px,4px_100%] pointer-events-none opacity-40"></div>
 
-            {/* 瑙掕惤瑁呴グ */}
+            {/* 角落装饰 */}
             <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-green-500/50"></div>
             <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-green-500/50"></div>
             <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-green-500/50"></div>
             <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-green-500/50"></div>
 
-            {/* 鍐呭鍖哄煙 */}
+            {/* 内容区域 */}
             <div className="relative p-8">
               <form onSubmit={handleEditSubmit} className="space-y-8">
-                {/* 鍩虹淇℃伅鍖哄煙 */}
+                {/* 基础信息区域 */}
                 <div className="space-y-6">
                   <div className="border-l-2 border-green-500/50 pl-4">
                     <label className="block text-green-400 cyber-label text-sm mb-3 flex items-center gap-2">
@@ -3936,7 +3936,7 @@ export default function TrainingDetailPage() {
                   </div>
                 </div>
 
-                {/* 鍙ュ瓙鍒嗘鍖哄煙 */}
+                {/* 句子分段区域 */}
                 <div className="border-t-2 border-green-500/30 pt-8">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="h-[2px] w-8 bg-green-500"></div>
@@ -3950,7 +3950,7 @@ export default function TrainingDetailPage() {
                     </div>
                   </div>
 
-                  {/* 宸叉坊鍔犵殑鍙ュ瓙鍒楄〃 */}
+                  {/* 已添加的句子列表 */}
                   {editSentences.length > 0 && (
                     <div className="space-y-3 mb-6 max-h-64 overflow-y-auto pr-2">
                       {editSentences.map((sentence, index) => (
@@ -4005,7 +4005,7 @@ export default function TrainingDetailPage() {
                     </div>
                   )}
 
-                  {/* 娣诲姞/缂栬緫鍙ュ瓙琛ㄥ崟 */}
+                  {/* 添加/编辑句子表单 */}
                   <div className="p-6 bg-black/30 border border-green-500/20 rounded space-y-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
@@ -4109,7 +4109,7 @@ export default function TrainingDetailPage() {
                   </div>
                 </div>
 
-                {/* 搴曢儴鎿嶄綔鏍?*/}
+                {/* 底部操作栏 */}
                 <div className="flex gap-4 pt-6 border-t-2 border-green-500/30 relative" style={{ zIndex: 100 }}>
                   <button
                     type="submit"

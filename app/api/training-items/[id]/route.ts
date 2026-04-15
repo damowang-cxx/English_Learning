@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireApiAdmin, requireApiUser } from '@/lib/authz'
+import { getUploadFile } from '@/lib/upload-form'
+import { isUploadValidationError } from '@/lib/upload-validation'
+import { deletePublicFile, savePublicUploadFile } from '@/lib/video-training-storage'
 import fs from 'fs'
 import path from 'path'
 
@@ -66,11 +69,14 @@ export async function PUT(
     return guard.response
   }
 
+  let newAudioPathToCleanup: string | null = null
+  let oldAudioPathToDelete: string | null = null
+
   try {
     const { id } = await params
     const formData = await request.formData()
     const title = formData.get('title') as string
-    const audioFile = formData.get('audio') as File | null
+    const audioFile = getUploadFile(formData, 'audio')
     const sentencesData = formData.get('sentences') as string
 
     if (!title || !sentencesData) {
@@ -94,30 +100,10 @@ export async function PUT(
 
     let audioPath = existingItem.audioUrl
 
-    // 如果提供了新的音频文件，保存它
     if (audioFile && audioFile.size > 0) {
-      // 删除旧音频文件（如果存在）
-      const oldAudioPath = path.join(process.cwd(), 'public', existingItem.audioUrl)
-      if (fs.existsSync(oldAudioPath)) {
-        try {
-          fs.unlinkSync(oldAudioPath)
-        } catch (error) {
-          console.error('Error deleting old audio file:', error)
-        }
-      }
-
-      // 保存新音频文件
-      const audioFileName = `${Date.now()}_${audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-      audioPath = `/audio/${audioFileName}`
-      
-      const audioDir = path.join(process.cwd(), 'public', 'audio')
-      if (!fs.existsSync(audioDir)) {
-        fs.mkdirSync(audioDir, { recursive: true })
-      }
-
-      const bytes = await audioFile.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      fs.writeFileSync(path.join(audioDir, audioFileName), buffer)
+      audioPath = await savePublicUploadFile(audioFile, 'audio', 'audio')
+      newAudioPathToCleanup = audioPath
+      oldAudioPathToDelete = existingItem.audioUrl
     }
 
     // 解析句子数据
@@ -151,12 +137,16 @@ export async function PUT(
       }
     })
 
+    newAudioPathToCleanup = null
+    deletePublicFile(oldAudioPathToDelete)
+
     return NextResponse.json(trainingItem)
   } catch (error) {
+    deletePublicFile(newAudioPathToCleanup)
     console.error('Error updating training item:', error)
     return NextResponse.json(
-      { error: 'Failed to update training item' },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : 'Failed to update training item' },
+      { status: isUploadValidationError(error) ? 400 : 500 }
     )
   }
 }

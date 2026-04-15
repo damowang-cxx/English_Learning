@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { randomUUID } from 'crypto'
+import { readValidatedUploadFile, type UploadFilePurpose } from '@/lib/upload-validation'
 
 const SAFE_FILE_NAME_PATTERN = /[^a-zA-Z0-9._-]/g
 const SUPPORTED_MANUAL_VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v'])
@@ -11,7 +12,11 @@ export function sanitizeUploadFileName(fileName: string) {
   return safeName || 'upload'
 }
 
-export async function savePublicUploadFile(file: File, publicSubdir: 'video' | 'video-covers' | 'user-avatars') {
+export async function savePublicUploadFile(
+  file: File,
+  publicSubdir: 'audio' | 'video' | 'video-covers' | 'user-avatars',
+  purpose: UploadFilePurpose
+) {
   const directory = path.join(process.cwd(), 'public', publicSubdir)
 
   if (!fs.existsSync(directory)) {
@@ -19,8 +24,7 @@ export async function savePublicUploadFile(file: File, publicSubdir: 'video' | '
   }
 
   const fileName = `${Date.now()}_${randomUUID()}_${sanitizeUploadFileName(file.name)}`
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
+  const buffer = await readValidatedUploadFile(file, purpose)
 
   fs.writeFileSync(path.join(directory, fileName), buffer)
 

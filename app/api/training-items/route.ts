@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireApiAdmin } from '@/lib/authz'
-import fs from 'fs'
-import path from 'path'
+import { getUploadFile } from '@/lib/upload-form'
+import { isUploadValidationError } from '@/lib/upload-validation'
+import { deletePublicFile, savePublicUploadFile } from '@/lib/video-training-storage'
 
 interface SentenceInput {
   text: string
@@ -39,10 +40,12 @@ export async function POST(request: NextRequest) {
     return guard.response
   }
 
+  let audioPathToCleanup: string | null = null
+
   try {
     const formData = await request.formData()
     const title = formData.get('title') as string
-    const audioFile = formData.get('audio') as File
+    const audioFile = getUploadFile(formData, 'audio')
     const sentencesData = formData.get('sentences') as string
 
     if (!title || !audioFile || !sentencesData) {
@@ -52,22 +55,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 保存音频文件到 public/audio 目录
-    const audioFileName = `${Date.now()}_${audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
-    const audioPath = `/audio/${audioFileName}`
-    
-    // 在 Next.js 中，我们需要使用文件系统 API
-    const audioDir = path.join(process.cwd(), 'public', 'audio')
-    
-    // 确保目录存在
-    if (!fs.existsSync(audioDir)) {
-      fs.mkdirSync(audioDir, { recursive: true })
-    }
-
-    // 保存文件
-    const bytes = await audioFile.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    fs.writeFileSync(path.join(audioDir, audioFileName), buffer)
+    const audioPath = await savePublicUploadFile(audioFile, 'audio', 'audio')
+    audioPathToCleanup = audioPath
 
     // 解析句子数据
     const sentences = JSON.parse(sentencesData) as SentenceInput[]
@@ -94,12 +83,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    audioPathToCleanup = null
     return NextResponse.json(trainingItem)
   } catch (error) {
+    deletePublicFile(audioPathToCleanup)
     console.error('Error creating training item:', error)
     return NextResponse.json(
-      { error: 'Failed to create training item' },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : 'Failed to create training item' },
+      { status: isUploadValidationError(error) ? 400 : 500 }
     )
   }
 }
