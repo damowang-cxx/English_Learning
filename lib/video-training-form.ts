@@ -56,6 +56,9 @@ export interface TranslationDraftResult {
   note?: string
 }
 
+const HAN_CHARACTER_PATTERN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
+const LATIN_LETTER_PATTERN = /[A-Za-z]/
+
 export function createLocalId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
@@ -215,6 +218,113 @@ export function parseSubtitleText(rawText: string) {
   }
 
   return cues
+}
+
+function splitBilingualSubtitleLine(line: string) {
+  const cleanedLine = cleanSubtitleText(line)
+
+  if (!cleanedLine) {
+    return null
+  }
+
+  const firstHanIndex = cleanedLine.search(HAN_CHARACTER_PATTERN)
+
+  if (firstHanIndex < 0) {
+    return {
+      enText: cleanedLine,
+      zhText: '',
+    }
+  }
+
+  const prefix = cleanedLine.slice(0, firstHanIndex).trim()
+  const suffix = cleanedLine.slice(firstHanIndex).trim()
+
+  if (prefix && LATIN_LETTER_PATTERN.test(prefix)) {
+    return {
+      enText: prefix,
+      zhText: suffix,
+    }
+  }
+
+  return {
+    enText: '',
+    zhText: cleanedLine,
+  }
+}
+
+export function parseBilingualSubtitleText(rawText: string) {
+  const blocks = rawText
+    .replace(/\r/g, '')
+    .replace(/^\uFEFF/, '')
+    .split(/\n{2,}/)
+  const captions: VideoCaptionDraft[] = []
+
+  for (const block of blocks) {
+    const lines = block
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    if (lines.length === 0 || lines[0].toUpperCase().startsWith('WEBVTT')) {
+      continue
+    }
+
+    const timeLineIndex = lines.findIndex((line) => line.includes('-->'))
+
+    if (timeLineIndex < 0) {
+      continue
+    }
+
+    const [rawStart, rawEndWithSettings] = lines[timeLineIndex].split('-->').map((part) => part.trim())
+    const rawEnd = rawEndWithSettings.split(/\s+/)[0]
+    const startTime = parseSubtitleTime(rawStart)
+    const endTime = parseSubtitleTime(rawEnd)
+
+    if (!Number.isFinite(startTime) || !Number.isFinite(endTime) || endTime <= startTime) {
+      continue
+    }
+
+    const enLines: string[] = []
+    const zhLines: string[] = []
+
+    for (const line of lines.slice(timeLineIndex + 1)) {
+      const splitLine = splitBilingualSubtitleLine(line)
+
+      if (!splitLine) {
+        continue
+      }
+
+      if (splitLine.enText) {
+        enLines.push(splitLine.enText)
+      }
+
+      if (splitLine.zhText) {
+        zhLines.push(splitLine.zhText)
+      }
+    }
+
+    const enText = enLines.join(' ').trim()
+
+    if (!enText) {
+      continue
+    }
+
+    const zhText = zhLines.join(' ').trim()
+
+    captions.push({
+      localId: createLocalId(),
+      startTime,
+      endTime,
+      enText,
+      zhText,
+      speaker: '',
+      needsReview: false,
+      translationStatus: zhText ? 'draft' : 'empty',
+      translationNeedsReview: !zhText,
+    })
+  }
+
+  return captions
 }
 
 function getOverlapSeconds(left: ParsedSubtitleCue, right: ParsedSubtitleCue) {

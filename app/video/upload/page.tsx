@@ -20,6 +20,7 @@ import {
   createLocalId,
   getVideoCharacterNames,
   mergeCaptionTracks,
+  parseBilingualSubtitleText,
   parseJsonCaptions,
   parseSubtitleText,
   type TranslationDraftResult,
@@ -168,6 +169,37 @@ export default function VideoUploadPage() {
       setStatus({
         type: 'error',
         message: error instanceof Error ? error.message : 'Subtitle import failed.',
+      })
+    } finally {
+      setIsParsing(false)
+    }
+  }
+
+  const handleParseBilingualSubtitles = async () => {
+    if (!enSubtitleFile) {
+      setStatus({ type: 'error', message: 'Choose the bilingual SRT/VTT file in the English/Bilingual field first.' })
+      return
+    }
+
+    setIsParsing(true)
+    setStatus(null)
+
+    try {
+      const nextCaptions = parseBilingualSubtitleText(await enSubtitleFile.text())
+
+      if (nextCaptions.length === 0) {
+        throw new Error('No valid bilingual caption blocks were found.')
+      }
+
+      setCaptions(nextCaptions)
+      setStatus({
+        type: 'success',
+        message: `Imported ${nextCaptions.length} bilingual caption blocks from ${enSubtitleFile.name}.`,
+      })
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Bilingual subtitle import failed.',
       })
     } finally {
       setIsParsing(false)
@@ -676,6 +708,14 @@ export default function VideoUploadPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={handleParseBilingualSubtitles}
+                    disabled={isParsing}
+                    className="rounded-md border border-emerald-400/40 bg-emerald-400/[0.08] px-4 py-2 text-xs text-emerald-100 transition-colors hover:border-emerald-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isParsing ? 'PARSING...' : 'PARSE BILINGUAL'}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => void handleRequestTranslationDraft('normal')}
                     disabled={isRequestingDraft}
                     className="rounded-md border border-yellow-500/35 bg-yellow-500/[0.08] px-4 py-2 text-xs text-yellow-200 transition-colors hover:border-yellow-400/60 disabled:cursor-not-allowed disabled:opacity-50"
@@ -694,7 +734,7 @@ export default function VideoUploadPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-xs text-cyan-300 cyber-label">ENGLISH SRT/VTT *</span>
+                  <span className="mb-2 block text-xs text-cyan-300 cyber-label">ENGLISH / BILINGUAL SRT/VTT *</span>
                   <input
                     type="file"
                     accept=".srt,.vtt,text/vtt"
@@ -712,6 +752,9 @@ export default function VideoUploadPage() {
                   />
                 </label>
               </div>
+              <p className="mt-3 text-xs text-cyan-300/60">
+                For one file with English and Chinese under each timestamp, choose it in the English/Bilingual field and click PARSE BILINGUAL.
+              </p>
               <div className="mt-5 rounded-md border border-cyan-500/20 bg-black/25 p-4">
                 <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
