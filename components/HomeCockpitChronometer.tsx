@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FUTURE_TECH_FONT_CLASSNAME } from '@/lib/training-fonts'
+import { HOME_CLOCK_FONT_CLASSNAME } from '@/lib/training-fonts'
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -30,7 +30,7 @@ function formatCockpitTime(date: Date) {
     hours,
     minutes,
     seconds,
-    display: `[${year}]:[${day}]:[${hours}]:[${minutes}]:[${seconds}]`,
+    display: `${year} / day ${day} / ${hours}:${minutes}:${seconds}`,
     dateTime: date.toISOString(),
     label: `Epoch year ${year}, accumulated day ${day}, time ${hours}:${minutes}:${seconds}`,
   }
@@ -43,7 +43,7 @@ export default function HomeCockpitChronometer() {
     hours: '--',
     minutes: '--',
     seconds: '--',
-    display: '[----]:[---]:[--]:[--]:[--]',
+    display: '---- / day --- / --:--:--',
     dateTime: '',
     label: 'Syncing cockpit time',
   }))
@@ -61,11 +61,23 @@ export default function HomeCockpitChronometer() {
 
   return (
     <time
-      className={`${FUTURE_TECH_FONT_CLASSNAME} home-cockpit-frame__chronometer`}
+      className={`${HOME_CLOCK_FONT_CLASSNAME} home-cockpit-frame__chronometer`}
       dateTime={time.dateTime}
       aria-label={time.label}
+      title={time.display}
     >
-      {time.display}
+      <span className="home-cockpit-frame__chronometer-date">
+        {time.year}
+        <span className="home-cockpit-frame__chronometer-dot" aria-hidden="true" />
+        DAY {time.day}
+      </span>
+      <span className="home-cockpit-frame__chronometer-time" aria-hidden="true">
+        {time.hours}
+        <span className="home-cockpit-frame__chronometer-separator">:</span>
+        {time.minutes}
+        <span className="home-cockpit-frame__chronometer-separator">:</span>
+        <span className="home-cockpit-frame__chronometer-seconds">{time.seconds}</span>
+      </span>
     </time>
   )
 }

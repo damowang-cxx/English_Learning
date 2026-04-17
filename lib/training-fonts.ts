@@ -41,6 +41,7 @@ const futureTech = localFont({
 })
 
 export const FUTURE_TECH_FONT_CLASSNAME = futureTech.className
+export const HOME_CLOCK_FONT_CLASSNAME = modernSans.className
 
 export const TRAINING_SENTENCE_FONT_STORAGE_KEY = 'trainingSentenceFont'
 
