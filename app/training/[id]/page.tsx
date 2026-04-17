@@ -2247,7 +2247,7 @@ export default function TrainingDetailPage() {
           }`}
             style={{
             boxShadow: isFocusMode
-              ? '0 14px 42px rgba(0,0,0,0.34), inset 0 0 0 1px rgba(255,255,255,0.02)'
+              ? 'var(--training-focus-frame-shadow, 0 14px 42px rgba(0,0,0,0.24), inset 0 0 0 1px rgba(255,255,255,0.02))'
               : '0 0 40px rgba(10,255,10,0.25), inset 0 0 30px rgba(10,255,10,0.1), 0 0 60px rgba(10,255,10,0.15)'
           }}
           >
@@ -2611,7 +2611,7 @@ export default function TrainingDetailPage() {
                             className={`audio-slider h-2 w-full cursor-pointer appearance-none rounded-lg ${isModernFocusLayout ? 'bg-slate-800/80' : 'bg-black/60'}`}
                             style={{
                               background: isModernFocusLayout
-                                ? `linear-gradient(to right, rgba(148,163,184,0.88) 0%, rgba(148,163,184,0.88) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(51,65,85,0.82) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(51,65,85,0.82) 100%)`
+                                ? `linear-gradient(to right, var(--training-focus-accent, rgba(148,163,184,0.88)) 0%, var(--training-focus-accent, rgba(148,163,184,0.88)) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, var(--training-focus-slider-track, rgba(51,65,85,0.82)) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, var(--training-focus-slider-track, rgba(51,65,85,0.82)) 100%)`
                                 : `linear-gradient(to right, rgba(10,255,10,0.58) 0%, rgba(10,255,10,0.58) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) ${duration > 0 ? (currentTime / duration) * 100 : 0}%, rgba(10,255,10,0.1) 100%)`
                             }}
                           />
@@ -2914,7 +2914,7 @@ export default function TrainingDetailPage() {
                           }}
                           className={`${sentenceCardClassName} group/sentence${isActive ? ' is-active' : ''}`}
                         >
-                          {!isModernFocusLayout && <div className={`${sentenceGlowClassName} absolute inset-0`}></div>}
+                          <div className={`${sentenceGlowClassName} pointer-events-none absolute inset-0`}></div>
                           {isActive && (
                             <div className={`${sentenceRailClassName} absolute inset-y-6 left-0 w-[2px] rounded-r-full`}></div>
                           )}
@@ -3212,11 +3212,12 @@ export default function TrainingDetailPage() {
                             <SelectableEnglishText
                               contextId={sentence.id}
                               onLookup={setWordLookup}
-                              className={`${readingSurfaceClassName} mt-3.5 px-4 py-1.5 md:px-5 md:py-2 transition-all select-text ${
+                              className={`${readingSurfaceClassName} mt-3.5 transition-all select-text ${
                                   isActive
                                     ? isModernFocusLayout ? 'text-slate-50' : 'text-green-100'
                                     : isModernFocusLayout ? 'text-slate-200 hover:text-slate-50' : 'text-gray-100 hover:text-green-100'
                                 }`}
+                              contentClassName="training-reading-text-inset"
                             >
                               <p className={`max-w-[48rem] text-base cyber-font-readable font-bold leading-[1.9] md:text-[17px] ${selectedSentenceFont.className} ${isModernFocusLayout ? 'tracking-[0.01em]' : ''}`}>
                                 {highlightedSentenceText}

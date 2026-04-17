@@ -16,6 +16,8 @@ model User {
   role         String   @default("USER")
   isActive     Boolean  @default(true)
   userGuideSeenAt DateTime?
+  dialogueSessions DialogueSession[]
+  dialogueAttempts DialogueAttempt[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -156,4 +158,140 @@ model LearningDailyStat {
   @@unique([userId, dateKey])
   @@index([userId])
   @@index([dateKey])
+}
+
+model DialogueScenario {
+  id          String            @id @default(cuid())
+  title       String
+  description String            @default("")
+  difficulty  String            @default("beginner")
+  userRole    String            @default("")
+  aiRole      String            @default("")
+  tagsJson    String            @default("[]")
+  coverUrl    String?
+  isPublished Boolean           @default(false)
+  startNodeId String?
+  roleVoice   String            @default("marin")
+  coachVoice  String            @default("cedar")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  nodes       DialogueNode[]
+  edges       DialogueEdge[]
+  sessions    DialogueSession[]
+
+  @@index([isPublished])
+  @@index([difficulty])
+  @@index([createdAt])
+}
+
+model DialogueNode {
+  id                   String              @id @default(cuid())
+  scenarioId           String
+  scenario             DialogueScenario    @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  order                Int
+  title                String              @default("")
+  roleLineEn           String
+  roleLineZh           String?
+  goal                 String
+  rubricJson           String              @default("{}")
+  hintJson             String              @default("{}")
+  sampleAnswer         String              @default("")
+  retryLimit           Int                 @default(2)
+  allowDynamicFollowup Boolean             @default(false)
+  positionX            Float               @default(0)
+  positionY            Float               @default(0)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  outgoingEdges        DialogueEdge[]      @relation("DialogueEdgeFromNode")
+  incomingEdges        DialogueEdge[]      @relation("DialogueEdgeToNode")
+  sessions             DialogueSession[]   @relation("DialogueCurrentNode")
+  attempts             DialogueAttempt[]
+
+  @@index([scenarioId])
+  @@index([scenarioId, order])
+}
+
+model DialogueEdge {
+  id          String           @id @default(cuid())
+  scenarioId  String
+  scenario    DialogueScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  fromNodeId  String
+  fromNode    DialogueNode     @relation("DialogueEdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  onResult    String
+  toNodeId    String?
+  toNode      DialogueNode?    @relation("DialogueEdgeToNode", fields: [toNodeId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([fromNodeId, onResult])
+  @@index([scenarioId])
+  @@index([toNodeId])
+}
+
+model DialogueSession {
+  id                 String             @id @default(cuid())
+  scenarioId         String
+  scenario           DialogueScenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentNodeId      String?
+  currentNode        DialogueNode?      @relation("DialogueCurrentNode", fields: [currentNodeId], references: [id], onDelete: SetNull)
+  status             String             @default("active")
+  totalScore         Int                @default(0)
+  completedNodeCount Int                @default(0)
+  lastActivityAt     DateTime           @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  attempts           DialogueAttempt[]
+
+  @@index([scenarioId])
+  @@index([userId])
+  @@index([status])
+  @@index([lastActivityAt])
+}
+
+model DialogueAttempt {
+  id              String           @id @default(cuid())
+  sessionId       String
+  session         DialogueSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  scenarioId      String
+  nodeId          String?
+  node            DialogueNode?    @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputMode       String           @default("text")
+  userText        String           @default("")
+  transcriptText  String?
+  routerIntent    String           @default("scene_answer")
+  routerJson      String           @default("{}")
+  evaluatorJson   String?
+  coachJson       String?
+  roleReplyEn     String?
+  coachReplyZh    String?
+  betterAnswerEn  String?
+  passed          Boolean?
+  score           Int?
+  nextAction      String           @default("stay")
+  createdAt       DateTime         @default(now())
+
+  @@index([sessionId])
+  @@index([scenarioId])
+  @@index([nodeId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model DialogueSpeechAsset {
+  id           String   @id @default(cuid())
+  cacheKey     String   @unique
+  text         String
+  voice        String
+  model        String
+  instructions String   @default("")
+  audioUrl     String
+  createdAt    DateTime @default(now())
+
+  @@index([voice])
+  @@index([createdAt])
 }

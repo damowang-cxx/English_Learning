@@ -89,3 +89,33 @@ export type VideoCaptionNote = Prisma.VideoCaptionNoteModel
  * 
  */
 export type LearningDailyStat = Prisma.LearningDailyStatModel
+/**
+ * Model DialogueScenario
+ * 
+ */
+export type DialogueScenario = Prisma.DialogueScenarioModel
+/**
+ * Model DialogueNode
+ * 
+ */
+export type DialogueNode = Prisma.DialogueNodeModel
+/**
+ * Model DialogueEdge
+ * 
+ */
+export type DialogueEdge = Prisma.DialogueEdgeModel
+/**
+ * Model DialogueSession
+ * 
+ */
+export type DialogueSession = Prisma.DialogueSessionModel
+/**
+ * Model DialogueAttempt
+ * 
+ */
+export type DialogueAttempt = Prisma.DialogueAttemptModel
+/**
+ * Model DialogueSpeechAsset
+ * 
+ */
+export type DialogueSpeechAsset = Prisma.DialogueSpeechAssetModel

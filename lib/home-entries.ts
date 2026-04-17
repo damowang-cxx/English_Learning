@@ -21,3 +21,15 @@ export type HomeEntry =
         tag: string
       }
     }
+  | {
+      kind: 'dialogue'
+      id: string
+      title: string
+      coverUrl: string | null
+      meta: {
+        updatedAt: string
+        difficulty: string
+        nodesCount: number
+        tags: string[]
+      }
+    }

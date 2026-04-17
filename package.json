@@ -9,11 +9,13 @@
     "lint": "eslint",
     "postinstall": "node scripts/fix-prisma-path.js",
     "seed:admin": "node scripts/seed-admin.mjs",
+    "seed:dialogue-demo": "node scripts/seed-dialogue-demo.mjs",
     "sync:ecdict": "node scripts/sync-ecdict.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "@xyflow/react": "^12.10.2",
     "better-sqlite3": "^12.6.2",
     "framer-motion": "^12.30.0",
     "lucide-react": "^0.563.0",

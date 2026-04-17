@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
 :root {
   --cyber-bg: #0a0a0f;
@@ -2001,6 +2002,576 @@ body[data-training-focus-mode='true'] [data-training-page] textarea::placeholder
 
 body[data-training-focus-mode='true'] [data-training-page] [class*='caret-slate-200'] {
   caret-color: var(--training-focus-text-secondary) !important;
+}
+
+/* Focus comfort refresh */
+body[data-training-focus-mode='true'] {
+  --training-focus-page-bg-color: #0c1117;
+  --training-focus-page-bg:
+    radial-gradient(ellipse at 50% -8%, rgba(115, 132, 153, 0.2), transparent 42%),
+    radial-gradient(ellipse at 12% 18%, rgba(62, 81, 104, 0.14), transparent 34%),
+    linear-gradient(180deg, #171d24 0%, #0c1117 52%, #070b10 100%);
+  --training-focus-frame-bg: rgba(12, 17, 23, 0.93);
+  --training-focus-frame-solid: rgba(13, 18, 24, 0.96);
+  --training-focus-control-solid: rgba(24, 31, 39, 0.9);
+  --training-focus-frame-border: rgba(136, 152, 169, 0.28);
+  --training-focus-frame-shadow:
+    0 20px 54px rgba(2, 6, 12, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --training-focus-surface-shadow:
+    0 14px 30px rgba(2, 6, 12, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  --training-focus-card-shadow:
+    0 10px 24px rgba(2, 6, 12, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  --training-focus-active-shadow:
+    0 18px 38px rgba(2, 6, 12, 0.26),
+    0 0 0 1px rgba(219, 226, 234, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --training-focus-input-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 8px 18px rgba(2, 6, 12, 0.1);
+  --training-focus-frame-inset:
+    radial-gradient(ellipse at top left, rgba(136, 152, 169, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(16, 24, 34, 0.24), rgba(16, 24, 34, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(218, 226, 235, 0.22), transparent);
+  --training-focus-header-bg:
+    radial-gradient(ellipse at top right, rgba(150, 166, 184, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(20, 27, 35, 0.95), rgba(13, 18, 24, 0.94));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(12, 17, 23, 0.96), rgba(9, 13, 19, 0.94));
+  --training-focus-content-overlay:
+    radial-gradient(ellipse at top right, rgba(142, 158, 177, 0.06), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent 22%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(17, 23, 31, 0.92), rgba(12, 17, 23, 0.94));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(23, 30, 39, 0.94), rgba(15, 21, 29, 0.92));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(29, 37, 47, 0.96), rgba(18, 25, 33, 0.94));
+  --training-focus-select-bg: rgba(20, 29, 40, 0.58);
+  --training-focus-select-bg-focus: rgba(25, 35, 47, 0.72);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(17, 25, 36, 0.36);
+  --training-focus-surface-bg-muted:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.006)),
+    rgba(12, 18, 26, 0.26);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0.014)),
+    rgba(22, 31, 43, 0.44);
+  --training-focus-surface-bg-active:
+    radial-gradient(ellipse at 18% 0%, rgba(154, 170, 188, 0.13), transparent 38%),
+    linear-gradient(180deg, rgba(25, 33, 44, 0.96), rgba(15, 22, 31, 0.94));
+  --training-focus-active-reading-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.014)),
+    rgba(24, 34, 47, 0.5);
+  --training-focus-active-glow: radial-gradient(ellipse at center, rgba(196, 209, 223, 0.11), transparent 64%);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(17, 25, 36, 0.32), rgba(9, 13, 19, 0.52));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(18, 27, 39, 0.34), rgba(9, 13, 19, 0.6));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(121, 82, 35, 0.16), rgba(13, 18, 24, 0.66));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(18, 26, 38, 0.44), rgba(10, 14, 20, 0.68));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(18, 26, 38, 0.38), rgba(10, 14, 20, 0.72));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(17, 25, 36, 0.34), rgba(10, 14, 20, 0.58));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(121, 82, 35, 0.14), rgba(13, 18, 24, 0.62));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(18, 26, 38, 0.4), rgba(12, 17, 23, 0.62));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(18, 26, 38, 0.36), rgba(11, 15, 21, 0.64));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(24, 33, 45, 0.48), rgba(14, 20, 28, 0.72));
+  --training-focus-border-strong: rgba(220, 229, 238, 0.42);
+  --training-focus-border: rgba(132, 149, 167, 0.3);
+  --training-focus-border-soft: rgba(113, 130, 150, 0.22);
+  --training-focus-border-faint: rgba(90, 108, 128, 0.2);
+  --training-focus-border-muted: rgba(126, 144, 164, 0.24);
+  --training-focus-border-hover: rgba(169, 184, 202, 0.48);
+  --training-focus-text-strong: #f7f9fb;
+  --training-focus-text-primary: rgba(226, 233, 240, 0.92);
+  --training-focus-text-secondary: rgba(193, 204, 217, 0.84);
+  --training-focus-text-muted: rgba(148, 163, 181, 0.78);
+  --training-focus-text-dim: rgba(112, 128, 148, 0.7);
+  --training-focus-accent: rgba(207, 216, 226, 0.82);
+  --training-focus-accent-soft: rgba(207, 216, 226, 0.12);
+  --training-focus-pill-bg: rgba(22, 31, 43, 0.46);
+  --training-focus-pill-border: rgba(130, 148, 168, 0.28);
+  --training-focus-pill-text: rgba(213, 222, 232, 0.84);
+  --training-focus-pill-active-bg: rgba(212, 222, 232, 0.1);
+  --training-focus-pill-active-border: rgba(220, 229, 238, 0.4);
+  --training-focus-rail: linear-gradient(180deg, rgba(226, 233, 240, 0.58), rgba(148, 163, 181, 0.18), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(148, 163, 181, 0.18), transparent);
+  --training-focus-slider-track: rgba(54, 66, 82, 0.72);
+  --training-focus-scroll-track: rgba(29, 40, 54, 0.42);
+  --training-focus-scroll-track-border: rgba(107, 124, 144, 0.2);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(151, 168, 188, 0.66), rgba(103, 120, 141, 0.52));
+  --training-focus-scroll-thumb-border: rgba(74, 91, 111, 0.28);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(191, 204, 219, 0.72), rgba(135, 152, 172, 0.58));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(24, 31, 39, 0.78), rgba(13, 18, 24, 0.92));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(34, 43, 54, 0.9), rgba(17, 23, 30, 0.96));
+  --training-focus-dock-border: rgba(144, 160, 178, 0.22);
+  --training-focus-dock-border-active: rgba(220, 229, 238, 0.42);
+  --training-focus-dock-shadow: 0 10px 24px rgba(2, 6, 12, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  --training-focus-dock-shadow-active: 0 14px 30px rgba(2, 6, 12, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --training-focus-danger: #f08a8a;
+  --training-focus-danger-soft: rgba(240, 138, 138, 0.14);
+  --training-focus-warning: #d1a05e;
+  --training-focus-warning-soft: rgba(209, 160, 94, 0.14);
+  --training-focus-success: #8cc9a7;
+  --training-focus-success-soft: rgba(140, 201, 167, 0.13);
+  --training-focus-info: #9fb8d1;
+  --training-focus-info-soft: rgba(159, 184, 209, 0.13);
+}
+
+body[data-training-focus-mode='true'][data-training-focus-theme='warm'] {
+  --training-focus-page-bg-color: #efe4ce;
+  --training-focus-page-bg:
+    radial-gradient(ellipse at 18% 18%, rgba(132, 148, 101, 0.2), transparent 34%),
+    radial-gradient(ellipse at 78% 6%, rgba(181, 138, 72, 0.2), transparent 36%),
+    linear-gradient(180deg, #f8f1e3 0%, #efe3ca 58%, #e4d2b4 100%);
+  --training-focus-frame-bg: rgba(255, 250, 239, 0.9);
+  --training-focus-frame-solid: rgba(255, 250, 239, 0.96);
+  --training-focus-control-solid: rgba(247, 235, 211, 0.92);
+  --training-focus-frame-border: rgba(132, 103, 58, 0.28);
+  --training-focus-frame-shadow:
+    0 20px 46px rgba(92, 72, 39, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  --training-focus-surface-shadow:
+    0 12px 26px rgba(112, 88, 47, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --training-focus-card-shadow:
+    0 8px 20px rgba(112, 88, 47, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  --training-focus-active-shadow:
+    0 16px 34px rgba(112, 82, 38, 0.18),
+    0 0 0 1px rgba(157, 111, 51, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --training-focus-input-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 7px 16px rgba(112, 88, 47, 0.08);
+  --training-focus-frame-inset:
+    radial-gradient(ellipse at top left, rgba(132, 148, 101, 0.14), transparent 25%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(147, 110, 59, 0.28), transparent);
+  --training-focus-header-bg:
+    radial-gradient(ellipse at top right, rgba(132, 148, 101, 0.13), transparent 34%),
+    linear-gradient(180deg, rgba(255, 252, 244, 0.94), rgba(247, 237, 216, 0.9));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(255, 251, 242, 0.92), rgba(241, 229, 205, 0.88));
+  --training-focus-content-overlay:
+    radial-gradient(ellipse at top right, rgba(132, 148, 101, 0.09), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 24%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(255, 252, 245, 0.9), rgba(246, 235, 213, 0.86));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(255, 249, 235, 0.9), rgba(241, 226, 195, 0.86));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(255, 251, 241, 0.95), rgba(239, 220, 184, 0.9));
+  --training-focus-select-bg: rgba(255, 248, 233, 0.7);
+  --training-focus-select-bg-focus: rgba(255, 251, 241, 0.86);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.18)),
+    rgba(245, 234, 211, 0.64);
+  --training-focus-surface-bg-muted:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12)),
+    rgba(240, 226, 198, 0.48);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2)),
+    rgba(249, 237, 212, 0.76);
+  --training-focus-surface-bg-active:
+    radial-gradient(ellipse at 15% 0%, rgba(132, 148, 101, 0.16), transparent 38%),
+    linear-gradient(180deg, rgba(255, 249, 235, 0.96), rgba(243, 225, 194, 0.92));
+  --training-focus-active-reading-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.24)),
+    rgba(255, 244, 220, 0.72);
+  --training-focus-active-glow: radial-gradient(ellipse at center, rgba(157, 111, 51, 0.1), transparent 64%);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(255, 250, 239, 0.56), rgba(239, 225, 197, 0.56));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(255, 250, 239, 0.6), rgba(235, 218, 188, 0.6));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(180, 117, 57, 0.15), rgba(247, 235, 211, 0.68));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(255, 250, 239, 0.58), rgba(239, 225, 197, 0.64));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(255, 250, 239, 0.62), rgba(237, 221, 190, 0.66));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(255, 252, 245, 0.62), rgba(242, 230, 206, 0.64));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(180, 117, 57, 0.14), rgba(247, 235, 211, 0.66));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(255, 252, 244, 0.68), rgba(239, 225, 198, 0.68));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(255, 251, 241, 0.66), rgba(239, 225, 198, 0.66));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(255, 253, 247, 0.76), rgba(235, 216, 183, 0.72));
+  --training-focus-border-strong: rgba(143, 99, 46, 0.48);
+  --training-focus-border: rgba(132, 103, 58, 0.28);
+  --training-focus-border-soft: rgba(151, 121, 75, 0.22);
+  --training-focus-border-faint: rgba(151, 121, 75, 0.18);
+  --training-focus-border-muted: rgba(132, 103, 58, 0.22);
+  --training-focus-border-hover: rgba(143, 99, 46, 0.42);
+  --training-focus-text-strong: #2f271c;
+  --training-focus-text-primary: rgba(58, 48, 35, 0.94);
+  --training-focus-text-secondary: rgba(94, 80, 57, 0.82);
+  --training-focus-text-muted: rgba(128, 111, 80, 0.76);
+  --training-focus-text-dim: rgba(154, 137, 104, 0.72);
+  --training-focus-accent: #9c6f33;
+  --training-focus-accent-soft: rgba(156, 111, 51, 0.13);
+  --training-focus-pill-bg: rgba(255, 249, 235, 0.66);
+  --training-focus-pill-border: rgba(132, 103, 58, 0.24);
+  --training-focus-pill-text: rgba(73, 60, 42, 0.86);
+  --training-focus-pill-active-bg: rgba(156, 111, 51, 0.13);
+  --training-focus-pill-active-border: rgba(143, 99, 46, 0.44);
+  --training-focus-rail: linear-gradient(180deg, rgba(156, 111, 51, 0.62), rgba(132, 148, 101, 0.24), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(132, 103, 58, 0.18), transparent);
+  --training-focus-slider-track: rgba(181, 154, 104, 0.28);
+  --training-focus-scroll-track: rgba(221, 204, 169, 0.46);
+  --training-focus-scroll-track-border: rgba(151, 121, 75, 0.16);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(156, 111, 51, 0.48), rgba(132, 148, 101, 0.38));
+  --training-focus-scroll-thumb-border: rgba(151, 121, 75, 0.22);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(143, 99, 46, 0.58), rgba(111, 125, 86, 0.46));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(255, 250, 239, 0.9), rgba(239, 225, 197, 0.9));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(255, 252, 245, 0.96), rgba(230, 210, 174, 0.94));
+  --training-focus-dock-border: rgba(132, 103, 58, 0.24);
+  --training-focus-dock-border-active: rgba(143, 99, 46, 0.44);
+  --training-focus-dock-shadow: 0 10px 24px rgba(112, 88, 47, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  --training-focus-dock-shadow-active: 0 14px 30px rgba(112, 88, 47, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --training-focus-danger: #b34848;
+  --training-focus-danger-soft: rgba(179, 72, 72, 0.12);
+  --training-focus-warning: #8f632e;
+  --training-focus-warning-soft: rgba(143, 99, 46, 0.13);
+  --training-focus-success: #52734d;
+  --training-focus-success-soft: rgba(82, 115, 77, 0.12);
+  --training-focus-info: #5f7162;
+  --training-focus-info-soft: rgba(95, 113, 98, 0.12);
+}
+
+body[data-training-focus-mode='true'][data-training-focus-theme='pink'] {
+  --training-focus-page-bg-color: #f8e8ef;
+  --training-focus-page-bg:
+    radial-gradient(ellipse at 14% 18%, rgba(153, 182, 172, 0.18), transparent 34%),
+    radial-gradient(ellipse at 78% 8%, rgba(213, 126, 160, 0.2), transparent 36%),
+    linear-gradient(180deg, #fff7fb 0%, #f7e3ec 58%, #efd4df 100%);
+  --training-focus-frame-bg: rgba(255, 248, 251, 0.9);
+  --training-focus-frame-solid: rgba(255, 248, 251, 0.96);
+  --training-focus-control-solid: rgba(249, 229, 238, 0.92);
+  --training-focus-frame-border: rgba(191, 91, 128, 0.25);
+  --training-focus-frame-shadow:
+    0 20px 46px rgba(120, 57, 85, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  --training-focus-surface-shadow:
+    0 12px 26px rgba(120, 57, 85, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --training-focus-card-shadow:
+    0 8px 20px rgba(120, 57, 85, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.64);
+  --training-focus-active-shadow:
+    0 16px 34px rgba(120, 57, 85, 0.17),
+    0 0 0 1px rgba(191, 91, 128, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --training-focus-input-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 7px 16px rgba(120, 57, 85, 0.08);
+  --training-focus-frame-inset:
+    radial-gradient(ellipse at top left, rgba(153, 182, 172, 0.12), transparent 25%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+  --training-focus-frame-line: linear-gradient(90deg, transparent, rgba(191, 91, 128, 0.24), transparent);
+  --training-focus-header-bg:
+    radial-gradient(ellipse at top right, rgba(153, 182, 172, 0.11), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 253, 0.94), rgba(249, 229, 238, 0.9));
+  --training-focus-content-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.92), rgba(247, 224, 234, 0.88));
+  --training-focus-content-overlay:
+    radial-gradient(ellipse at top right, rgba(153, 182, 172, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 24%);
+  --training-focus-panel-bg: linear-gradient(180deg, rgba(255, 250, 253, 0.9), rgba(248, 227, 236, 0.86));
+  --training-focus-control-bg: linear-gradient(180deg, rgba(255, 248, 252, 0.9), rgba(246, 222, 232, 0.86));
+  --training-focus-control-bg-hover: linear-gradient(180deg, rgba(255, 251, 253, 0.95), rgba(242, 214, 226, 0.9));
+  --training-focus-select-bg: rgba(255, 247, 251, 0.72);
+  --training-focus-select-bg-focus: rgba(255, 250, 253, 0.88);
+  --training-focus-surface-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.18)),
+    rgba(248, 225, 235, 0.62);
+  --training-focus-surface-bg-muted:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.12)),
+    rgba(244, 218, 229, 0.48);
+  --training-focus-surface-bg-hover:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2)),
+    rgba(251, 233, 241, 0.76);
+  --training-focus-surface-bg-active:
+    radial-gradient(ellipse at 15% 0%, rgba(153, 182, 172, 0.14), transparent 38%),
+    linear-gradient(180deg, rgba(255, 247, 251, 0.96), rgba(247, 220, 232, 0.92));
+  --training-focus-active-reading-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.24)),
+    rgba(255, 239, 246, 0.74);
+  --training-focus-active-glow: radial-gradient(ellipse at center, rgba(191, 91, 128, 0.1), transparent 64%);
+  --training-focus-inset-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.58), rgba(244, 218, 229, 0.56));
+  --training-focus-inset-dense-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.62), rgba(241, 211, 224, 0.6));
+  --training-focus-inset-warning-bg: linear-gradient(180deg, rgba(191, 91, 128, 0.13), rgba(249, 229, 238, 0.68));
+  --training-focus-inset-review-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.58), rgba(244, 218, 229, 0.64));
+  --training-focus-inset-form-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.62), rgba(241, 211, 224, 0.66));
+  --training-focus-record-bg: linear-gradient(180deg, rgba(255, 250, 253, 0.64), rgba(246, 222, 232, 0.64));
+  --training-focus-record-legacy-bg: linear-gradient(180deg, rgba(191, 91, 128, 0.13), rgba(249, 229, 238, 0.66));
+  --training-focus-stat-bg: linear-gradient(180deg, rgba(255, 250, 253, 0.7), rgba(244, 218, 229, 0.68));
+  --training-focus-mini-bg: linear-gradient(180deg, rgba(255, 249, 252, 0.68), rgba(244, 218, 229, 0.66));
+  --training-focus-mini-bg-hover: linear-gradient(180deg, rgba(255, 252, 254, 0.78), rgba(240, 208, 222, 0.72));
+  --training-focus-border-strong: rgba(169, 76, 110, 0.48);
+  --training-focus-border: rgba(191, 91, 128, 0.25);
+  --training-focus-border-soft: rgba(191, 91, 128, 0.2);
+  --training-focus-border-faint: rgba(191, 91, 128, 0.16);
+  --training-focus-border-muted: rgba(172, 104, 130, 0.22);
+  --training-focus-border-hover: rgba(169, 76, 110, 0.4);
+  --training-focus-text-strong: #38262e;
+  --training-focus-text-primary: rgba(60, 41, 50, 0.94);
+  --training-focus-text-secondary: rgba(100, 74, 85, 0.82);
+  --training-focus-text-muted: rgba(132, 101, 114, 0.76);
+  --training-focus-text-dim: rgba(160, 128, 141, 0.72);
+  --training-focus-accent: #bf5b80;
+  --training-focus-accent-soft: rgba(191, 91, 128, 0.13);
+  --training-focus-pill-bg: rgba(255, 247, 251, 0.68);
+  --training-focus-pill-border: rgba(191, 91, 128, 0.22);
+  --training-focus-pill-text: rgba(73, 50, 60, 0.86);
+  --training-focus-pill-active-bg: rgba(191, 91, 128, 0.13);
+  --training-focus-pill-active-border: rgba(169, 76, 110, 0.42);
+  --training-focus-rail: linear-gradient(180deg, rgba(191, 91, 128, 0.62), rgba(153, 182, 172, 0.24), transparent);
+  --training-focus-divider: linear-gradient(90deg, transparent, rgba(191, 91, 128, 0.16), transparent);
+  --training-focus-slider-track: rgba(203, 148, 169, 0.28);
+  --training-focus-scroll-track: rgba(234, 198, 213, 0.46);
+  --training-focus-scroll-track-border: rgba(191, 91, 128, 0.14);
+  --training-focus-scroll-thumb: linear-gradient(to bottom, rgba(191, 91, 128, 0.46), rgba(153, 182, 172, 0.36));
+  --training-focus-scroll-thumb-border: rgba(191, 91, 128, 0.2);
+  --training-focus-scroll-thumb-hover: linear-gradient(to bottom, rgba(169, 76, 110, 0.56), rgba(127, 162, 151, 0.44));
+  --training-focus-dock-bg: linear-gradient(180deg, rgba(255, 248, 251, 0.9), rgba(246, 222, 232, 0.9));
+  --training-focus-dock-bg-active: linear-gradient(180deg, rgba(255, 252, 254, 0.96), rgba(238, 206, 220, 0.94));
+  --training-focus-dock-border: rgba(191, 91, 128, 0.22);
+  --training-focus-dock-border-active: rgba(169, 76, 110, 0.42);
+  --training-focus-dock-shadow: 0 10px 24px rgba(120, 57, 85, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  --training-focus-dock-shadow-active: 0 14px 30px rgba(120, 57, 85, 0.17), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --training-focus-danger: #b64a63;
+  --training-focus-danger-soft: rgba(182, 74, 99, 0.12);
+  --training-focus-warning: #9b6b42;
+  --training-focus-warning-soft: rgba(155, 107, 66, 0.12);
+  --training-focus-success: #5d7b70;
+  --training-focus-success-soft: rgba(93, 123, 112, 0.12);
+  --training-focus-info: #7d7090;
+  --training-focus-info-soft: rgba(125, 112, 144, 0.12);
+}
+
+body[data-training-focus-mode='true'],
+body[data-training-focus-mode='true'] [data-training-page].training-focus-mode {
+  color: var(--training-focus-text-primary);
+  background-color: var(--training-focus-page-bg-color);
+  background-image: var(--training-focus-page-bg);
+  background-attachment: fixed;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-title {
+  letter-spacing: 0;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-frame,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-header,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-panel,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-control-shell,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-toolbar-button,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-dictation-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-record,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-stat-box,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-mini-button,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-group,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-meta-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-order-pill,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-kicker,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-play-button {
+  border-radius: 8px !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-frame::before {
+  border-radius: 7px;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-header,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-content,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-panel,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-control-shell,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-toolbar-button,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-group {
+  box-shadow: var(--training-focus-surface-shadow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-dictation-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-inset,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-record,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-stat-box,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-mini-button {
+  box-shadow: var(--training-focus-input-shadow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card {
+  position: relative;
+  overflow: hidden;
+  opacity: 0.78;
+  box-shadow: var(--training-focus-card-shadow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:hover {
+  opacity: 0.92;
+  box-shadow: var(--training-focus-surface-shadow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active {
+  opacity: 1;
+  background: var(--training-focus-surface-bg-active);
+  box-shadow: var(--training-focus-active-shadow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:not(.is-active) .training-focus-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:not(.is-active) .training-focus-dictation-surface {
+  background: var(--training-focus-surface-bg-muted);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active .training-focus-reading-surface,
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active .training-focus-dictation-surface {
+  border-color: var(--training-focus-border-strong);
+  background: var(--training-focus-active-reading-bg);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active .training-focus-sentence-glow {
+  display: block;
+  opacity: 1;
+  background: var(--training-focus-active-glow);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:not(.is-active) .training-focus-sentence-rail {
+  opacity: 0.34;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card.is-active .training-focus-sentence-rail {
+  width: 3px;
+  opacity: 1;
+}
+
+[data-training-page] .training-reading-text-inset {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px !important;
+}
+
+[data-training-page] .training-reading-text-inset > p {
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  [data-training-page] .training-reading-text-inset {
+    padding: 9px 20px 9px 24px !important;
+  }
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell {
+  border-radius: 8px !important;
+}
+
+body[data-training-focus-mode='true'] .training-dock-button-shell.is-active {
+  box-shadow: var(--training-focus-dock-shadow-active) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .training-font-select option {
+  background: var(--training-focus-frame-solid);
+  color: var(--training-focus-text-primary);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-950'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-900'] {
+  background-color: var(--training-focus-frame-solid) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-slate-800'] {
+  background-color: var(--training-focus-control-solid) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-amber-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-yellow-'] {
+  color: var(--training-focus-warning) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-amber-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-yellow-'] {
+  border-color: color-mix(in srgb, var(--training-focus-warning) 42%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-amber-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-yellow-'] {
+  background-color: var(--training-focus-warning-soft) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-red-'] {
+  color: var(--training-focus-danger) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-red-'] {
+  border-color: color-mix(in srgb, var(--training-focus-danger) 44%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-red-'] {
+  background-color: var(--training-focus-danger-soft) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-green-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-emerald-'] {
+  color: var(--training-focus-success) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-green-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-emerald-'] {
+  border-color: color-mix(in srgb, var(--training-focus-success) 40%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-green-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-emerald-'] {
+  background-color: var(--training-focus-success-soft) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-cyan-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='text-blue-'] {
+  color: var(--training-focus-info) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-cyan-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='border-blue-'] {
+  border-color: color-mix(in srgb, var(--training-focus-info) 40%, transparent) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-cyan-'],
+body[data-training-focus-mode='true'] [data-training-page] [class*='bg-blue-'] {
+  background-color: var(--training-focus-info-soft) !important;
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .audio-slider::-webkit-slider-thumb {
+  background: var(--training-focus-accent);
+  border-color: var(--training-focus-frame-solid);
+  box-shadow:
+    0 0 0 4px var(--training-focus-accent-soft),
+    0 6px 14px rgba(0, 0, 0, 0.14);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .audio-slider::-webkit-slider-thumb:hover {
+  transform: none;
+  box-shadow:
+    0 0 0 5px var(--training-focus-accent-soft),
+    0 7px 16px rgba(0, 0, 0, 0.16);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .audio-slider::-moz-range-thumb {
+  background: var(--training-focus-accent);
+  border-color: var(--training-focus-frame-solid);
+  box-shadow:
+    0 0 0 4px var(--training-focus-accent-soft),
+    0 6px 14px rgba(0, 0, 0, 0.14);
+}
+
+body[data-training-focus-mode='true'] [data-training-page] .audio-slider::-moz-range-thumb:hover {
+  transform: none;
+  box-shadow:
+    0 0 0 5px var(--training-focus-accent-soft),
+    0 7px 16px rgba(0, 0, 0, 0.16);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-training-focus-mode='true'] [data-training-page] *,
+  body[data-training-focus-mode='true'] .training-dock-button-shell {
+    animation: none !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  body[data-training-focus-mode='true'] [data-training-page] .training-focus-sentence-card:hover,
+  body[data-training-focus-mode='true'] [data-training-page] .training-focus-theme-pill:hover {
+    transform: none !important;
+  }
 }
 
 /* 确保训练页面时 body 和 html 不显示滚动条 */
@@ -7214,6 +7785,272 @@ input[type="checkbox"]:checked {
   .home-user-command-panel--top-bridge .home-user-command-panel__tether {
     right: 1.62rem;
     width: 7.2rem;
+  }
+}
+
+/* Dialogue scenario practice */
+.dialogue-practice,
+.dialogue-editor {
+  position: relative;
+  z-index: 20;
+  height: 100vh;
+  min-height: 100vh;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 16%, rgba(34, 211, 238, 0.14), transparent 32%),
+    radial-gradient(circle at 82% 22%, rgba(236, 72, 153, 0.1), transparent 30%),
+    linear-gradient(135deg, rgba(2, 6, 18, 0.98), rgba(2, 12, 18, 0.96) 48%, rgba(8, 8, 22, 0.98));
+}
+
+.dialogue-avatar {
+  position: relative;
+  display: flex;
+  min-height: 20rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(245, 253, 255, 0.18), transparent 18%),
+    radial-gradient(circle at 50% 55%, rgba(34, 211, 238, 0.16), transparent 52%),
+    linear-gradient(180deg, rgba(4, 18, 28, 0.74), rgba(5, 8, 18, 0.92));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 0 26px rgba(34, 211, 238, 0.08);
+}
+
+.dialogue-avatar__halo {
+  position: absolute;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(34, 211, 238, 0.16), transparent 62%),
+    conic-gradient(from 180deg, rgba(34, 211, 238, 0.08), rgba(236, 72, 153, 0.1), rgba(16, 185, 129, 0.08), rgba(34, 211, 238, 0.08));
+  filter: blur(10px);
+  opacity: 0.9;
+  animation: dialogue-avatar-breathe 5s ease-in-out infinite;
+}
+
+.dialogue-avatar__body {
+  position: relative;
+  z-index: 1;
+  width: 11rem;
+  height: 15rem;
+  animation: dialogue-avatar-breathe 4.8s ease-in-out infinite;
+}
+
+.dialogue-avatar__hair {
+  position: absolute;
+  left: 50%;
+  top: 0.6rem;
+  width: 7.8rem;
+  height: 7.8rem;
+  transform: translateX(-50%);
+  border-radius: 42% 42% 48% 48%;
+  background: linear-gradient(145deg, #243042, #101827 62%, #0b1020);
+  box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.05);
+}
+
+.dialogue-avatar__face {
+  position: absolute;
+  left: 50%;
+  top: 1.65rem;
+  width: 6.6rem;
+  height: 7.25rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 44% 44% 48% 48%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.22), transparent 18%),
+    linear-gradient(180deg, #ffd8c8, #efad9c);
+  box-shadow:
+    inset 0 -0.4rem 1.1rem rgba(125, 42, 38, 0.18),
+    0 0 18px rgba(34, 211, 238, 0.08);
+}
+
+.dialogue-avatar__eye {
+  position: absolute;
+  top: 2.7rem;
+  width: 0.7rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: #162033;
+  animation: dialogue-avatar-blink 6s ease-in-out infinite;
+}
+
+.dialogue-avatar__eye--left { left: 1.75rem; }
+.dialogue-avatar__eye--right { right: 1.75rem; }
+
+.dialogue-avatar__brow {
+  position: absolute;
+  top: 2.16rem;
+  width: 1.05rem;
+  height: 0.15rem;
+  border-radius: 999px;
+  background: rgba(36, 48, 66, 0.85);
+}
+
+.dialogue-avatar__brow--left { left: 1.52rem; transform: rotate(-6deg); }
+.dialogue-avatar__brow--right { right: 1.52rem; transform: rotate(6deg); }
+
+.dialogue-avatar__mouth {
+  position: absolute;
+  left: 50%;
+  bottom: 1.6rem;
+  width: 1.5rem;
+  height: 0.56rem;
+  transform-origin: center;
+  border-radius: 999px;
+  background: #75333d;
+  transition: transform 80ms linear;
+}
+
+.dialogue-avatar__neck {
+  position: absolute;
+  left: 50%;
+  top: 8.35rem;
+  width: 2rem;
+  height: 2.3rem;
+  transform: translateX(-50%);
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(180deg, #eaa997, #d88e80);
+}
+
+.dialogue-avatar__jacket {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 9rem;
+  height: 5.4rem;
+  transform: translateX(-50%);
+  border-radius: 2.4rem 2.4rem 0 0;
+  background:
+    linear-gradient(115deg, rgba(34, 211, 238, 0.24), transparent 36%),
+    linear-gradient(180deg, #17233a, #0c1324);
+  border: 1px solid rgba(103, 232, 249, 0.16);
+}
+
+.dialogue-avatar__status {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.34);
+  padding: 0.35rem 0.55rem;
+  color: rgba(165, 243, 252, 0.82);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+}
+
+.dialogue-avatar--listening .dialogue-avatar__halo {
+  background:
+    radial-gradient(circle, rgba(16, 185, 129, 0.2), transparent 62%),
+    conic-gradient(from 180deg, rgba(16, 185, 129, 0.12), rgba(34, 211, 238, 0.08), rgba(16, 185, 129, 0.12));
+}
+
+.dialogue-avatar--coach_mode .dialogue-avatar__halo,
+.dialogue-avatar--encouraging .dialogue-avatar__halo {
+  background:
+    radial-gradient(circle, rgba(236, 72, 153, 0.14), transparent 58%),
+    radial-gradient(circle, rgba(34, 211, 238, 0.12), transparent 70%);
+}
+
+.dialogue-avatar--corrective .dialogue-avatar__brow--left,
+.dialogue-avatar--confused .dialogue-avatar__brow--left {
+  transform: rotate(8deg);
+}
+
+.dialogue-avatar--corrective .dialogue-avatar__brow--right,
+.dialogue-avatar--confused .dialogue-avatar__brow--right {
+  transform: rotate(-8deg);
+}
+
+.dialogue-home-coach {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(34, 211, 238, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 22%, rgba(236, 72, 153, 0.08), transparent 30%),
+    rgba(0, 0, 0, 0.36);
+  padding: 1rem;
+  box-shadow:
+    0 0 28px rgba(34, 211, 238, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.dialogue-home-coach__avatar .dialogue-avatar {
+  height: 100%;
+  min-height: 24rem;
+}
+
+.dialogue-home-coach__panel {
+  min-width: 0;
+  border: 1px solid rgba(34, 211, 238, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  padding: 1rem;
+}
+
+.dialogue-editor .react-flow {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.08), transparent 28%),
+    rgba(2, 6, 18, 0.82);
+}
+
+.dialogue-editor .react-flow__node {
+  max-width: 15rem;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 8px;
+  background: rgba(3, 12, 22, 0.94);
+  color: rgba(236, 254, 255, 0.95);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.12);
+}
+
+.dialogue-editor .react-flow__edge-path {
+  stroke: rgba(103, 232, 249, 0.76);
+}
+
+.dialogue-editor .react-flow__controls,
+.dialogue-editor .react-flow__minimap {
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(2, 6, 18, 0.86);
+}
+
+@keyframes dialogue-avatar-breathe {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.86; }
+  50% { transform: translateY(-0.22rem) scale(1.015); opacity: 1; }
+}
+
+@keyframes dialogue-avatar-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogue-avatar__halo,
+  .dialogue-avatar__body,
+  .dialogue-avatar__eye {
+    animation: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dialogue-home-coach {
+    grid-template-columns: 1fr;
+  }
+
+  .dialogue-home-coach__avatar .dialogue-avatar {
+    min-height: 18rem;
   }
 }
 

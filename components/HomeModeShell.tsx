@@ -6,7 +6,7 @@ import TopActionNav from '@/components/TopActionNav'
 import HomeCockpitFrame from '@/components/HomeCockpitFrame'
 import HomeUserWatch from '@/components/HomeUserWatch'
 
-type HomeMode = 'listening' | 'video'
+type HomeMode = 'listening' | 'video' | 'dialogue'
 
 interface HomeModeShellProps {
   mode: HomeMode
@@ -17,12 +17,13 @@ interface HomeModeShellProps {
 const MODE_LINKS = [
   { mode: 'listening' as const, label: 'LISTENING', href: '/' },
   { mode: 'video' as const, label: 'VIDEO', href: '/video' },
+  { mode: 'dialogue' as const, label: 'DIALOGUE', href: '/dialogue' },
 ]
 
 export default function HomeModeShell({ mode, isAdmin = false, children }: HomeModeShellProps) {
-  const uploadHref = mode === 'video' ? '/video/upload' : '/upload'
-  const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : 'UPLOAD LISTENING'
-  const viewportStyle = mode === 'video'
+  const uploadHref = mode === 'video' ? '/video/upload' : mode === 'dialogue' ? '/dialogue/upload' : '/upload'
+  const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : mode === 'dialogue' ? 'UPLOAD DIALOGUE' : 'UPLOAD LISTENING'
+  const viewportStyle = mode === 'video' || mode === 'dialogue'
     ? {
         position: 'relative' as const,
         zIndex: 10,

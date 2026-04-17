@@ -60,7 +60,13 @@ export const ModelName = {
   VideoCharacter: 'VideoCharacter',
   VideoPhraseNote: 'VideoPhraseNote',
   VideoCaptionNote: 'VideoCaptionNote',
-  LearningDailyStat: 'LearningDailyStat'
+  LearningDailyStat: 'LearningDailyStat',
+  DialogueScenario: 'DialogueScenario',
+  DialogueNode: 'DialogueNode',
+  DialogueEdge: 'DialogueEdge',
+  DialogueSession: 'DialogueSession',
+  DialogueAttempt: 'DialogueAttempt',
+  DialogueSpeechAsset: 'DialogueSpeechAsset'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -212,6 +218,117 @@ export const LearningDailyStatScalarFieldEnum = {
 } as const
 
 export type LearningDailyStatScalarFieldEnum = (typeof LearningDailyStatScalarFieldEnum)[keyof typeof LearningDailyStatScalarFieldEnum]
+
+
+export const DialogueScenarioScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  difficulty: 'difficulty',
+  userRole: 'userRole',
+  aiRole: 'aiRole',
+  tagsJson: 'tagsJson',
+  coverUrl: 'coverUrl',
+  isPublished: 'isPublished',
+  startNodeId: 'startNodeId',
+  roleVoice: 'roleVoice',
+  coachVoice: 'coachVoice',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueScenarioScalarFieldEnum = (typeof DialogueScenarioScalarFieldEnum)[keyof typeof DialogueScenarioScalarFieldEnum]
+
+
+export const DialogueNodeScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  order: 'order',
+  title: 'title',
+  roleLineEn: 'roleLineEn',
+  roleLineZh: 'roleLineZh',
+  goal: 'goal',
+  rubricJson: 'rubricJson',
+  hintJson: 'hintJson',
+  sampleAnswer: 'sampleAnswer',
+  retryLimit: 'retryLimit',
+  allowDynamicFollowup: 'allowDynamicFollowup',
+  positionX: 'positionX',
+  positionY: 'positionY',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueNodeScalarFieldEnum = (typeof DialogueNodeScalarFieldEnum)[keyof typeof DialogueNodeScalarFieldEnum]
+
+
+export const DialogueEdgeScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  fromNodeId: 'fromNodeId',
+  onResult: 'onResult',
+  toNodeId: 'toNodeId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueEdgeScalarFieldEnum = (typeof DialogueEdgeScalarFieldEnum)[keyof typeof DialogueEdgeScalarFieldEnum]
+
+
+export const DialogueSessionScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  userId: 'userId',
+  currentNodeId: 'currentNodeId',
+  status: 'status',
+  totalScore: 'totalScore',
+  completedNodeCount: 'completedNodeCount',
+  lastActivityAt: 'lastActivityAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueSessionScalarFieldEnum = (typeof DialogueSessionScalarFieldEnum)[keyof typeof DialogueSessionScalarFieldEnum]
+
+
+export const DialogueAttemptScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  scenarioId: 'scenarioId',
+  nodeId: 'nodeId',
+  userId: 'userId',
+  inputMode: 'inputMode',
+  userText: 'userText',
+  transcriptText: 'transcriptText',
+  routerIntent: 'routerIntent',
+  routerJson: 'routerJson',
+  evaluatorJson: 'evaluatorJson',
+  coachJson: 'coachJson',
+  roleReplyEn: 'roleReplyEn',
+  coachReplyZh: 'coachReplyZh',
+  betterAnswerEn: 'betterAnswerEn',
+  passed: 'passed',
+  score: 'score',
+  nextAction: 'nextAction',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueAttemptScalarFieldEnum = (typeof DialogueAttemptScalarFieldEnum)[keyof typeof DialogueAttemptScalarFieldEnum]
+
+
+export const DialogueSpeechAssetScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  text: 'text',
+  voice: 'voice',
+  model: 'model',
+  instructions: 'instructions',
+  audioUrl: 'audioUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueSpeechAssetScalarFieldEnum = (typeof DialogueSpeechAssetScalarFieldEnum)[keyof typeof DialogueSpeechAssetScalarFieldEnum]
 
 
 export const SortOrder = {

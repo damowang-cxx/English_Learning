@@ -393,7 +393,13 @@ export const ModelName = {
   VideoCharacter: 'VideoCharacter',
   VideoPhraseNote: 'VideoPhraseNote',
   VideoCaptionNote: 'VideoCaptionNote',
-  LearningDailyStat: 'LearningDailyStat'
+  LearningDailyStat: 'LearningDailyStat',
+  DialogueScenario: 'DialogueScenario',
+  DialogueNode: 'DialogueNode',
+  DialogueEdge: 'DialogueEdge',
+  DialogueSession: 'DialogueSession',
+  DialogueAttempt: 'DialogueAttempt',
+  DialogueSpeechAsset: 'DialogueSpeechAsset'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -409,7 +415,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat"
+    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat" | "dialogueScenario" | "dialogueNode" | "dialogueEdge" | "dialogueSession" | "dialogueAttempt" | "dialogueSpeechAsset"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1153,6 +1159,450 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DialogueScenario: {
+      payload: Prisma.$DialogueScenarioPayload<ExtArgs>
+      fields: Prisma.DialogueScenarioFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueScenarioFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueScenarioFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueScenarioFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueScenarioFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueScenarioFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueScenarioCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueScenarioCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueScenarioCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueScenarioDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        update: {
+          args: Prisma.DialogueScenarioUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueScenarioDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueScenarioUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueScenarioUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueScenarioUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueScenarioPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueScenarioAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueScenario>
+        }
+        groupBy: {
+          args: Prisma.DialogueScenarioGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueScenarioGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueScenarioCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueScenarioCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueNode: {
+      payload: Prisma.$DialogueNodePayload<ExtArgs>
+      fields: Prisma.DialogueNodeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueNodeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueNodeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueNodeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueNodeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        findMany: {
+          args: Prisma.DialogueNodeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>[]
+        }
+        create: {
+          args: Prisma.DialogueNodeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        createMany: {
+          args: Prisma.DialogueNodeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueNodeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueNodeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        update: {
+          args: Prisma.DialogueNodeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueNodeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueNodeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueNodeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueNodeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueNodePayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueNodeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueNode>
+        }
+        groupBy: {
+          args: Prisma.DialogueNodeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueNodeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueNodeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueNodeCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueEdge: {
+      payload: Prisma.$DialogueEdgePayload<ExtArgs>
+      fields: Prisma.DialogueEdgeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueEdgeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueEdgeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueEdgeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueEdgeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        findMany: {
+          args: Prisma.DialogueEdgeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>[]
+        }
+        create: {
+          args: Prisma.DialogueEdgeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        createMany: {
+          args: Prisma.DialogueEdgeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueEdgeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueEdgeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        update: {
+          args: Prisma.DialogueEdgeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueEdgeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueEdgeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueEdgeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueEdgeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueEdgePayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueEdgeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueEdge>
+        }
+        groupBy: {
+          args: Prisma.DialogueEdgeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueEdgeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueEdgeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueEdgeCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueSession: {
+      payload: Prisma.$DialogueSessionPayload<ExtArgs>
+      fields: Prisma.DialogueSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        update: {
+          args: Prisma.DialogueSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueSession>
+        }
+        groupBy: {
+          args: Prisma.DialogueSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueAttempt: {
+      payload: Prisma.$DialogueAttemptPayload<ExtArgs>
+      fields: Prisma.DialogueAttemptFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueAttemptFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueAttemptFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueAttemptFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueAttemptFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueAttemptFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueAttemptCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueAttemptCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueAttemptCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueAttemptDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        update: {
+          args: Prisma.DialogueAttemptUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueAttemptDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueAttemptUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueAttemptUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueAttemptUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueAttemptPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueAttemptAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueAttempt>
+        }
+        groupBy: {
+          args: Prisma.DialogueAttemptGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueAttemptGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueAttemptCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueAttemptCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueSpeechAsset: {
+      payload: Prisma.$DialogueSpeechAssetPayload<ExtArgs>
+      fields: Prisma.DialogueSpeechAssetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueSpeechAssetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueSpeechAssetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueSpeechAssetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueSpeechAssetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueSpeechAssetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueSpeechAssetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueSpeechAssetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueSpeechAssetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueSpeechAssetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        update: {
+          args: Prisma.DialogueSpeechAssetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueSpeechAssetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueSpeechAssetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueSpeechAssetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueSpeechAssetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueSpeechAssetPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueSpeechAssetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueSpeechAsset>
+        }
+        groupBy: {
+          args: Prisma.DialogueSpeechAssetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueSpeechAssetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueSpeechAssetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueSpeechAssetCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1327,6 +1777,117 @@ export const LearningDailyStatScalarFieldEnum = {
 export type LearningDailyStatScalarFieldEnum = (typeof LearningDailyStatScalarFieldEnum)[keyof typeof LearningDailyStatScalarFieldEnum]
 
 
+export const DialogueScenarioScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  difficulty: 'difficulty',
+  userRole: 'userRole',
+  aiRole: 'aiRole',
+  tagsJson: 'tagsJson',
+  coverUrl: 'coverUrl',
+  isPublished: 'isPublished',
+  startNodeId: 'startNodeId',
+  roleVoice: 'roleVoice',
+  coachVoice: 'coachVoice',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueScenarioScalarFieldEnum = (typeof DialogueScenarioScalarFieldEnum)[keyof typeof DialogueScenarioScalarFieldEnum]
+
+
+export const DialogueNodeScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  order: 'order',
+  title: 'title',
+  roleLineEn: 'roleLineEn',
+  roleLineZh: 'roleLineZh',
+  goal: 'goal',
+  rubricJson: 'rubricJson',
+  hintJson: 'hintJson',
+  sampleAnswer: 'sampleAnswer',
+  retryLimit: 'retryLimit',
+  allowDynamicFollowup: 'allowDynamicFollowup',
+  positionX: 'positionX',
+  positionY: 'positionY',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueNodeScalarFieldEnum = (typeof DialogueNodeScalarFieldEnum)[keyof typeof DialogueNodeScalarFieldEnum]
+
+
+export const DialogueEdgeScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  fromNodeId: 'fromNodeId',
+  onResult: 'onResult',
+  toNodeId: 'toNodeId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueEdgeScalarFieldEnum = (typeof DialogueEdgeScalarFieldEnum)[keyof typeof DialogueEdgeScalarFieldEnum]
+
+
+export const DialogueSessionScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  userId: 'userId',
+  currentNodeId: 'currentNodeId',
+  status: 'status',
+  totalScore: 'totalScore',
+  completedNodeCount: 'completedNodeCount',
+  lastActivityAt: 'lastActivityAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueSessionScalarFieldEnum = (typeof DialogueSessionScalarFieldEnum)[keyof typeof DialogueSessionScalarFieldEnum]
+
+
+export const DialogueAttemptScalarFieldEnum = {
+  id: 'id',
+  sessionId: 'sessionId',
+  scenarioId: 'scenarioId',
+  nodeId: 'nodeId',
+  userId: 'userId',
+  inputMode: 'inputMode',
+  userText: 'userText',
+  transcriptText: 'transcriptText',
+  routerIntent: 'routerIntent',
+  routerJson: 'routerJson',
+  evaluatorJson: 'evaluatorJson',
+  coachJson: 'coachJson',
+  roleReplyEn: 'roleReplyEn',
+  coachReplyZh: 'coachReplyZh',
+  betterAnswerEn: 'betterAnswerEn',
+  passed: 'passed',
+  score: 'score',
+  nextAction: 'nextAction',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueAttemptScalarFieldEnum = (typeof DialogueAttemptScalarFieldEnum)[keyof typeof DialogueAttemptScalarFieldEnum]
+
+
+export const DialogueSpeechAssetScalarFieldEnum = {
+  id: 'id',
+  cacheKey: 'cacheKey',
+  text: 'text',
+  voice: 'voice',
+  model: 'model',
+  instructions: 'instructions',
+  audioUrl: 'audioUrl',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueSpeechAssetScalarFieldEnum = (typeof DialogueSpeechAssetScalarFieldEnum)[keyof typeof DialogueSpeechAssetScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -1488,6 +2049,12 @@ export type GlobalOmitConfig = {
   videoPhraseNote?: Prisma.VideoPhraseNoteOmit
   videoCaptionNote?: Prisma.VideoCaptionNoteOmit
   learningDailyStat?: Prisma.LearningDailyStatOmit
+  dialogueScenario?: Prisma.DialogueScenarioOmit
+  dialogueNode?: Prisma.DialogueNodeOmit
+  dialogueEdge?: Prisma.DialogueEdgeOmit
+  dialogueSession?: Prisma.DialogueSessionOmit
+  dialogueAttempt?: Prisma.DialogueAttemptOmit
+  dialogueSpeechAsset?: Prisma.DialogueSpeechAssetOmit
 }
 
 /* Types for Logging */

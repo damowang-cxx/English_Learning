@@ -25,6 +25,7 @@ export interface WordLookupRequest<TContextId extends string = string> {
 interface SelectableEnglishTextProps<TContextId extends string = string> {
   contextId: TContextId
   className?: string
+  contentClassName?: string
   children: ReactNode
   onLookup: (request: WordLookupRequest<TContextId>) => void
 }
@@ -180,6 +181,7 @@ function getThemeClasses(theme: WordLookupPopoverProps['theme']) {
 export function SelectableEnglishText<TContextId extends string = string>({
   contextId,
   className,
+  contentClassName,
   children,
   onLookup,
 }: SelectableEnglishTextProps<TContextId>) {
@@ -212,7 +214,9 @@ export function SelectableEnglishText<TContextId extends string = string>({
       onMouseUp={openFromSelection}
       onDoubleClick={openFromSelection}
     >
-      {children}
+      <div className={contentClassName}>
+        {children}
+      </div>
     </div>
   )
 }

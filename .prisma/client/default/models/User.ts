@@ -222,6 +222,8 @@ export type UserWhereInput = {
   userGuideSeenAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  dialogueSessions?: Prisma.DialogueSessionListRelationFilter
+  dialogueAttempts?: Prisma.DialogueAttemptListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -235,6 +237,8 @@ export type UserOrderByWithRelationInput = {
   userGuideSeenAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  dialogueSessions?: Prisma.DialogueSessionOrderByRelationAggregateInput
+  dialogueAttempts?: Prisma.DialogueAttemptOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -251,6 +255,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   userGuideSeenAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
+  dialogueSessions?: Prisma.DialogueSessionListRelationFilter
+  dialogueAttempts?: Prisma.DialogueAttemptListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -296,6 +302,8 @@ export type UserCreateInput = {
   userGuideSeenAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionCreateNestedManyWithoutUserInput
+  dialogueAttempts?: Prisma.DialogueAttemptCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -309,6 +317,8 @@ export type UserUncheckedCreateInput = {
   userGuideSeenAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutUserInput
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -322,6 +332,8 @@ export type UserUpdateInput = {
   userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUpdateManyWithoutUserNestedInput
+  dialogueAttempts?: Prisma.DialogueAttemptUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -335,6 +347,8 @@ export type UserUncheckedUpdateInput = {
   userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutUserNestedInput
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -415,6 +429,11 @@ export type UserMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type UserScalarRelationFilter = {
+  is?: Prisma.UserWhereInput
+  isNot?: Prisma.UserWhereInput
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -435,6 +454,216 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserCreateNestedOneWithoutDialogueSessionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueSessionsInput, Prisma.UserUncheckedCreateWithoutDialogueSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDialogueSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueSessionsInput, Prisma.UserUncheckedCreateWithoutDialogueSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueSessionsInput
+  upsert?: Prisma.UserUpsertWithoutDialogueSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDialogueSessionsInput, Prisma.UserUpdateWithoutDialogueSessionsInput>, Prisma.UserUncheckedUpdateWithoutDialogueSessionsInput>
+}
+
+export type UserCreateNestedOneWithoutDialogueAttemptsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueAttemptsInput, Prisma.UserUncheckedCreateWithoutDialogueAttemptsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueAttemptsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueAttemptsInput, Prisma.UserUncheckedCreateWithoutDialogueAttemptsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueAttemptsInput
+  upsert?: Prisma.UserUpsertWithoutDialogueAttemptsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDialogueAttemptsInput, Prisma.UserUpdateWithoutDialogueAttemptsInput>, Prisma.UserUncheckedUpdateWithoutDialogueAttemptsInput>
+}
+
+export type UserCreateWithoutDialogueSessionsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueAttempts?: Prisma.DialogueAttemptCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDialogueSessionsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDialogueSessionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueSessionsInput, Prisma.UserUncheckedCreateWithoutDialogueSessionsInput>
+}
+
+export type UserUpsertWithoutDialogueSessionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDialogueSessionsInput, Prisma.UserUncheckedUpdateWithoutDialogueSessionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueSessionsInput, Prisma.UserUncheckedCreateWithoutDialogueSessionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDialogueSessionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDialogueSessionsInput, Prisma.UserUncheckedUpdateWithoutDialogueSessionsInput>
+}
+
+export type UserUpdateWithoutDialogueSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueAttempts?: Prisma.DialogueAttemptUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDialogueSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutDialogueAttemptsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDialogueAttemptsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDialogueAttemptsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueAttemptsInput, Prisma.UserUncheckedCreateWithoutDialogueAttemptsInput>
+}
+
+export type UserUpsertWithoutDialogueAttemptsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDialogueAttemptsInput, Prisma.UserUncheckedUpdateWithoutDialogueAttemptsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueAttemptsInput, Prisma.UserUncheckedCreateWithoutDialogueAttemptsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDialogueAttemptsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDialogueAttemptsInput, Prisma.UserUncheckedUpdateWithoutDialogueAttemptsInput>
+}
+
+export type UserUpdateWithoutDialogueAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDialogueAttemptsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+
+/**
+ * Count Type UserCountOutputType
+ */
+
+export type UserCountOutputType = {
+  dialogueSessions: number
+  dialogueAttempts: number
+}
+
+export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  dialogueSessions?: boolean | UserCountOutputTypeCountDialogueSessionsArgs
+  dialogueAttempts?: boolean | UserCountOutputTypeCountDialogueAttemptsArgs
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserCountOutputType
+   */
+  select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDialogueSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueSessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDialogueAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueAttemptWhereInput
+}
 
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -448,6 +677,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   userGuideSeenAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  dialogueSessions?: boolean | Prisma.User$dialogueSessionsArgs<ExtArgs>
+  dialogueAttempts?: boolean | Prisma.User$dialogueAttemptsArgs<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -490,10 +722,20 @@ export type UserSelectScalar = {
 }
 
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "avatarUrl" | "passwordHash" | "role" | "isActive" | "userGuideSeenAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  dialogueSessions?: boolean | Prisma.User$dialogueSessionsArgs<ExtArgs>
+  dialogueAttempts?: boolean | Prisma.User$dialogueAttemptsArgs<ExtArgs>
+  _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type UserIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "User"
-  objects: {}
+  objects: {
+    dialogueSessions: Prisma.$DialogueSessionPayload<ExtArgs>[]
+    dialogueAttempts: Prisma.$DialogueAttemptPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     email: string
@@ -899,6 +1141,8 @@ readonly fields: UserFieldRefs;
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  dialogueSessions<T extends Prisma.User$dialogueSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dialogueSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  dialogueAttempts<T extends Prisma.User$dialogueAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dialogueAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -955,6 +1199,10 @@ export type UserFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where: Prisma.UserWhereUniqueInput
@@ -973,6 +1221,10 @@ export type UserFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where: Prisma.UserWhereUniqueInput
@@ -990,6 +1242,10 @@ export type UserFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * Filter, which User to fetch.
    */
@@ -1039,6 +1295,10 @@ export type UserFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which User to fetch.
    */
   where?: Prisma.UserWhereInput
@@ -1087,6 +1347,10 @@ export type UserFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter, which Users to fetch.
    */
   where?: Prisma.UserWhereInput
@@ -1129,6 +1393,10 @@ export type UserCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * The data needed to create a User.
    */
@@ -1175,6 +1443,10 @@ export type UserUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
   /**
    * The data needed to update a User.
    */
@@ -1242,6 +1514,10 @@ export type UserUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * The filter to search for the User to update in case it exists.
    */
   where: Prisma.UserWhereUniqueInput
@@ -1268,6 +1544,10 @@ export type UserDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
+  /**
    * Filter which User to delete.
    */
   where: Prisma.UserWhereUniqueInput
@@ -1288,6 +1568,54 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
+ * User.dialogueSessions
+ */
+export type User$dialogueSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueSession
+   */
+  select?: Prisma.DialogueSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueSession
+   */
+  omit?: Prisma.DialogueSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueSessionInclude<ExtArgs> | null
+  where?: Prisma.DialogueSessionWhereInput
+  orderBy?: Prisma.DialogueSessionOrderByWithRelationInput | Prisma.DialogueSessionOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueSessionScalarFieldEnum | Prisma.DialogueSessionScalarFieldEnum[]
+}
+
+/**
+ * User.dialogueAttempts
+ */
+export type User$dialogueAttemptsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueAttempt
+   */
+  select?: Prisma.DialogueAttemptSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueAttempt
+   */
+  omit?: Prisma.DialogueAttemptOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueAttemptInclude<ExtArgs> | null
+  where?: Prisma.DialogueAttemptWhereInput
+  orderBy?: Prisma.DialogueAttemptOrderByWithRelationInput | Prisma.DialogueAttemptOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueAttemptWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueAttemptScalarFieldEnum | Prisma.DialogueAttemptScalarFieldEnum[]
+}
+
+/**
  * User without action
  */
 export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1299,4 +1627,8 @@ export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the User
    */
   omit?: Prisma.UserOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserInclude<ExtArgs> | null
 }
