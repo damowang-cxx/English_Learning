@@ -8044,6 +8044,653 @@ input[type="checkbox"]:checked {
   }
 }
 
+/* Dialogue mecha AI terminal */
+.dialogue-avatar--mecha {
+  min-height: 21rem;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(0, 229, 255, 0.22), transparent 18%),
+    radial-gradient(circle at 78% 34%, rgba(255, 43, 214, 0.18), transparent 26%),
+    radial-gradient(circle at 24% 72%, rgba(255, 61, 0, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(2, 12, 24, 0.98), rgba(1, 4, 12, 0.97));
+}
+
+.dialogue-avatar--mecha::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.28;
+  background:
+    linear-gradient(125deg, transparent 0 44%, rgba(255, 43, 214, 0.14) 45% 46%, transparent 47%),
+    linear-gradient(rgba(0, 229, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 43, 214, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 30px 30px, 30px 30px;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 74%);
+  pointer-events: none;
+}
+
+.dialogue-avatar--mecha::after {
+  content: "";
+  position: absolute;
+  inset: 1rem;
+  z-index: 0;
+  border: 1px solid rgba(103, 232, 249, 0.14);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 18px rgba(34, 211, 238, 0.08),
+    0 0 28px rgba(34, 211, 238, 0.08);
+  pointer-events: none;
+}
+
+.mecha-coach-3d {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.mecha-coach-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.dialogue-avatar__status--mecha {
+  z-index: 5;
+  border-color: rgba(103, 232, 249, 0.32);
+  background: linear-gradient(180deg, rgba(2, 12, 24, 0.72), rgba(0, 0, 0, 0.54));
+  color: rgba(207, 250, 254, 0.92);
+  text-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+}
+
+.mecha-face-panel {
+  position: relative;
+  display: grid;
+  width: 6.5rem;
+  height: 1.8rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--mecha-face-color, #67e8f9) 48%, transparent);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(230, 251, 255, 0.08), rgba(0, 0, 0, 0.02)),
+    rgba(1, 10, 18, 0.82);
+  box-shadow:
+    inset 0 0 14px color-mix(in srgb, var(--mecha-face-color, #67e8f9) 20%, transparent),
+    0 0 var(--mecha-face-glow, 10px) color-mix(in srgb, var(--mecha-face-color, #67e8f9) 34%, transparent);
+  color: var(--mecha-face-color, #67e8f9);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.mecha-face-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 4px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.mecha-face-panel::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  top: 0;
+  width: 38%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(230, 251, 255, 0.28), transparent);
+  animation: mecha-panel-scan 2.6s linear infinite;
+  pointer-events: none;
+}
+
+.mecha-face-panel--speaking span,
+.mecha-face-panel--coach_mode span {
+  animation: mecha-symbol-speak 420ms ease-in-out infinite;
+}
+
+.mecha-face-panel--corrective {
+  color: #fb923c;
+}
+
+.mecha-coach-fallback {
+  --mecha-primary: #67e8f9;
+  --mecha-secondary: #a78bfa;
+  --mecha-level: 0.08;
+  position: relative;
+  z-index: 1;
+  width: min(18rem, 88%);
+  height: 18rem;
+  color: var(--mecha-primary);
+}
+
+.mecha-coach-fallback__stars,
+.mecha-coach-fallback__noise,
+.mecha-coach-fallback__ring,
+.mecha-coach-fallback__armor,
+.mecha-coach-fallback__core,
+.mecha-coach-fallback__wave,
+.mecha-coach-fallback__thruster {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.mecha-coach-fallback__stars {
+  inset: 0;
+  left: 0;
+  top: 0;
+  transform: none;
+  background:
+    radial-gradient(circle at 16% 22%, rgba(103, 232, 249, 0.7) 0 1px, transparent 2px),
+    radial-gradient(circle at 74% 18%, rgba(244, 114, 182, 0.7) 0 1px, transparent 2px),
+    radial-gradient(circle at 86% 72%, rgba(230, 251, 255, 0.7) 0 1px, transparent 2px),
+    radial-gradient(circle at 24% 76%, rgba(103, 232, 249, 0.5) 0 1px, transparent 2px);
+  opacity: 0.52;
+  animation: mecha-stars-drift 7s linear infinite;
+}
+
+.mecha-coach-fallback__ring {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 52%, transparent);
+  box-shadow:
+    inset 0 0 18px color-mix(in srgb, var(--mecha-primary) 20%, transparent),
+    0 0 22px color-mix(in srgb, var(--mecha-primary) 18%, transparent);
+}
+
+.mecha-coach-fallback__ring--outer {
+  width: 13rem;
+  height: 13rem;
+  border-style: dashed;
+  animation: mecha-ring-spin 8s linear infinite;
+}
+
+.mecha-coach-fallback__ring--inner {
+  width: 9.6rem;
+  height: 9.6rem;
+  animation: mecha-ring-spin 5s linear infinite reverse;
+}
+
+.mecha-coach-fallback__armor {
+  width: 2.3rem;
+  height: 5.7rem;
+  border: 1px solid rgba(103, 232, 249, 0.26);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(103, 232, 249, 0.16), rgba(2, 12, 24, 0.92));
+  box-shadow: inset 0 0 16px rgba(103, 232, 249, 0.08);
+}
+
+.mecha-coach-fallback__armor--left {
+  transform: translate(calc(-50% - 4.8rem - var(--mecha-offset, 0rem)), -50%) rotate(-10deg);
+}
+
+.mecha-coach-fallback__armor--right {
+  transform: translate(calc(-50% + 4.8rem + var(--mecha-offset, 0rem)), -50%) rotate(10deg);
+}
+
+.mecha-coach-fallback__armor--top {
+  width: 5.8rem;
+  height: 1.4rem;
+  transform: translate(-50%, calc(-50% - 4.8rem - var(--mecha-rise-offset, 0rem)));
+}
+
+.mecha-coach-fallback__core {
+  width: 6rem;
+  height: 6rem;
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 62%, transparent);
+  border-radius: 26%;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--mecha-primary) 72%, transparent) 0 14%, transparent 46%),
+    linear-gradient(135deg, rgba(103, 232, 249, 0.16), rgba(167, 139, 250, 0.12), rgba(0, 0, 0, 0.5));
+  box-shadow:
+    inset 0 0 24px color-mix(in srgb, var(--mecha-primary) 22%, transparent),
+    0 0 var(--mecha-core-glow, 24px) color-mix(in srgb, var(--mecha-primary) 32%, transparent);
+  animation: mecha-core-breathe 3.4s ease-in-out infinite;
+}
+
+.mecha-coach-fallback__face {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  width: 4.2rem;
+  height: 1.5rem;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 44%, transparent);
+  border-radius: 4px;
+  background: rgba(1, 9, 18, 0.82);
+  font-family: var(--font-geist-mono), monospace;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-shadow: 0 0 10px currentColor;
+}
+
+.mecha-coach-fallback__noise {
+  width: var(--mecha-noise-size, 8.4rem);
+  height: var(--mecha-noise-size, 8.4rem);
+  border-radius: 999px;
+  opacity: 0;
+  background:
+    conic-gradient(from 90deg, transparent, color-mix(in srgb, var(--mecha-primary) 32%, transparent), transparent 24%, color-mix(in srgb, var(--mecha-secondary) 20%, transparent), transparent 62%);
+  filter: blur(1px);
+}
+
+.mecha-coach-fallback--listening .mecha-coach-fallback__noise {
+  opacity: var(--mecha-noise-opacity, 0.2);
+  animation: mecha-noise-jitter 540ms steps(3, end) infinite;
+}
+
+.mecha-coach-fallback__wave {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 42%, transparent);
+  opacity: 0;
+}
+
+.mecha-coach-fallback--speaking .mecha-coach-fallback__wave,
+.mecha-coach-fallback--coach_mode .mecha-coach-fallback__wave {
+  animation: mecha-wave-expand 1.7s ease-out infinite;
+}
+
+.mecha-coach-fallback__wave--two {
+  animation-delay: 720ms !important;
+}
+
+.mecha-coach-fallback__thruster {
+  top: calc(50% + 4.7rem);
+  width: 1.1rem;
+  height: var(--mecha-thruster-height, 1rem);
+  border-radius: 999px 999px 10px 10px;
+  background: linear-gradient(180deg, rgba(251, 146, 60, 0.86), transparent);
+  filter: blur(1px);
+  opacity: 0.08;
+}
+
+.mecha-coach-fallback--speaking .mecha-coach-fallback__thruster,
+.mecha-coach-fallback--coach_mode .mecha-coach-fallback__thruster,
+.mecha-coach-fallback--thinking .mecha-coach-fallback__thruster {
+  opacity: var(--mecha-thruster-opacity, 0.24);
+}
+
+.mecha-coach-fallback__thruster--left {
+  transform: translate(calc(-50% - 1.4rem), -50%);
+}
+
+.mecha-coach-fallback__thruster--right {
+  transform: translate(calc(-50% + 1.4rem), -50%);
+}
+
+@keyframes mecha-panel-scan {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translateX(320%); opacity: 0; }
+}
+
+@keyframes mecha-symbol-speak {
+  0%, 100% { transform: translateY(0); opacity: 0.82; }
+  50% { transform: translateY(-1px); opacity: 1; }
+}
+
+@keyframes mecha-ring-spin {
+  to { rotate: 360deg; }
+}
+
+@keyframes mecha-core-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.04; }
+}
+
+@keyframes mecha-stars-drift {
+  to { transform: translate3d(0.25rem, -0.2rem, 0); }
+}
+
+@keyframes mecha-noise-jitter {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  50% { transform: translate(-50%, -50%) rotate(8deg) scale(1.04); }
+}
+
+@keyframes mecha-wave-expand {
+  0% { opacity: var(--mecha-wave-opacity, 0.34); scale: 0.52; }
+  100% { opacity: 0; scale: 1.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mecha-face-panel::after,
+  .mecha-face-panel--speaking span,
+  .mecha-face-panel--coach_mode span,
+  .mecha-coach-fallback__stars,
+  .mecha-coach-fallback__ring,
+  .mecha-coach-fallback__core,
+  .mecha-coach-fallback__noise,
+  .mecha-coach-fallback__wave {
+    animation: none;
+  }
+}
+
+.mecha-drone-fallback {
+  --mecha-primary: #00e5ff;
+  --mecha-secondary: #ff2bd6;
+  --mecha-warning: #ff3d00;
+  --mecha-level: 0.08;
+  position: relative;
+  z-index: 1;
+  width: min(19rem, 92%);
+  height: 18rem;
+  color: var(--mecha-primary);
+  filter: drop-shadow(0 0 22px color-mix(in srgb, var(--mecha-primary) 18%, transparent));
+}
+
+.mecha-drone-fallback__grid,
+.mecha-drone-fallback__scan,
+.mecha-drone-fallback__wing,
+.mecha-drone-fallback__antenna,
+.mecha-drone-fallback__body,
+.mecha-drone-fallback__wave,
+.mecha-drone-fallback__noise,
+.mecha-drone-fallback__thruster {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+.mecha-drone-fallback__grid {
+  inset: 0;
+  left: 0;
+  top: 0;
+  background:
+    linear-gradient(115deg, transparent 0 44%, color-mix(in srgb, var(--mecha-secondary) 14%, transparent) 45% 46%, transparent 47%),
+    linear-gradient(rgba(0, 229, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 43, 214, 0.08) 1px, transparent 1px);
+  background-size: 100% 100%, 24px 24px, 24px 24px;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 76%);
+  opacity: 0.72;
+}
+
+.mecha-drone-fallback__scan {
+  width: 15rem;
+  height: 15rem;
+  transform: translate(-50%, -50%) rotate(12deg);
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 28%, transparent);
+  clip-path: polygon(50% 0, 100% 28%, 100% 72%, 50% 100%, 0 72%, 0 28%);
+  opacity: 0.38;
+  animation: mecha-drone-scan 2.8s linear infinite;
+}
+
+.mecha-drone-fallback__body {
+  width: 7.8rem;
+  height: 4.3rem;
+  transform: translate(-50%, -50%);
+  clip-path: polygon(14% 0, 86% 0, 100% 28%, 92% 82%, 66% 100%, 34% 100%, 8% 82%, 0 28%);
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 44%, transparent);
+  background:
+    radial-gradient(circle at 50% 66%, color-mix(in srgb, var(--mecha-primary) 24%, transparent), transparent 30%),
+    linear-gradient(135deg, rgba(255, 43, 214, 0.2), transparent 28%),
+    linear-gradient(180deg, #102134, #030812 72%);
+  box-shadow:
+    inset 0 0 28px rgba(0, 229, 255, 0.1),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.44),
+    0 0 var(--mecha-core-glow, 26px) color-mix(in srgb, var(--mecha-primary) 26%, transparent);
+}
+
+.mecha-drone-fallback__body::before,
+.mecha-drone-fallback__body::after {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  width: 0.5rem;
+  height: 2.9rem;
+  border: 1px solid color-mix(in srgb, var(--mecha-secondary) 38%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mecha-secondary) 32%, transparent), transparent);
+}
+
+.mecha-drone-fallback__body::before {
+  left: 0.55rem;
+  transform: skewY(-16deg);
+}
+
+.mecha-drone-fallback__body::after {
+  right: 0.55rem;
+  transform: skewY(16deg);
+}
+
+.mecha-drone-fallback__visor {
+  position: absolute;
+  left: 50%;
+  top: 1.33rem;
+  display: grid;
+  width: 5.6rem;
+  height: 1.45rem;
+  place-items: center;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 58%, transparent);
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(180deg, rgba(230, 251, 255, 0.12) 0 1px, transparent 1px 4px),
+    rgba(1, 10, 18, 0.92);
+  color: var(--mecha-primary);
+  font-family: var(--font-geist-mono), monospace;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 12px currentColor;
+  box-shadow:
+    inset 0 0 14px color-mix(in srgb, var(--mecha-primary) 24%, transparent),
+    0 0 16px color-mix(in srgb, var(--mecha-primary) 34%, transparent);
+}
+
+.mecha-drone-fallback__core {
+  position: absolute;
+  left: 50%;
+  bottom: 0.48rem;
+  width: 1rem;
+  height: 1rem;
+  transform: translateX(-50%) rotate(45deg);
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 68%, transparent);
+  background: color-mix(in srgb, var(--mecha-primary) 42%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--mecha-primary) 46%, transparent);
+}
+
+.mecha-drone-fallback__antenna {
+  top: calc(50% - 4.3rem);
+  width: 0.14rem;
+  height: 1.5rem;
+  background: linear-gradient(180deg, var(--mecha-primary), transparent);
+  box-shadow: 0 0 10px var(--mecha-primary);
+}
+
+.mecha-drone-fallback__antenna--left {
+  left: calc(50% - 1.68rem);
+  transform: rotate(-12deg);
+}
+
+.mecha-drone-fallback__antenna--right {
+  left: calc(50% + 1.55rem);
+  transform: rotate(12deg);
+}
+
+.mecha-drone-fallback__alert {
+  position: absolute;
+  bottom: 1.02rem;
+  width: 0.48rem;
+  height: 0.24rem;
+  background: var(--mecha-warning);
+  box-shadow: 0 0 12px var(--mecha-warning);
+}
+
+.mecha-drone-fallback__alert--left { left: 1.34rem; }
+.mecha-drone-fallback__alert--right { right: 1.34rem; }
+
+.mecha-drone-fallback__wing {
+  width: 5.6rem;
+  height: 3.6rem;
+  transform-origin: center center;
+}
+
+.mecha-drone-fallback__wing--left {
+  transform: translate(calc(-50% - 5.15rem - var(--mecha-wing-open, 0rem)), calc(-50% - 0.1rem)) rotate(var(--mecha-wing-tilt-negative, 0deg));
+}
+
+.mecha-drone-fallback__wing--right {
+  transform: translate(calc(-50% + 5.15rem + var(--mecha-wing-open, 0rem)), calc(-50% - 0.1rem)) scaleX(-1) rotate(var(--mecha-wing-tilt-negative, 0deg));
+}
+
+.mecha-drone-fallback__arm {
+  position: absolute;
+  left: 0.25rem;
+  top: 1.58rem;
+  width: 3rem;
+  height: 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 28%, transparent);
+  background: linear-gradient(90deg, #071521, #122b3d);
+}
+
+.mecha-drone-fallback__blade {
+  position: absolute;
+  left: 2.25rem;
+  top: 0.82rem;
+  width: 2.8rem;
+  height: 1.35rem;
+  clip-path: polygon(0 18%, 78% 0, 100% 38%, 74% 100%, 0 82%);
+  border: 1px solid color-mix(in srgb, var(--mecha-secondary) 36%, transparent);
+  background:
+    linear-gradient(120deg, color-mix(in srgb, var(--mecha-secondary) 25%, transparent), transparent 42%),
+    linear-gradient(180deg, #0c1a28, #030812);
+  box-shadow: inset 0 0 18px rgba(255, 43, 214, 0.12);
+}
+
+.mecha-drone-fallback__rotor {
+  position: absolute;
+  right: 0;
+  top: 1.16rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2px solid color-mix(in srgb, var(--mecha-primary) 54%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mecha-primary) 34%, transparent);
+}
+
+.mecha-drone-fallback__rotor::before,
+.mecha-drone-fallback__rotor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.18rem;
+  height: 0.13rem;
+  transform: translate(-50%, -50%);
+  background: var(--mecha-warning);
+  box-shadow: 0 0 10px var(--mecha-warning);
+}
+
+.mecha-drone-fallback__rotor::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.mecha-drone-fallback--speaking .mecha-drone-fallback__rotor::before,
+.mecha-drone-fallback--speaking .mecha-drone-fallback__rotor::after,
+.mecha-drone-fallback--coach_mode .mecha-drone-fallback__rotor::before,
+.mecha-drone-fallback--coach_mode .mecha-drone-fallback__rotor::after,
+.mecha-drone-fallback--thinking .mecha-drone-fallback__rotor::before,
+.mecha-drone-fallback--thinking .mecha-drone-fallback__rotor::after {
+  animation: mecha-drone-rotor 360ms linear infinite;
+}
+
+.mecha-drone-fallback__noise {
+  width: 10.4rem;
+  height: 5.6rem;
+  transform: translate(-50%, -50%);
+  clip-path: polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%);
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--mecha-primary) 16%, transparent) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(180deg, color-mix(in srgb, var(--mecha-secondary) 12%, transparent) 0 1px, transparent 1px 7px);
+  opacity: var(--mecha-noise-opacity, 0.04);
+  mix-blend-mode: screen;
+  animation: mecha-drone-noise 520ms steps(2, end) infinite;
+}
+
+.mecha-drone-fallback__wave {
+  width: 6.4rem;
+  height: 2.6rem;
+  transform: translate(-50%, calc(-50% + 0.2rem));
+  border: 1px solid color-mix(in srgb, var(--mecha-primary) 44%, transparent);
+  border-radius: 999px;
+  opacity: 0;
+}
+
+.mecha-drone-fallback--speaking .mecha-drone-fallback__wave,
+.mecha-drone-fallback--coach_mode .mecha-drone-fallback__wave {
+  animation: mecha-drone-wave 1.4s ease-out infinite;
+}
+
+.mecha-drone-fallback__wave--two {
+  animation-delay: 620ms !important;
+}
+
+.mecha-drone-fallback__thruster {
+  top: calc(50% + 3.2rem);
+  width: 1rem;
+  height: var(--mecha-thruster-height, 1.3rem);
+  transform: translate(-50%, 0);
+  border-radius: 999px 999px 8px 8px;
+  background: linear-gradient(180deg, var(--mecha-warning), #ff3d00 42%, transparent);
+  filter: blur(0.8px);
+  opacity: var(--mecha-thruster-opacity, 0.22);
+  box-shadow: 0 0 16px var(--mecha-warning);
+}
+
+.mecha-drone-fallback__thruster--left { left: calc(50% - 1.65rem); }
+.mecha-drone-fallback__thruster--center { left: 50%; width: 0.8rem; }
+.mecha-drone-fallback__thruster--right { left: calc(50% + 1.65rem); }
+
+.mecha-face-panel {
+  width: 7.6rem;
+  height: 2.1rem;
+  border-color: color-mix(in srgb, var(--mecha-face-color, #00e5ff) 62%, transparent);
+  border-radius: 4px;
+  background:
+    linear-gradient(115deg, color-mix(in srgb, #ff2bd6 18%, transparent), transparent 32%),
+    repeating-linear-gradient(180deg, rgba(230, 251, 255, 0.12) 0 1px, transparent 1px 4px),
+    rgba(1, 10, 18, 0.9);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+}
+
+@keyframes mecha-drone-scan {
+  0% { opacity: 0.18; transform: translate(-50%, -50%) rotate(0deg) scale(0.92); }
+  50% { opacity: 0.52; transform: translate(-50%, -50%) rotate(180deg) scale(1.04); }
+  100% { opacity: 0.18; transform: translate(-50%, -50%) rotate(360deg) scale(0.92); }
+}
+
+@keyframes mecha-drone-rotor {
+  to { rotate: 360deg; }
+}
+
+@keyframes mecha-drone-noise {
+  0%, 100% { transform: translate(-50%, -50%) skewX(0deg); }
+  50% { transform: translate(calc(-50% + 0.12rem), calc(-50% - 0.08rem)) skewX(-4deg); }
+}
+
+@keyframes mecha-drone-wave {
+  0% { opacity: var(--mecha-wave-opacity, 0.38); scale: 0.58; }
+  100% { opacity: 0; scale: 2.1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mecha-drone-fallback__scan,
+  .mecha-drone-fallback__noise,
+  .mecha-drone-fallback__wave,
+  .mecha-drone-fallback__rotor::before,
+  .mecha-drone-fallback__rotor::after {
+    animation: none;
+  }
+}
+
 @media (max-width: 1024px) {
   .dialogue-home-coach {
     grid-template-columns: 1fr;

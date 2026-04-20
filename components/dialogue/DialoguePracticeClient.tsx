@@ -8,6 +8,7 @@ import DialogueCoachAvatar, {
   type DialogueAvatarState,
 } from '@/components/dialogue/DialogueCoachAvatar'
 import { withBasePath } from '@/lib/base-path'
+import { useMicrophoneLevel } from '@/hooks/useMicrophoneLevel'
 
 interface DialogueNodeView {
   id: string
@@ -104,6 +105,7 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
   const [avatarState, setAvatarState] = useState<DialogueAvatarState>('idle')
   const [expression, setExpression] = useState<DialogueAvatarExpression>('normal')
   const [amplitude, setAmplitude] = useState(0)
+  const { level: listeningLevel, start: startMicrophoneLevel, stop: stopMicrophoneLevel } = useMicrophoneLevel()
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<number | null>(null)
@@ -171,8 +173,9 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
 
       audioRef.current?.pause()
       audioContextRef.current?.close().catch(() => undefined)
+      stopMicrophoneLevel()
     }
-  }, [])
+  }, [stopMicrophoneLevel])
 
   const playAudio = useCallback(async (audioUrl: string, mode: 'role' | 'coach') => {
     audioRef.current?.pause()
@@ -338,6 +341,7 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
       }
       mediaRecorderRef.current = recorder
       recorder.start()
+      void startMicrophoneLevel(stream).catch(() => undefined)
       setIsRecording(true)
       setRecordingSeconds(0)
       setAvatarState('listening')
@@ -353,6 +357,7 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
     mediaRecorderRef.current?.stop()
     mediaRecorderRef.current = null
     recordedChunksRef.current = []
+    stopMicrophoneLevel()
     setIsRecording(false)
     setRecordingSeconds(0)
     setAvatarState('idle')
@@ -375,6 +380,7 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
     recorder.stop()
     mediaRecorderRef.current = null
     await stopped
+    stopMicrophoneLevel()
 
     if (recordingTimerRef.current) {
       window.clearInterval(recordingTimerRef.current)
@@ -507,7 +513,12 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
 
         <div className="grid min-h-[70vh] gap-5 lg:grid-cols-[320px_1fr_320px]">
           <aside className="space-y-4 rounded-lg border border-cyan-500/22 bg-black/42 p-4 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-            <DialogueCoachAvatar state={avatarState} expression={expression} amplitude={amplitude} />
+            <DialogueCoachAvatar
+              state={avatarState}
+              expression={expression}
+              amplitude={amplitude}
+              listeningLevel={avatarState === 'listening' ? listeningLevel : 0}
+            />
 
             <div className="rounded-lg border border-cyan-500/16 bg-black/30 p-4">
               <div className="font-mono text-[11px] tracking-[0.2em] text-cyan-300/60">CURRENT TASK</div>
