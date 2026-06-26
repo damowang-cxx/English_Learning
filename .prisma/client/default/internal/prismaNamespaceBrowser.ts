@@ -66,6 +66,7 @@ export const ModelName = {
   DialogueEdge: 'DialogueEdge',
   DialogueSession: 'DialogueSession',
   DialogueAttempt: 'DialogueAttempt',
+  DialogueProfileEvent: 'DialogueProfileEvent',
   DialogueSpeechAsset: 'DialogueSpeechAsset'
 } as const
 
@@ -277,10 +278,12 @@ export type DialogueEdgeScalarFieldEnum = (typeof DialogueEdgeScalarFieldEnum)[k
 
 export const DialogueSessionScalarFieldEnum = {
   id: 'id',
+  mode: 'mode',
   scenarioId: 'scenarioId',
   userId: 'userId',
   currentNodeId: 'currentNodeId',
   status: 'status',
+  metadataJson: 'metadataJson',
   totalScore: 'totalScore',
   completedNodeCount: 'completedNodeCount',
   lastActivityAt: 'lastActivityAt',
@@ -299,8 +302,16 @@ export const DialogueAttemptScalarFieldEnum = {
   nodeId: 'nodeId',
   userId: 'userId',
   inputMode: 'inputMode',
+  turnStatus: 'turnStatus',
+  turnIndex: 'turnIndex',
+  transcriptSource: 'transcriptSource',
   userText: 'userText',
   transcriptText: 'transcriptText',
+  transcriptJson: 'transcriptJson',
+  aiReplyJson: 'aiReplyJson',
+  assessmentJson: 'assessmentJson',
+  profileEventsJson: 'profileEventsJson',
+  errorJson: 'errorJson',
   routerIntent: 'routerIntent',
   routerJson: 'routerJson',
   evaluatorJson: 'evaluatorJson',
@@ -315,6 +326,25 @@ export const DialogueAttemptScalarFieldEnum = {
 } as const
 
 export type DialogueAttemptScalarFieldEnum = (typeof DialogueAttemptScalarFieldEnum)[keyof typeof DialogueAttemptScalarFieldEnum]
+
+
+export const DialogueProfileEventScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  turnId: 'turnId',
+  mode: 'mode',
+  scenarioId: 'scenarioId',
+  nodeId: 'nodeId',
+  type: 'type',
+  severity: 'severity',
+  evidence: 'evidence',
+  suggestion: 'suggestion',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueProfileEventScalarFieldEnum = (typeof DialogueProfileEventScalarFieldEnum)[keyof typeof DialogueProfileEventScalarFieldEnum]
 
 
 export const DialogueSpeechAssetScalarFieldEnum = {

@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { Mic, MicOff, Radio } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DialogueCoachAvatar, {
   type DialogueAvatarExpression,
   type DialogueAvatarState,
 } from '@/components/dialogue/DialogueCoachAvatar'
 import type { HomeDialogueScenarioCardItem } from '@/components/dialogue/HomeDialogueScenarioGrid'
+import { useRealtimeVoiceAdapter, type RealtimeVoiceStatus } from '@/hooks/useRealtimeVoiceAdapter'
 import { withBasePath } from '@/lib/base-path'
 
 type HomeCoachMessageRole = 'user' | 'coach' | 'system'
@@ -38,6 +40,16 @@ function createMessage(
   }
 }
 
+const realtimeStatusLabels: Record<RealtimeVoiceStatus, string> = {
+  idle: '未连接',
+  connecting: '连接中',
+  listening: '正在听',
+  speaking: '教练回应',
+  connected: '已连接',
+  disconnected: '已结束',
+  error: '连接异常',
+}
+
 export default function DialogueHomeCoach({ scenarios, isAuthenticated }: DialogueHomeCoachProps) {
   const [messages, setMessages] = useState<HomeCoachMessage[]>([
     createMessage(
@@ -47,6 +59,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
   ])
   const [input, setInput] = useState('')
   const [statusText, setStatusText] = useState<string | null>(null)
+  const [conversationSessionId, setConversationSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
@@ -77,6 +90,28 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
     [messages]
   )
 
+  const handleRealtimeTurnCommitted = useCallback(
+    (turn: { conversationSessionId: string; turnId: string; userTranscript: string; assistantTranscript: string }) => {
+      setConversationSessionId(turn.conversationSessionId)
+      setMessages((current) => [
+        ...current,
+        createMessage('user', turn.userTranscript),
+        createMessage('coach', turn.assistantTranscript),
+      ])
+      setExpression('encouraging')
+      setStatusText(null)
+    },
+    []
+  )
+
+  const realtime = useRealtimeVoiceAdapter({
+    conversationSessionId,
+    disabled: !isAuthenticated,
+    onConversationSessionId: setConversationSessionId,
+    onTurnCommitted: handleRealtimeTurnCommitted,
+    onStatusMessage: setStatusText,
+  })
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -91,6 +126,38 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
       audioContextRef.current?.close().catch(() => undefined)
     }
   }, [])
+
+  useEffect(() => {
+    if (!realtime.isActive) {
+      if (!isRecording && !isSubmitting) {
+        setAvatarState('idle')
+        setAmplitude(0)
+      }
+      return
+    }
+
+    if (realtime.status === 'connecting') {
+      setAvatarState('thinking')
+      setAmplitude(0.18)
+      return
+    }
+
+    if (realtime.status === 'listening') {
+      setAvatarState('listening')
+      setAmplitude(0.3)
+      return
+    }
+
+    if (realtime.status === 'speaking') {
+      setAvatarState('coach_mode')
+      setAmplitude(0.58)
+      setExpression('encouraging')
+      return
+    }
+
+    setAvatarState('idle')
+    setAmplitude(0.08)
+  }, [isRecording, isSubmitting, realtime.isActive, realtime.status])
 
   const playAudio = useCallback(async (audioUrl: string) => {
     audioRef.current?.pause()
@@ -154,7 +221,13 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
     suggestedScenarioIds?: string[]
     studyTips?: string[]
     transcriptText?: string
+    conversationSessionId?: string
+    turnId?: string
   }) => {
+    if (payload.conversationSessionId) {
+      setConversationSessionId(payload.conversationSessionId)
+    }
+
     setMessages((current) => {
       const next = [...current]
 
@@ -176,7 +249,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
   const submitMessage = async (message: string) => {
     const trimmed = message.trim()
 
-    if (!trimmed || isSubmitting || !isAuthenticated) {
+    if (!trimmed || isSubmitting || realtime.isActive || !isAuthenticated) {
       return
     }
 
@@ -193,6 +266,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
         body: JSON.stringify({
           message: trimmed,
           recentMessages,
+          conversationSessionId,
         }),
       })
       const payload = await response.json()
@@ -212,7 +286,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
   }
 
   const startRecording = async () => {
-    if (isRecording || isSubmitting || !isAuthenticated) {
+    if (isRecording || isSubmitting || realtime.isActive || !isAuthenticated) {
       return
     }
 
@@ -256,7 +330,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
   }
 
   const submitRecording = async () => {
-    if (!mediaRecorderRef.current || isSubmitting || !isAuthenticated) {
+    if (!mediaRecorderRef.current || isSubmitting || realtime.isActive || !isAuthenticated) {
       return
     }
 
@@ -293,6 +367,9 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
       const formData = new FormData()
       formData.append('audio', audioBlob, 'dialogue-home-coach.webm')
       formData.append('recentMessages', JSON.stringify(recentMessages))
+      if (conversationSessionId) {
+        formData.append('conversationSessionId', conversationSessionId)
+      }
       const response = await fetch(withBasePath('/api/dialogue/home-coach/respond-audio'), {
         method: 'POST',
         body: formData,
@@ -434,11 +511,68 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
           </div>
         ) : (
           <div className="mt-4 space-y-3">
+            <div className="rounded-lg border border-emerald-300/24 bg-emerald-300/[0.06] p-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] text-emerald-200/75">
+                    <Radio className="h-3.5 w-3.5" aria-hidden="true" />
+                    REALTIME VOICE
+                  </div>
+                  <div className="mt-1 text-sm text-cyan-50">中英双语实时教练</div>
+                  <div className="mt-1 truncate text-xs text-cyan-100/52">
+                    {realtime.model ? `${realtime.model} / ${realtime.voice || 'voice'}` : 'WebRTC live session'}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-emerald-300/20 bg-black/24 px-2.5 py-1.5 font-mono text-[11px] text-emerald-100/75">
+                    {realtimeStatusLabels[realtime.status]}
+                  </span>
+                  {!realtime.isActive ? (
+                    <button
+                      type="button"
+                      onClick={() => void realtime.start()}
+                      disabled={isSubmitting || isRecording}
+                      className="inline-flex items-center gap-2 rounded-md border border-emerald-300/45 bg-emerald-400/[0.14] px-3 py-2 text-sm text-emerald-50 transition-colors hover:bg-emerald-400/[0.22] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Mic className="h-4 w-4" aria-hidden="true" />
+                      开始实时交流
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={realtime.stop}
+                      className="inline-flex items-center gap-2 rounded-md border border-red-300/40 bg-red-400/[0.1] px-3 py-2 text-sm text-red-100 transition-colors hover:bg-red-400/[0.16]"
+                    >
+                      <MicOff className="h-4 w-4" aria-hidden="true" />
+                      结束实时交流
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {realtime.liveUserTranscript || realtime.liveAssistantTranscript ? (
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  <div className="rounded-md border border-cyan-300/16 bg-black/24 px-3 py-2">
+                    <div className="font-mono text-[10px] tracking-[0.16em] text-cyan-100/45">YOU</div>
+                    <div className="mt-1 line-clamp-3 text-xs leading-5 text-cyan-50/82">
+                      {realtime.liveUserTranscript || '...'}
+                    </div>
+                  </div>
+                  <div className="rounded-md border border-emerald-300/16 bg-black/24 px-3 py-2">
+                    <div className="font-mono text-[10px] tracking-[0.16em] text-emerald-100/45">COACH</div>
+                    <div className="mt-1 line-clamp-3 text-xs leading-5 text-emerald-50/82">
+                      {realtime.liveAssistantTranscript || '...'}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
               rows={3}
-              disabled={isSubmitting}
+              disabled={isSubmitting || realtime.isActive}
               className="w-full resize-none rounded-md border border-cyan-500/24 bg-black/45 px-4 py-3 text-sm leading-6 text-cyan-50 outline-none transition-colors placeholder:text-cyan-200/35 focus:border-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="例如：我想练面试英语，应该从哪个场景开始？或者问：reservation 和 booking 有什么区别？"
             />
@@ -446,7 +580,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
               <button
                 type="button"
                 onClick={() => void submitMessage(input)}
-                disabled={!input.trim() || isSubmitting}
+                disabled={!input.trim() || isSubmitting || realtime.isActive}
                 className="rounded-md border border-cyan-300/50 bg-cyan-400/[0.16] px-4 py-2 text-sm text-cyan-50 transition-colors hover:bg-cyan-400/[0.24] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSubmitting ? '思考中...' : '发送给教练'}
@@ -455,7 +589,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
                 <button
                   type="button"
                   onClick={() => void startRecording()}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || realtime.isActive}
                   className="rounded-md border border-emerald-300/42 bg-emerald-400/[0.12] px-4 py-2 text-sm text-emerald-50 transition-colors hover:bg-emerald-400/[0.2] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   录音提问

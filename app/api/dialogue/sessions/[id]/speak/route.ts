@@ -26,6 +26,7 @@ export async function POST(
       where: {
         id,
         userId: guard.user.id,
+        mode: 'scenario',
       },
       include: {
         scenario: true,
@@ -39,6 +40,10 @@ export async function POST(
 
     if (!session) {
       return NextResponse.json({ error: 'Dialogue session not found' }, { status: 404 })
+    }
+
+    if (!session.scenario) {
+      return NextResponse.json({ error: 'Dialogue session is not attached to a scenario.' }, { status: 400 })
     }
 
     let text = ''

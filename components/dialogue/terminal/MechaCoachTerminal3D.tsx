@@ -13,10 +13,10 @@ export default function MechaCoachTerminal3D(props: MechaCoachTerminalProps) {
         dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <color attach="background" args={['#020617']} />
+        <color attach="background" args={['#04090d']} />
         <MechaCoachScene {...props} />
         <EffectComposer multisampling={0}>
-          <Bloom intensity={0.95 + props.amplitude * 0.82 + props.listeningLevel * 0.22} luminanceThreshold={0.16} luminanceSmoothing={0.42} mipmapBlur />
+          <Bloom intensity={0.24 + props.amplitude * 0.28 + props.listeningLevel * 0.16} luminanceThreshold={0.36} luminanceSmoothing={0.56} mipmapBlur />
         </EffectComposer>
       </Canvas>
     </div>

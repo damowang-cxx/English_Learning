@@ -224,6 +224,7 @@ export type UserWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   dialogueSessions?: Prisma.DialogueSessionListRelationFilter
   dialogueAttempts?: Prisma.DialogueAttemptListRelationFilter
+  dialogueProfileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -239,6 +240,7 @@ export type UserOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   dialogueSessions?: Prisma.DialogueSessionOrderByRelationAggregateInput
   dialogueAttempts?: Prisma.DialogueAttemptOrderByRelationAggregateInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -257,6 +259,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   dialogueSessions?: Prisma.DialogueSessionListRelationFilter
   dialogueAttempts?: Prisma.DialogueAttemptListRelationFilter
+  dialogueProfileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -304,6 +307,7 @@ export type UserCreateInput = {
   updatedAt?: Date | string
   dialogueSessions?: Prisma.DialogueSessionCreateNestedManyWithoutUserInput
   dialogueAttempts?: Prisma.DialogueAttemptCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -319,6 +323,7 @@ export type UserUncheckedCreateInput = {
   updatedAt?: Date | string
   dialogueSessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutUserInput
   dialogueAttempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -334,6 +339,7 @@ export type UserUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueSessions?: Prisma.DialogueSessionUpdateManyWithoutUserNestedInput
   dialogueAttempts?: Prisma.DialogueAttemptUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -349,6 +355,7 @@ export type UserUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueSessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutUserNestedInput
   dialogueAttempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -482,6 +489,20 @@ export type UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDialogueAttemptsInput, Prisma.UserUpdateWithoutDialogueAttemptsInput>, Prisma.UserUncheckedUpdateWithoutDialogueAttemptsInput>
 }
 
+export type UserCreateNestedOneWithoutDialogueProfileEventsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedCreateWithoutDialogueProfileEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueProfileEventsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDialogueProfileEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedCreateWithoutDialogueProfileEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDialogueProfileEventsInput
+  upsert?: Prisma.UserUpsertWithoutDialogueProfileEventsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDialogueProfileEventsInput, Prisma.UserUpdateWithoutDialogueProfileEventsInput>, Prisma.UserUncheckedUpdateWithoutDialogueProfileEventsInput>
+}
+
 export type UserCreateWithoutDialogueSessionsInput = {
   id?: string
   email: string
@@ -494,6 +515,7 @@ export type UserCreateWithoutDialogueSessionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   dialogueAttempts?: Prisma.DialogueAttemptCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDialogueSessionsInput = {
@@ -508,6 +530,7 @@ export type UserUncheckedCreateWithoutDialogueSessionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   dialogueAttempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDialogueSessionsInput = {
@@ -538,6 +561,7 @@ export type UserUpdateWithoutDialogueSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueAttempts?: Prisma.DialogueAttemptUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDialogueSessionsInput = {
@@ -552,6 +576,7 @@ export type UserUncheckedUpdateWithoutDialogueSessionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueAttempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDialogueAttemptsInput = {
@@ -566,6 +591,7 @@ export type UserCreateWithoutDialogueAttemptsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   dialogueSessions?: Prisma.DialogueSessionCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDialogueAttemptsInput = {
@@ -580,6 +606,7 @@ export type UserUncheckedCreateWithoutDialogueAttemptsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   dialogueSessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutUserInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDialogueAttemptsInput = {
@@ -610,6 +637,7 @@ export type UserUpdateWithoutDialogueAttemptsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueSessions?: Prisma.DialogueSessionUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDialogueAttemptsInput = {
@@ -624,6 +652,83 @@ export type UserUncheckedUpdateWithoutDialogueAttemptsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dialogueSessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutUserNestedInput
+  dialogueProfileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutDialogueProfileEventsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionCreateNestedManyWithoutUserInput
+  dialogueAttempts?: Prisma.DialogueAttemptCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutDialogueProfileEventsInput = {
+  id?: string
+  email: string
+  name?: string
+  avatarUrl?: string | null
+  passwordHash: string
+  role?: string
+  isActive?: boolean
+  userGuideSeenAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutUserInput
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutDialogueProfileEventsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedCreateWithoutDialogueProfileEventsInput>
+}
+
+export type UserUpsertWithoutDialogueProfileEventsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedUpdateWithoutDialogueProfileEventsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedCreateWithoutDialogueProfileEventsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDialogueProfileEventsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDialogueProfileEventsInput, Prisma.UserUncheckedUpdateWithoutDialogueProfileEventsInput>
+}
+
+export type UserUpdateWithoutDialogueProfileEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUpdateManyWithoutUserNestedInput
+  dialogueAttempts?: Prisma.DialogueAttemptUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDialogueProfileEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  userGuideSeenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dialogueSessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutUserNestedInput
+  dialogueAttempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -634,11 +739,13 @@ export type UserUncheckedUpdateWithoutDialogueAttemptsInput = {
 export type UserCountOutputType = {
   dialogueSessions: number
   dialogueAttempts: number
+  dialogueProfileEvents: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dialogueSessions?: boolean | UserCountOutputTypeCountDialogueSessionsArgs
   dialogueAttempts?: boolean | UserCountOutputTypeCountDialogueAttemptsArgs
+  dialogueProfileEvents?: boolean | UserCountOutputTypeCountDialogueProfileEventsArgs
 }
 
 /**
@@ -665,6 +772,13 @@ export type UserCountOutputTypeCountDialogueAttemptsArgs<ExtArgs extends runtime
   where?: Prisma.DialogueAttemptWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDialogueProfileEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueProfileEventWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -679,6 +793,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   dialogueSessions?: boolean | Prisma.User$dialogueSessionsArgs<ExtArgs>
   dialogueAttempts?: boolean | Prisma.User$dialogueAttemptsArgs<ExtArgs>
+  dialogueProfileEvents?: boolean | Prisma.User$dialogueProfileEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -725,6 +840,7 @@ export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dialogueSessions?: boolean | Prisma.User$dialogueSessionsArgs<ExtArgs>
   dialogueAttempts?: boolean | Prisma.User$dialogueAttemptsArgs<ExtArgs>
+  dialogueProfileEvents?: boolean | Prisma.User$dialogueProfileEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -735,6 +851,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     dialogueSessions: Prisma.$DialogueSessionPayload<ExtArgs>[]
     dialogueAttempts: Prisma.$DialogueAttemptPayload<ExtArgs>[]
+    dialogueProfileEvents: Prisma.$DialogueProfileEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1143,6 +1260,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   dialogueSessions<T extends Prisma.User$dialogueSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dialogueSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dialogueAttempts<T extends Prisma.User$dialogueAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dialogueAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  dialogueProfileEvents<T extends Prisma.User$dialogueProfileEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dialogueProfileEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueProfileEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1613,6 +1731,30 @@ export type User$dialogueAttemptsArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.DialogueAttemptScalarFieldEnum | Prisma.DialogueAttemptScalarFieldEnum[]
+}
+
+/**
+ * User.dialogueProfileEvents
+ */
+export type User$dialogueProfileEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueProfileEvent
+   */
+  select?: Prisma.DialogueProfileEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueProfileEvent
+   */
+  omit?: Prisma.DialogueProfileEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueProfileEventInclude<ExtArgs> | null
+  where?: Prisma.DialogueProfileEventWhereInput
+  orderBy?: Prisma.DialogueProfileEventOrderByWithRelationInput | Prisma.DialogueProfileEventOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueProfileEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueProfileEventScalarFieldEnum | Prisma.DialogueProfileEventScalarFieldEnum[]
 }
 
 /**

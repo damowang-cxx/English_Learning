@@ -1,62 +1,105 @@
 'use client'
 
-import { MECHA_EXPRESSION_SYMBOLS } from './mechaCoach.constants'
-import { getReactiveLevel, getStateProfile } from './mechaCoach.utils'
+import { getReactiveLevel, getStateProfile, isSpeakingState } from './mechaCoach.utils'
 import type { MechaCoachTerminalProps } from './mechaCoach.types'
+
+function getMouthBars(props: MechaCoachTerminalProps, signalLevel: number) {
+  const mouthLevel = isSpeakingState(props.state) ? Math.max(0.18, signalLevel) : 0.16
+
+  if (isSpeakingState(props.state)) {
+    return [
+      0.34 + mouthLevel * 0.54,
+      0.52 + mouthLevel * 0.68,
+      0.38 + mouthLevel * 0.46,
+      0.68 + mouthLevel * 0.72,
+      0.4 + mouthLevel * 0.48,
+      0.58 + mouthLevel * 0.62,
+      0.36 + mouthLevel * 0.5,
+    ]
+  }
+
+  if (props.expression === 'encouraging') {
+    return [0.18, 0.24, 0.3, 0.34, 0.3, 0.24, 0.18]
+  }
+
+  if (props.expression === 'confused') {
+    return [0.32, 0.18, 0.28, 0.2, 0.3, 0.18, 0.34]
+  }
+
+  if (props.expression === 'corrective') {
+    return [0.18, 0.18, 0.18, 0.18, 0.18, 0.18, 0.18]
+  }
+
+  return [0.24, 0.24, 0.24, 0.24, 0.24, 0.24, 0.24]
+}
 
 export default function MechaCoachTerminalFallback(props: MechaCoachTerminalProps) {
   const profile = getStateProfile(props.state)
   const reactiveLevel = getReactiveLevel(props.state, props.amplitude, props.listeningLevel)
-  const symbol = props.state === 'thinking' ? '...' : MECHA_EXPRESSION_SYMBOLS[props.expression]
-  const wingOpen = profile.armorOpen + reactiveLevel * 0.3
+  const signalLevel = props.state === 'listening' ? props.listeningLevel : props.amplitude
+  const faceColor = props.expression === 'corrective' ? profile.warning : profile.primary
+  const mouthBars = getMouthBars(props, signalLevel)
 
   return (
     <div
-      className={`mecha-drone-fallback mecha-drone-fallback--${props.state} mecha-drone-fallback--${props.expression}`}
+      className={`coach-device-fallback coach-device-fallback--${props.state} coach-device-fallback--${props.expression}`}
       style={{
-        ['--mecha-primary' as string]: profile.primary,
-        ['--mecha-secondary' as string]: profile.secondary,
-        ['--mecha-warning' as string]: profile.warning,
-        ['--mecha-level' as string]: String(Math.max(0.08, reactiveLevel)),
-        ['--mecha-wing-open' as string]: `${wingOpen * 2.1}rem`,
-        ['--mecha-wing-tilt' as string]: `${wingOpen * 16}deg`,
-        ['--mecha-wing-tilt-negative' as string]: `${wingOpen * -16}deg`,
-        ['--mecha-core-glow' as string]: `${24 + reactiveLevel * 26}px`,
-        ['--mecha-noise-opacity' as string]: String(props.state === 'listening' ? 0.28 + reactiveLevel * 0.62 : 0.04),
-        ['--mecha-wave-opacity' as string]: String(0.34 + reactiveLevel * 0.36),
-        ['--mecha-thruster-height' as string]: `${1.2 + profile.thrusterStrength * 2.8 + reactiveLevel * 2}rem`,
-        ['--mecha-thruster-opacity' as string]: String(Math.min(0.92, 0.18 + profile.thrusterStrength + reactiveLevel * 0.44)),
+        ['--device-primary' as string]: profile.primary,
+        ['--device-secondary' as string]: profile.secondary,
+        ['--device-warning' as string]: profile.warning,
+        ['--device-level' as string]: String(Math.max(0.08, reactiveLevel)),
+        ['--device-face-color' as string]: faceColor,
+        ['--device-face-secondary' as string]: profile.secondary,
+        ['--device-face-level' as string]: String(Math.max(0.12, signalLevel)),
+        ['--device-face-glow' as string]: `${14 + Math.max(0.12, signalLevel) * 18}px`,
+        ['--device-core-glow' as string]: `${18 + reactiveLevel * 34}px`,
+        ['--device-ear-glow' as string]: String(props.state === 'listening' ? 0.38 + reactiveLevel * 0.5 : 0.2 + reactiveLevel * 0.32),
+        ['--device-wave-opacity' as string]: String(0.18 + reactiveLevel * 0.38),
       }}
       aria-hidden="true"
     >
-      <div className="mecha-drone-fallback__grid" />
-      <div className="mecha-drone-fallback__scan" />
-      <div className="mecha-drone-fallback__wing mecha-drone-fallback__wing--left">
-        <div className="mecha-drone-fallback__arm" />
-        <div className="mecha-drone-fallback__blade" />
-        <div className="mecha-drone-fallback__rotor" />
-      </div>
-      <div className="mecha-drone-fallback__wing mecha-drone-fallback__wing--right">
-        <div className="mecha-drone-fallback__arm" />
-        <div className="mecha-drone-fallback__blade" />
-        <div className="mecha-drone-fallback__rotor" />
-      </div>
-      <div className="mecha-drone-fallback__antenna mecha-drone-fallback__antenna--left" />
-      <div className="mecha-drone-fallback__antenna mecha-drone-fallback__antenna--right" />
-      <div className="mecha-drone-fallback__body">
-        <div className="mecha-drone-fallback__visor">
-          <span>{symbol}</span>
+      <div className="coach-device-fallback__grid" />
+      <div className="coach-device-fallback__halo coach-device-fallback__halo--outer" />
+      <div className="coach-device-fallback__halo coach-device-fallback__halo--inner" />
+      <div className="coach-device-fallback__wave coach-device-fallback__wave--one" />
+      <div className="coach-device-fallback__wave coach-device-fallback__wave--two" />
+
+      <div className="coach-device-fallback__shell">
+        <div className="coach-device-fallback__audio coach-device-fallback__audio--left">
+          <span />
+          <span />
+          <span />
         </div>
-        <div className="mecha-drone-fallback__core" />
-        <div className="mecha-drone-fallback__alert mecha-drone-fallback__alert--left" />
-        <div className="mecha-drone-fallback__alert mecha-drone-fallback__alert--right" />
+        <div className="coach-device-fallback__audio coach-device-fallback__audio--right">
+          <span />
+          <span />
+          <span />
+        </div>
+
+        <div className="coach-device-fallback__body">
+          <div className="coach-device-fallback__sensor" />
+          <div className={`coach-device-face coach-device-face--${props.state} coach-device-face--${props.expression}`}>
+            <span className="coach-device-face__scan" />
+            <span className="coach-device-face__brow coach-device-face__brow--left" />
+            <span className="coach-device-face__brow coach-device-face__brow--right" />
+            <span className="coach-device-face__eye coach-device-face__eye--left" />
+            <span className="coach-device-face__eye coach-device-face__eye--right" />
+            <span className="coach-device-face__mouth" aria-hidden="true">
+              {mouthBars.map((height, index) => (
+                <span
+                  key={index}
+                  style={{ ['--device-mouth-height' as string]: `${height}rem` }}
+                />
+              ))}
+            </span>
+            <span className="coach-device-face__pulse" />
+          </div>
+        </div>
+
+        <div className="coach-device-fallback__neck" />
+        <div className="coach-device-fallback__core" />
       </div>
-      <div className="mecha-drone-fallback__wave mecha-drone-fallback__wave--one" />
-      <div className="mecha-drone-fallback__wave mecha-drone-fallback__wave--two" />
-      <div className="mecha-drone-fallback__noise" />
-      <div className="mecha-drone-fallback__thruster mecha-drone-fallback__thruster--left" />
-      <div className="mecha-drone-fallback__thruster mecha-drone-fallback__thruster--center" />
-      <div className="mecha-drone-fallback__thruster mecha-drone-fallback__thruster--right" />
+      <div className="coach-device-fallback__shadow" />
     </div>
   )
 }

@@ -10,12 +10,13 @@ export default function MechaCoachScene(props: MechaCoachTerminalProps) {
 
   return (
     <>
-      <PerspectiveCamera makeDefault position={[0, 0.08, 5.2]} fov={42} />
-      <ambientLight intensity={0.24} />
-      <pointLight position={[0, 1.8, 2.5]} color={profile.primary} intensity={2.8 * profile.glowStrength} />
-      <pointLight position={[-2.8, -0.65, 1.7]} color={profile.secondary} intensity={1.9} />
-      <pointLight position={[2.4, -1.1, 1.2]} color={profile.warning} intensity={1.25} />
-      <spotLight position={[0, 2.6, 3.2]} angle={0.42} penumbra={0.8} color={profile.primary} intensity={1.25} />
+      <PerspectiveCamera makeDefault position={[0, 0.05, 5.0]} fov={37} />
+      <ambientLight intensity={0.62} />
+      <pointLight position={[0, 2.35, 2.9]} color="#f7fbff" intensity={1.7} />
+      <pointLight position={[-2.75, 0.25, 1.9]} color={profile.primary} intensity={0.9 * profile.glowStrength} />
+      <pointLight position={[2.55, -0.4, 1.8]} color="#a8bec8" intensity={0.82} />
+      <spotLight position={[0, 2.85, 3.35]} angle={0.35} penumbra={0.88} color="#ffffff" intensity={0.62} />
+      <spotLight position={[0, -1.4, 2.45]} angle={0.5} penumbra={0.92} color={profile.primary} intensity={0.36 * profile.glowStrength} />
       <MechaCoachModel {...props} />
     </>
   )

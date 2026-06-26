@@ -8691,6 +8691,1006 @@ input[type="checkbox"]:checked {
   }
 }
 
+/* Premium AI coach desktop device redesign */
+.dialogue-avatar--mecha {
+  min-height: 21rem;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(143, 234, 242, 0.13), transparent 32%),
+    radial-gradient(circle at 48% 72%, rgba(130, 247, 205, 0.1), transparent 34%),
+    linear-gradient(180deg, rgba(246, 251, 255, 0.035), rgba(3, 15, 18, 0.28)),
+    #061114;
+}
+
+.dialogue-avatar--mecha::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.14;
+  background:
+    linear-gradient(rgba(143, 234, 242, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 234, 242, 0.08) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at 50% 48%, black, transparent 74%);
+}
+
+.dialogue-avatar--mecha::after {
+  content: "";
+  position: absolute;
+  inset: 1rem;
+  z-index: 0;
+  border: 1px solid rgba(143, 234, 242, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 36%),
+    radial-gradient(circle at 50% 72%, rgba(130, 247, 205, 0.09), transparent 32%);
+  box-shadow:
+    inset 0 0 36px rgba(143, 234, 242, 0.06),
+    0 22px 54px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+.dialogue-avatar--listening.dialogue-avatar--mecha::after,
+.dialogue-avatar--speaking.dialogue-avatar--mecha::after,
+.dialogue-avatar--coach_mode.dialogue-avatar--mecha::after {
+  border-color: rgba(130, 247, 205, 0.28);
+  box-shadow:
+    inset 0 0 44px rgba(130, 247, 205, 0.08),
+    0 22px 58px rgba(0, 0, 0, 0.22);
+}
+
+.dialogue-avatar__status--mecha {
+  z-index: 6;
+  border-color: rgba(143, 234, 242, 0.36);
+  background: linear-gradient(180deg, rgba(7, 25, 29, 0.82), rgba(2, 12, 15, 0.7));
+  color: rgba(234, 255, 252, 0.95);
+  text-shadow: 0 0 12px rgba(130, 247, 205, 0.34);
+  box-shadow:
+    inset 0 0 14px rgba(143, 234, 242, 0.08),
+    0 0 16px rgba(130, 247, 205, 0.12);
+}
+
+.coach-device-fallback {
+  --device-primary: #8feaf2;
+  --device-secondary: #82f7cd;
+  --device-warning: #f4c96f;
+  --device-level: 0.08;
+  --device-face-color: #82f7cd;
+  --device-face-secondary: #8feaf2;
+  --device-face-level: 0.16;
+  --device-face-glow: 14px;
+  --device-core-glow: 22px;
+  --device-ear-glow: 0.22;
+  --device-wave-opacity: 0.2;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.coach-device-fallback__grid,
+.coach-device-fallback__halo,
+.coach-device-fallback__wave,
+.coach-device-fallback__shell,
+.coach-device-fallback__shadow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+.coach-device-fallback__grid {
+  inset: 0;
+  left: 0;
+  top: 0;
+  background:
+    radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--device-primary) 16%, transparent), transparent 36%),
+    linear-gradient(rgba(143, 234, 242, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 234, 242, 0.04) 1px, transparent 1px);
+  background-size: auto, 2.6rem 2.6rem, 2.6rem 2.6rem;
+  mask-image: radial-gradient(circle at 50% 50%, black, transparent 74%);
+}
+
+.coach-device-fallback__halo {
+  transform: translate(-50%, -50%);
+  border: 1px solid color-mix(in srgb, var(--device-primary) 38%, transparent);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 18px color-mix(in srgb, var(--device-primary) 12%, transparent),
+    0 0 28px color-mix(in srgb, var(--device-primary) 12%, transparent);
+  pointer-events: none;
+}
+
+.coach-device-fallback__halo--outer {
+  width: 14.6rem;
+  height: 8.8rem;
+  opacity: 0.44;
+  animation: coach-device-halo-breathe 5.6s ease-in-out infinite;
+}
+
+.coach-device-fallback__halo--inner {
+  width: 11.2rem;
+  height: 6.2rem;
+  border-style: dashed;
+  opacity: 0.46;
+  animation: coach-device-halo-turn 15s linear infinite;
+}
+
+.coach-device-fallback__shell {
+  width: 15rem;
+  height: 14rem;
+  transform: translate(-50%, -50%);
+  animation: coach-device-float 4.8s ease-in-out infinite;
+}
+
+.coach-device-fallback__body {
+  position: absolute;
+  left: 50%;
+  top: 2.55rem;
+  width: 11.3rem;
+  height: 7.45rem;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 2rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(191, 211, 217, 0.76) 48%, rgba(134, 155, 162, 0.72)),
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.95), transparent 36%);
+  box-shadow:
+    inset 0 1.1rem 1.6rem rgba(255, 255, 255, 0.36),
+    inset 0 -1.2rem 1.9rem rgba(5, 22, 27, 0.24),
+    0 1.3rem 2.3rem rgba(0, 0, 0, 0.34),
+    0 0 2.2rem color-mix(in srgb, var(--device-primary) 16%, transparent);
+}
+
+.coach-device-fallback__body::after {
+  content: "";
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  top: 0.62rem;
+  height: 0.16rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+}
+
+.coach-device-fallback__sensor {
+  position: absolute;
+  left: 50%;
+  top: 0.45rem;
+  width: 3.3rem;
+  height: 0.32rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--device-primary) 32%, #f7fbff);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--device-primary) 32%, transparent);
+  opacity: 0.78;
+}
+
+.coach-device-fallback--thinking .coach-device-fallback__sensor {
+  animation: coach-device-sensor-scan 1.65s ease-in-out infinite;
+}
+
+.coach-device-face {
+  --device-face-color: #82f7cd;
+  --device-face-secondary: #8feaf2;
+  --device-face-level: 0.16;
+  --device-face-glow: 14px;
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 8.55rem;
+  height: 4.82rem;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--device-face-color) 36%, transparent);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--device-face-color) 18%, transparent), transparent 58%),
+    linear-gradient(145deg, rgba(5, 29, 34, 0.98), rgba(2, 12, 16, 0.98));
+  box-shadow:
+    inset 0 0 1.4rem rgba(0, 0, 0, 0.62),
+    inset 0 0 2rem color-mix(in srgb, var(--device-face-color) 12%, transparent),
+    0 0 var(--device-face-glow) color-mix(in srgb, var(--device-face-color) 36%, transparent);
+}
+
+.coach-device-face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(143, 234, 242, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 234, 242, 0.035) 1px, transparent 1px);
+  background-size: 100% 0.34rem, 0.48rem 100%;
+  opacity: 0.72;
+}
+
+.coach-device-face::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 0.42rem;
+  height: 0.36rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transform: rotate(-4deg);
+}
+
+.coach-device-face__scan,
+.coach-device-face__eye,
+.coach-device-face__brow,
+.coach-device-face__mouth,
+.coach-device-face__mouth span,
+.coach-device-face__pulse {
+  position: absolute;
+  display: block;
+}
+
+.coach-device-face__scan {
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--device-face-secondary) 24%, transparent), transparent);
+  opacity: 0;
+  transform: translateX(-120%);
+}
+
+.coach-device-face--thinking .coach-device-face__scan {
+  animation: coach-device-face-scan 1.9s ease-in-out infinite;
+}
+
+.coach-device-face__eye {
+  top: 1.44rem;
+  width: 1.62rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--device-face-color) 88%, white);
+  box-shadow:
+    0 0 0.55rem color-mix(in srgb, var(--device-face-color) 78%, transparent),
+    0 0 1.15rem color-mix(in srgb, var(--device-face-color) 34%, transparent);
+  animation: coach-device-eye-breathe 5s ease-in-out infinite;
+}
+
+.coach-device-face__eye--left {
+  left: 1.72rem;
+}
+
+.coach-device-face__eye--right {
+  right: 1.72rem;
+}
+
+.coach-device-face__brow {
+  top: 0.92rem;
+  width: 1.42rem;
+  height: 0.12rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--device-face-secondary) 82%, white);
+  box-shadow: 0 0 0.8rem color-mix(in srgb, var(--device-face-secondary) 32%, transparent);
+}
+
+.coach-device-face__brow--left {
+  left: 1.64rem;
+  transform: rotate(-4deg);
+}
+
+.coach-device-face__brow--right {
+  right: 1.64rem;
+  transform: rotate(4deg);
+}
+
+.coach-device-face__mouth {
+  left: 50%;
+  bottom: 0.72rem;
+  display: flex;
+  height: 1.34rem;
+  align-items: flex-end;
+  gap: 0.12rem;
+  transform: translateX(-50%);
+}
+
+.coach-device-face__mouth span {
+  position: relative;
+  width: 0.13rem;
+  height: var(--device-mouth-height, 0.24rem);
+  min-height: 0.12rem;
+  border-radius: 999px;
+  background: var(--device-face-color);
+  box-shadow: 0 0 0.55rem color-mix(in srgb, var(--device-face-color) 58%, transparent);
+}
+
+.coach-device-face--speaking .coach-device-face__mouth span,
+.coach-device-face--coach_mode .coach-device-face__mouth span {
+  animation: coach-device-mouth-live 520ms ease-in-out infinite;
+}
+
+.coach-device-face__pulse {
+  left: 50%;
+  bottom: 0.34rem;
+  width: 1.5rem;
+  height: 0.11rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--device-face-color) 78%, white);
+  box-shadow: 0 0 0.8rem color-mix(in srgb, var(--device-face-color) 36%, transparent);
+  opacity: 0.54;
+}
+
+.coach-device-face--encouraging .coach-device-face__eye {
+  height: 0.36rem;
+  transform: translateY(-0.03rem);
+}
+
+.coach-device-face--encouraging .coach-device-face__brow--left {
+  transform: rotate(7deg);
+}
+
+.coach-device-face--encouraging .coach-device-face__brow--right {
+  transform: rotate(-7deg);
+}
+
+.coach-device-face--confused .coach-device-face__eye--left {
+  width: 1.12rem;
+  transform: translateY(0.08rem);
+}
+
+.coach-device-face--confused .coach-device-face__eye--right {
+  width: 1.8rem;
+  transform: translateY(-0.08rem);
+}
+
+.coach-device-face--confused .coach-device-face__brow--left {
+  transform: rotate(15deg);
+}
+
+.coach-device-face--confused .coach-device-face__brow--right {
+  transform: rotate(10deg);
+}
+
+.coach-device-face--corrective {
+  --device-face-color: #f4c96f;
+}
+
+.coach-device-face--corrective .coach-device-face__eye {
+  height: 0.26rem;
+}
+
+.coach-device-face--corrective .coach-device-face__brow--left {
+  transform: rotate(-13deg);
+}
+
+.coach-device-face--corrective .coach-device-face__brow--right {
+  transform: rotate(13deg);
+}
+
+.coach-device-fallback__audio {
+  position: absolute;
+  top: 4rem;
+  width: 1.86rem;
+  height: 4.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(250, 253, 255, 0.72), rgba(169, 192, 199, 0.68)),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--device-primary) 18%, transparent), transparent 70%);
+  box-shadow:
+    inset 0 0 1rem rgba(255, 255, 255, 0.22),
+    0 0 1.25rem color-mix(in srgb, var(--device-primary) 20%, transparent);
+}
+
+.coach-device-fallback__audio--left {
+  left: 0.36rem;
+}
+
+.coach-device-fallback__audio--right {
+  right: 0.36rem;
+}
+
+.coach-device-fallback__audio::after {
+  content: "";
+  position: absolute;
+  inset: 0.32rem;
+  border: 1px solid color-mix(in srgb, var(--device-primary) 46%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 1rem color-mix(in srgb, var(--device-primary) 22%, transparent);
+}
+
+.coach-device-fallback__audio span {
+  position: absolute;
+  left: 50%;
+  width: 0.72rem;
+  height: 0.08rem;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--device-primary) 72%, white);
+  box-shadow: 0 0 0.55rem color-mix(in srgb, var(--device-primary) 36%, transparent);
+}
+
+.coach-device-fallback__audio span:nth-child(1) {
+  top: 1.42rem;
+}
+
+.coach-device-fallback__audio span:nth-child(2) {
+  top: 2.1rem;
+}
+
+.coach-device-fallback__audio span:nth-child(3) {
+  top: 2.78rem;
+}
+
+.coach-device-fallback__neck {
+  position: absolute;
+  left: 50%;
+  top: 9.74rem;
+  width: 1.28rem;
+  height: 0.86rem;
+  transform: translateX(-50%);
+  border-radius: 0.34rem;
+  background: linear-gradient(180deg, rgba(231, 240, 243, 0.82), rgba(130, 150, 156, 0.7));
+  box-shadow: inset 0 0 0.75rem rgba(255, 255, 255, 0.18);
+}
+
+.coach-device-fallback__core {
+  position: absolute;
+  left: 50%;
+  top: 10.62rem;
+  width: 1.72rem;
+  height: 1.72rem;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--device-primary) 42%, transparent);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--device-primary) 72%, white) 0 18%, color-mix(in srgb, var(--device-primary) 28%, #10343a) 19% 44%, rgba(3, 16, 20, 0.84) 45% 100%);
+  box-shadow:
+    inset 0 0 1rem color-mix(in srgb, var(--device-primary) 22%, transparent),
+    0 0 var(--device-core-glow, 22px) color-mix(in srgb, var(--device-primary) 38%, transparent);
+  animation: coach-device-core-pulse 2.8s ease-in-out infinite;
+}
+
+.coach-device-fallback__wave {
+  width: 10.4rem;
+  height: 6.2rem;
+  transform: translate(-50%, calc(-50% + 0.2rem));
+  border: 1px solid color-mix(in srgb, var(--device-primary) 42%, transparent);
+  border-radius: 999px;
+  opacity: 0;
+}
+
+.coach-device-fallback--listening .coach-device-fallback__wave,
+.coach-device-fallback--speaking .coach-device-fallback__wave,
+.coach-device-fallback--coach_mode .coach-device-fallback__wave {
+  animation: coach-device-wave 1.7s ease-out infinite;
+}
+
+.coach-device-fallback__wave--two {
+  animation-delay: 760ms !important;
+}
+
+.coach-device-fallback__shadow {
+  width: 8.4rem;
+  height: 1.12rem;
+  transform: translate(-50%, 5.4rem);
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.36), transparent 70%);
+  filter: blur(0.1rem);
+}
+
+@keyframes coach-device-face-scan {
+  0% { opacity: 0; transform: translateX(-130%); }
+  24% { opacity: 0.78; }
+  100% { opacity: 0; transform: translateX(130%); }
+}
+
+@keyframes coach-device-eye-breathe {
+  0%, 88%, 100% { opacity: 0.88; transform: scaleY(1); }
+  92% { opacity: 1; transform: scaleY(0.28); }
+}
+
+@keyframes coach-device-mouth-live {
+  0%, 100% { transform: scaleY(0.82); opacity: 0.78; }
+  50% { transform: scaleY(1.16); opacity: 1; }
+}
+
+@keyframes coach-device-halo-breathe {
+  0%, 100% { opacity: 0.34; transform: translate(-50%, -50%) scale(0.98); }
+  50% { opacity: 0.58; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+@keyframes coach-device-halo-turn {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes coach-device-float {
+  0%, 100% { transform: translate(-50%, calc(-50% + 0.05rem)); }
+  50% { transform: translate(-50%, calc(-50% - 0.16rem)); }
+}
+
+@keyframes coach-device-core-pulse {
+  0%, 100% { scale: 1; opacity: 0.84; }
+  50% { scale: 1.08; opacity: 1; }
+}
+
+@keyframes coach-device-wave {
+  0% { opacity: var(--device-wave-opacity, 0.24); scale: 0.62; }
+  100% { opacity: 0; scale: 1.75; }
+}
+
+@keyframes coach-device-sensor-scan {
+  0%, 100% { opacity: 0.5; box-shadow: 0 0 0.8rem color-mix(in srgb, var(--device-primary) 24%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 1.5rem color-mix(in srgb, var(--device-secondary) 42%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-device-face__scan,
+  .coach-device-face__eye,
+  .coach-device-face__mouth span,
+  .coach-device-fallback__halo,
+  .coach-device-fallback__shell,
+  .coach-device-fallback__core,
+  .coach-device-fallback__wave,
+  .coach-device-fallback__sensor {
+    animation: none;
+  }
+}
+
+/* Dark titanium helmet-only refinement */
+.dialogue-avatar--mecha {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(105, 219, 226, 0.12), transparent 34%),
+    radial-gradient(circle at 50% 70%, rgba(30, 45, 52, 0.58), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.28)),
+    #04090d;
+}
+
+.dialogue-avatar--mecha::before {
+  opacity: 0.1;
+  background:
+    linear-gradient(rgba(143, 234, 242, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 234, 242, 0.045) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+.dialogue-avatar--mecha::after {
+  border-color: rgba(143, 234, 242, 0.12);
+  background:
+    radial-gradient(circle at 50% 48%, rgba(143, 234, 242, 0.055), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 34%);
+  box-shadow:
+    inset 0 0 42px rgba(143, 234, 242, 0.04),
+    0 22px 58px rgba(0, 0, 0, 0.26);
+}
+
+.coach-device-fallback {
+  --device-primary: #82f7cd;
+  --device-secondary: #8feaf2;
+  color: var(--device-primary);
+}
+
+.coach-device-fallback__grid {
+  opacity: 0.64;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--device-primary) 12%, transparent), transparent 38%),
+    linear-gradient(rgba(143, 234, 242, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 234, 242, 0.025) 1px, transparent 1px);
+  background-size: auto, 3.2rem 3.2rem, 3.2rem 3.2rem;
+}
+
+.coach-device-fallback__halo--outer {
+  width: 13.2rem;
+  height: 7.4rem;
+  opacity: 0.3;
+}
+
+.coach-device-fallback__halo--inner {
+  width: 10.4rem;
+  height: 5.5rem;
+  opacity: 0.34;
+}
+
+.coach-device-fallback__shell {
+  width: 14.4rem;
+  height: 11.6rem;
+}
+
+.coach-device-fallback__body {
+  top: 2.24rem;
+  width: 12.05rem;
+  height: 7.55rem;
+  border-color: rgba(174, 213, 222, 0.28);
+  border-radius: 2.25rem 2.25rem 1.72rem 1.72rem;
+  background:
+    linear-gradient(145deg, rgba(65, 78, 86, 0.95), rgba(25, 35, 42, 0.98) 42%, rgba(10, 17, 23, 0.98)),
+    radial-gradient(circle at 50% 12%, rgba(210, 236, 242, 0.24), transparent 32%);
+  box-shadow:
+    inset 0 0.95rem 1.35rem rgba(255, 255, 255, 0.08),
+    inset 0 -1rem 1.8rem rgba(0, 0, 0, 0.44),
+    inset 0 0 0 0.22rem rgba(255, 255, 255, 0.025),
+    0 1.4rem 2.7rem rgba(0, 0, 0, 0.45),
+    0 0 1.8rem color-mix(in srgb, var(--device-primary) 12%, transparent);
+}
+
+.coach-device-fallback__body::before {
+  content: "";
+  position: absolute;
+  inset: 0.42rem;
+  border: 1px solid rgba(183, 223, 232, 0.11);
+  border-radius: 1.84rem 1.84rem 1.36rem 1.36rem;
+  box-shadow:
+    inset 0 0 1.1rem rgba(0, 0, 0, 0.24),
+    0 0 0.9rem rgba(143, 234, 242, 0.04);
+  pointer-events: none;
+}
+
+.coach-device-fallback__body::after {
+  top: 0.58rem;
+  left: 28%;
+  right: 28%;
+  height: 0.12rem;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--device-primary) 44%, white), transparent);
+  opacity: 0.66;
+}
+
+.coach-device-fallback__sensor {
+  top: 0.74rem;
+  width: 3.7rem;
+  height: 0.16rem;
+  background: color-mix(in srgb, var(--device-primary) 54%, #dffcff);
+  opacity: 0.74;
+}
+
+.coach-device-face {
+  top: 52%;
+  width: 9.35rem;
+  height: 4.66rem;
+  border-color: color-mix(in srgb, var(--device-face-color) 24%, transparent);
+  border-radius: 1.12rem;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--device-face-color) 14%, transparent), transparent 62%),
+    linear-gradient(150deg, rgba(15, 33, 38, 0.96), rgba(2, 8, 12, 0.99) 52%, rgba(15, 22, 27, 0.98));
+  box-shadow:
+    inset 0 0 1.7rem rgba(0, 0, 0, 0.74),
+    inset 0 0 2.2rem color-mix(in srgb, var(--device-face-color) 9%, transparent),
+    0 0 var(--device-face-glow) color-mix(in srgb, var(--device-face-color) 26%, transparent);
+}
+
+.coach-device-face__eye {
+  top: 1.46rem;
+  height: 0.42rem;
+}
+
+.coach-device-face__brow {
+  top: 0.88rem;
+}
+
+.coach-device-fallback__audio {
+  top: 4.08rem;
+  width: 0.38rem;
+  height: 3.48rem;
+  border-color: color-mix(in srgb, var(--device-primary) 30%, transparent);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(120, 245, 210, 0.18), rgba(36, 50, 58, 0.9)),
+    rgba(8, 16, 21, 0.86);
+  box-shadow:
+    inset 0 0 0.7rem rgba(255, 255, 255, 0.05),
+    0 0 1.05rem color-mix(in srgb, var(--device-primary) 18%, transparent);
+}
+
+.coach-device-fallback__audio--left {
+  left: 1.05rem;
+}
+
+.coach-device-fallback__audio--right {
+  right: 1.05rem;
+}
+
+.coach-device-fallback__audio::after {
+  inset: 0.12rem;
+  border-color: color-mix(in srgb, var(--device-primary) 34%, transparent);
+}
+
+.coach-device-fallback__audio span {
+  width: 0.11rem;
+  height: 0.52rem;
+  background: color-mix(in srgb, var(--device-primary) 72%, white);
+}
+
+.coach-device-fallback__audio span:nth-child(1) {
+  top: 0.72rem;
+}
+
+.coach-device-fallback__audio span:nth-child(2) {
+  top: 1.48rem;
+}
+
+.coach-device-fallback__audio span:nth-child(3) {
+  top: 2.24rem;
+}
+
+.coach-device-fallback__neck,
+.coach-device-fallback__core {
+  display: none;
+}
+
+.coach-device-fallback__wave {
+  width: 9.2rem;
+  height: 4.7rem;
+}
+
+.coach-device-fallback__shadow {
+  width: 8.8rem;
+  transform: translate(-50%, 4.46rem);
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.42), transparent 70%);
+}
+
+/* 2D cyber robot coach avatar */
+.dialogue-avatar--2d {
+  min-height: 21rem;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(38, 232, 209, 0.16), transparent 30%),
+    radial-gradient(circle at 50% 78%, rgba(8, 18, 22, 0.92), transparent 38%),
+    linear-gradient(135deg, rgba(134, 237, 242, 0.06), transparent 34%),
+    #03080c;
+}
+
+.dialogue-avatar--2d::before {
+  opacity: 0.13;
+  background:
+    linear-gradient(rgba(134, 237, 242, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(130, 247, 205, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at 50% 48%, rgba(38, 232, 209, 0.16), transparent 42%);
+  background-size: 38px 38px, 38px 38px, auto;
+}
+
+.dialogue-avatar--2d::after {
+  border-color: rgba(134, 237, 242, 0.14);
+  background:
+    radial-gradient(circle at 50% 48%, rgba(130, 247, 205, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.18));
+  box-shadow:
+    inset 0 0 34px rgba(134, 237, 242, 0.045),
+    0 22px 52px rgba(0, 0, 0, 0.24);
+}
+
+.cyber-coach-2d {
+  --coach2d-primary: #86edf2;
+  --coach2d-secondary: #6f858f;
+  --coach2d-face: #82f7cd;
+  --coach2d-level: 0.08;
+  --coach2d-signal: 0.12;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.cyber-coach-2d__ambient {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid color-mix(in srgb, var(--coach2d-primary) 30%, transparent);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.cyber-coach-2d__ambient--outer {
+  width: 15rem;
+  height: 10rem;
+  opacity: calc(0.18 + var(--coach2d-level) * 0.24);
+  animation: cyber-coach-ambient-breathe 5.8s ease-in-out infinite;
+}
+
+.cyber-coach-2d__ambient--inner {
+  width: 11rem;
+  height: 7.2rem;
+  border-style: dashed;
+  opacity: calc(0.18 + var(--coach2d-level) * 0.18);
+  animation: cyber-coach-ambient-turn 18s linear infinite;
+}
+
+.cyber-coach-2d__svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(86%, 19rem);
+  height: auto;
+  aspect-ratio: 1;
+  overflow: visible;
+  filter:
+    drop-shadow(0 1.2rem 1.4rem rgba(0, 0, 0, 0.42))
+    drop-shadow(0 0 calc(0.7rem + var(--coach2d-level) * 1.2rem) color-mix(in srgb, var(--coach2d-face) 22%, transparent));
+  animation: cyber-coach-float 4.8s ease-in-out infinite;
+}
+
+.cyber-coach-2d__shadow ellipse {
+  fill: rgba(0, 0, 0, 0.36);
+  filter: blur(2px);
+}
+
+.cyber-coach-2d__shell {
+  fill: url("#cyberCoachShell");
+  stroke: rgba(164, 205, 214, 0.22);
+  stroke-width: 1.6;
+}
+
+.cyber-coach-2d__shell-bevel {
+  fill: url("#cyberCoachBevel");
+  stroke: color-mix(in srgb, var(--coach2d-primary) 24%, transparent);
+  stroke-width: 1.4;
+}
+
+.cyber-coach-2d__lower-lip {
+  fill: none;
+  stroke: rgba(143, 234, 242, 0.13);
+  stroke-width: 2;
+}
+
+.cyber-coach-2d__top-sensor,
+.cyber-coach-2d__side-lights rect {
+  fill: color-mix(in srgb, var(--coach2d-face) 62%, #e9ffff);
+  opacity: calc(0.42 + var(--coach2d-level) * 0.34);
+  filter: url("#cyberCoachGlow");
+}
+
+.cyber-coach-2d__visor-frame {
+  fill: rgba(8, 16, 21, 0.92);
+  stroke: rgba(163, 207, 218, 0.24);
+  stroke-width: 2.2;
+}
+
+.cyber-coach-2d__visor-glass {
+  fill: url("#cyberCoachVisorGlow");
+  stroke: color-mix(in srgb, var(--coach2d-face) 26%, transparent);
+  stroke-width: 1.2;
+}
+
+.cyber-coach-2d__grid line {
+  stroke: color-mix(in srgb, var(--coach2d-face) 12%, transparent);
+  stroke-width: 0.8;
+}
+
+.cyber-coach-2d__scan {
+  fill: color-mix(in srgb, var(--coach2d-face) 20%, transparent);
+  opacity: 0;
+}
+
+.cyber-coach-2d--thinking .cyber-coach-2d__scan {
+  animation: cyber-coach-scan 1.8s ease-in-out infinite;
+}
+
+.cyber-coach-2d__reflection {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.56;
+}
+
+.cyber-coach-2d__brows rect {
+  fill: color-mix(in srgb, var(--coach2d-secondary) 70%, white);
+  opacity: 0.82;
+  filter: url("#cyberCoachGlow");
+}
+
+.cyber-coach-2d__eye,
+.cyber-coach-2d__mouth-bar,
+.cyber-coach-2d__pulse {
+  fill: color-mix(in srgb, var(--coach2d-face) 82%, white);
+}
+
+.cyber-coach-2d__eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cyber-coach-eye-breathe 5s ease-in-out infinite;
+}
+
+.cyber-coach-2d__mouth-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.cyber-coach-2d--speaking .cyber-coach-2d__mouth-bar,
+.cyber-coach-2d--coach_mode .cyber-coach-2d__mouth-bar {
+  animation: cyber-coach-mouth-live 520ms ease-in-out infinite;
+  animation-delay: calc(var(--bar-index) * 48ms);
+}
+
+.cyber-coach-2d__pulse {
+  opacity: calc(0.34 + var(--coach2d-signal) * 0.38);
+  filter: url("#cyberCoachGlow");
+}
+
+.cyber-coach-2d__listening-marks path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--coach2d-face) 58%, transparent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+.cyber-coach-2d--listening .cyber-coach-2d__listening-marks path {
+  opacity: calc(0.28 + var(--coach2d-signal) * 0.38);
+  animation: cyber-coach-listen-mark 1.1s ease-in-out infinite;
+}
+
+.cyber-coach-2d__waves path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--coach2d-face) 56%, transparent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cyber-coach-2d--listening .cyber-coach-2d__waves path {
+  animation: cyber-coach-wave-2d 1.45s ease-out infinite;
+}
+
+.cyber-coach-2d--coach_mode .cyber-coach-2d__shell-bevel,
+.cyber-coach-2d--coach_mode .cyber-coach-2d__visor-glass {
+  stroke: color-mix(in srgb, var(--coach2d-face) 42%, transparent);
+}
+
+.cyber-coach-2d--corrective .cyber-coach-2d__visor-glass {
+  stroke: color-mix(in srgb, #f4c96f 34%, transparent);
+}
+
+@keyframes cyber-coach-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.28rem); }
+}
+
+@keyframes cyber-coach-ambient-breathe {
+  0%, 100% { opacity: 0.18; transform: translate(-50%, -50%) scale(0.98); }
+  50% { opacity: 0.42; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+@keyframes cyber-coach-ambient-turn {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes cyber-coach-scan {
+  0% { opacity: 0; transform: translateX(0); }
+  24% { opacity: 0.72; }
+  100% { opacity: 0; transform: translateX(340px); }
+}
+
+@keyframes cyber-coach-eye-breathe {
+  0%, 88%, 100% { transform: scaleY(1); opacity: 0.96; }
+  92% { transform: scaleY(0.24); opacity: 1; }
+}
+
+@keyframes cyber-coach-mouth-live {
+  0%, 100% { transform: scaleY(0.78); opacity: 0.72; }
+  50% { transform: scaleY(1.18); opacity: 1; }
+}
+
+@keyframes cyber-coach-listen-mark {
+  0%, 100% { transform: scaleX(0.8); opacity: 0.22; }
+  50% { transform: scaleX(1.08); opacity: 0.72; }
+}
+
+@keyframes cyber-coach-wave-2d {
+  0% { opacity: calc(0.12 + var(--coach2d-signal) * 0.34); transform: scale(0.84); }
+  100% { opacity: 0; transform: scale(1.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-coach-2d__svg,
+  .cyber-coach-2d__ambient,
+  .cyber-coach-2d__scan,
+  .cyber-coach-2d__eye,
+  .cyber-coach-2d__mouth-bar,
+  .cyber-coach-2d__listening-marks path,
+  .cyber-coach-2d__waves path {
+    animation: none;
+  }
+}
+
 @media (max-width: 1024px) {
   .dialogue-home-coach {
     grid-template-columns: 1fr;

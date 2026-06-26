@@ -115,6 +115,11 @@ export type DialogueSession = Prisma.DialogueSessionModel
  */
 export type DialogueAttempt = Prisma.DialogueAttemptModel
 /**
+ * Model DialogueProfileEvent
+ * 
+ */
+export type DialogueProfileEvent = Prisma.DialogueProfileEventModel
+/**
  * Model DialogueSpeechAsset
  * 
  */

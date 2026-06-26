@@ -8,6 +8,11 @@ import {
   transcribeDialogueAudio,
   type DialogueHomeCoachMessage,
 } from '@/lib/dialogue-ai'
+import {
+  getOrCreateFreeConversationSession,
+  recordCompletedConversationTurn,
+  type AiReply,
+} from '@/lib/conversation-core'
 
 function normalizeRecentMessages(value: unknown): DialogueHomeCoachMessage[] {
   if (!Array.isArray(value)) {
@@ -67,11 +72,19 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const audio = formData.get('audio')
+    const conversationSessionId = String(formData.get('conversationSessionId') || '').trim()
 
     if (!(audio instanceof File)) {
       return NextResponse.json({ error: 'audio file is required.' }, { status: 400 })
     }
 
+    const conversationSession = await getOrCreateFreeConversationSession({
+      userId: guard.user.id,
+      sessionId: conversationSessionId || null,
+      metadata: {
+        surface: 'dialogue_home_coach',
+      },
+    })
     const transcriptText = await transcribeDialogueAudio(audio)
     const recentMessagesRaw = String(formData.get('recentMessages') || '[]')
     const scenarios = await getPublishedScenarioContext()
@@ -81,12 +94,50 @@ export async function POST(request: NextRequest) {
       scenarios,
     })
     const suggestedScenarios = scenarios.filter((scenario) => coach.suggestedScenarioIds.includes(scenario.id))
+    const speechToken = createDialogueHomeSpeechToken(coach.ttsTextZh)
+    const aiReply: AiReply = {
+      role: 'coach',
+      text: coach.replyZh,
+      language: 'zh',
+      speechText: coach.ttsTextZh,
+      speechToken,
+      suggestedScenarioIds: coach.suggestedScenarioIds,
+      metadata: {
+        studyTips: coach.studyTips,
+        followupQuestion: coach.followupQuestion,
+      },
+    }
+    const turn = await recordCompletedConversationTurn({
+      sessionId: conversationSession.id,
+      userId: guard.user.id,
+      inputMode: 'audio',
+      transcriptSource: 'file_transcription',
+      userText: transcriptText,
+      transcript: {
+        source: 'file_transcription',
+        text: transcriptText,
+        language: 'en',
+      },
+      routerIntent: 'free_chat',
+      router: {
+        intent: 'free_chat',
+        confidence: 1,
+      },
+      aiReply,
+      assessment: null,
+      profileEvents: [],
+      coach: coach,
+      coachReplyZh: coach.replyZh,
+      nextAction: 'reply',
+    })
 
     return NextResponse.json({
       ...coach,
       suggestedScenarios,
-      speechToken: createDialogueHomeSpeechToken(coach.ttsTextZh),
+      speechToken,
       transcriptText,
+      conversationSessionId: conversationSession.id,
+      turnId: turn.turn.id,
     })
   } catch (error) {
     console.error('Error responding with dialogue home coach audio:', error)

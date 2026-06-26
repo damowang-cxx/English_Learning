@@ -27,10 +27,12 @@ export type AggregateDialogueAttempt = {
 }
 
 export type DialogueAttemptAvgAggregateOutputType = {
+  turnIndex: number | null
   score: number | null
 }
 
 export type DialogueAttemptSumAggregateOutputType = {
+  turnIndex: number | null
   score: number | null
 }
 
@@ -41,8 +43,16 @@ export type DialogueAttemptMinAggregateOutputType = {
   nodeId: string | null
   userId: string | null
   inputMode: string | null
+  turnStatus: string | null
+  turnIndex: number | null
+  transcriptSource: string | null
   userText: string | null
   transcriptText: string | null
+  transcriptJson: string | null
+  aiReplyJson: string | null
+  assessmentJson: string | null
+  profileEventsJson: string | null
+  errorJson: string | null
   routerIntent: string | null
   routerJson: string | null
   evaluatorJson: string | null
@@ -63,8 +73,16 @@ export type DialogueAttemptMaxAggregateOutputType = {
   nodeId: string | null
   userId: string | null
   inputMode: string | null
+  turnStatus: string | null
+  turnIndex: number | null
+  transcriptSource: string | null
   userText: string | null
   transcriptText: string | null
+  transcriptJson: string | null
+  aiReplyJson: string | null
+  assessmentJson: string | null
+  profileEventsJson: string | null
+  errorJson: string | null
   routerIntent: string | null
   routerJson: string | null
   evaluatorJson: string | null
@@ -85,8 +103,16 @@ export type DialogueAttemptCountAggregateOutputType = {
   nodeId: number
   userId: number
   inputMode: number
+  turnStatus: number
+  turnIndex: number
+  transcriptSource: number
   userText: number
   transcriptText: number
+  transcriptJson: number
+  aiReplyJson: number
+  assessmentJson: number
+  profileEventsJson: number
+  errorJson: number
   routerIntent: number
   routerJson: number
   evaluatorJson: number
@@ -103,10 +129,12 @@ export type DialogueAttemptCountAggregateOutputType = {
 
 
 export type DialogueAttemptAvgAggregateInputType = {
+  turnIndex?: true
   score?: true
 }
 
 export type DialogueAttemptSumAggregateInputType = {
+  turnIndex?: true
   score?: true
 }
 
@@ -117,8 +145,16 @@ export type DialogueAttemptMinAggregateInputType = {
   nodeId?: true
   userId?: true
   inputMode?: true
+  turnStatus?: true
+  turnIndex?: true
+  transcriptSource?: true
   userText?: true
   transcriptText?: true
+  transcriptJson?: true
+  aiReplyJson?: true
+  assessmentJson?: true
+  profileEventsJson?: true
+  errorJson?: true
   routerIntent?: true
   routerJson?: true
   evaluatorJson?: true
@@ -139,8 +175,16 @@ export type DialogueAttemptMaxAggregateInputType = {
   nodeId?: true
   userId?: true
   inputMode?: true
+  turnStatus?: true
+  turnIndex?: true
+  transcriptSource?: true
   userText?: true
   transcriptText?: true
+  transcriptJson?: true
+  aiReplyJson?: true
+  assessmentJson?: true
+  profileEventsJson?: true
+  errorJson?: true
   routerIntent?: true
   routerJson?: true
   evaluatorJson?: true
@@ -161,8 +205,16 @@ export type DialogueAttemptCountAggregateInputType = {
   nodeId?: true
   userId?: true
   inputMode?: true
+  turnStatus?: true
+  turnIndex?: true
+  transcriptSource?: true
   userText?: true
   transcriptText?: true
+  transcriptJson?: true
+  aiReplyJson?: true
+  assessmentJson?: true
+  profileEventsJson?: true
+  errorJson?: true
   routerIntent?: true
   routerJson?: true
   evaluatorJson?: true
@@ -266,12 +318,20 @@ export type DialogueAttemptGroupByArgs<ExtArgs extends runtime.Types.Extensions.
 export type DialogueAttemptGroupByOutputType = {
   id: string
   sessionId: string
-  scenarioId: string
+  scenarioId: string | null
   nodeId: string | null
   userId: string
   inputMode: string
+  turnStatus: string
+  turnIndex: number
+  transcriptSource: string
   userText: string
   transcriptText: string | null
+  transcriptJson: string
+  aiReplyJson: string
+  assessmentJson: string | null
+  profileEventsJson: string
+  errorJson: string | null
   routerIntent: string
   routerJson: string
   evaluatorJson: string | null
@@ -311,12 +371,20 @@ export type DialogueAttemptWhereInput = {
   NOT?: Prisma.DialogueAttemptWhereInput | Prisma.DialogueAttemptWhereInput[]
   id?: Prisma.StringFilter<"DialogueAttempt"> | string
   sessionId?: Prisma.StringFilter<"DialogueAttempt"> | string
-  scenarioId?: Prisma.StringFilter<"DialogueAttempt"> | string
+  scenarioId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   userId?: Prisma.StringFilter<"DialogueAttempt"> | string
   inputMode?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnStatus?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnIndex?: Prisma.IntFilter<"DialogueAttempt"> | number
+  transcriptSource?: Prisma.StringFilter<"DialogueAttempt"> | string
   userText?: Prisma.StringFilter<"DialogueAttempt"> | string
   transcriptText?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  transcriptJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  aiReplyJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  assessmentJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  profileEventsJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  errorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   routerIntent?: Prisma.StringFilter<"DialogueAttempt"> | string
   routerJson?: Prisma.StringFilter<"DialogueAttempt"> | string
   evaluatorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
@@ -331,17 +399,26 @@ export type DialogueAttemptWhereInput = {
   session?: Prisma.XOR<Prisma.DialogueSessionScalarRelationFilter, Prisma.DialogueSessionWhereInput>
   node?: Prisma.XOR<Prisma.DialogueNodeNullableScalarRelationFilter, Prisma.DialogueNodeWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  profileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }
 
 export type DialogueAttemptOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   sessionId?: Prisma.SortOrder
-  scenarioId?: Prisma.SortOrder
+  scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   nodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
   inputMode?: Prisma.SortOrder
+  turnStatus?: Prisma.SortOrder
+  turnIndex?: Prisma.SortOrder
+  transcriptSource?: Prisma.SortOrder
   userText?: Prisma.SortOrder
   transcriptText?: Prisma.SortOrderInput | Prisma.SortOrder
+  transcriptJson?: Prisma.SortOrder
+  aiReplyJson?: Prisma.SortOrder
+  assessmentJson?: Prisma.SortOrderInput | Prisma.SortOrder
+  profileEventsJson?: Prisma.SortOrder
+  errorJson?: Prisma.SortOrderInput | Prisma.SortOrder
   routerIntent?: Prisma.SortOrder
   routerJson?: Prisma.SortOrder
   evaluatorJson?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -356,6 +433,7 @@ export type DialogueAttemptOrderByWithRelationInput = {
   session?: Prisma.DialogueSessionOrderByWithRelationInput
   node?: Prisma.DialogueNodeOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
+  profileEvents?: Prisma.DialogueProfileEventOrderByRelationAggregateInput
 }
 
 export type DialogueAttemptWhereUniqueInput = Prisma.AtLeast<{
@@ -364,12 +442,20 @@ export type DialogueAttemptWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.DialogueAttemptWhereInput[]
   NOT?: Prisma.DialogueAttemptWhereInput | Prisma.DialogueAttemptWhereInput[]
   sessionId?: Prisma.StringFilter<"DialogueAttempt"> | string
-  scenarioId?: Prisma.StringFilter<"DialogueAttempt"> | string
+  scenarioId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   userId?: Prisma.StringFilter<"DialogueAttempt"> | string
   inputMode?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnStatus?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnIndex?: Prisma.IntFilter<"DialogueAttempt"> | number
+  transcriptSource?: Prisma.StringFilter<"DialogueAttempt"> | string
   userText?: Prisma.StringFilter<"DialogueAttempt"> | string
   transcriptText?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  transcriptJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  aiReplyJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  assessmentJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  profileEventsJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  errorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   routerIntent?: Prisma.StringFilter<"DialogueAttempt"> | string
   routerJson?: Prisma.StringFilter<"DialogueAttempt"> | string
   evaluatorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
@@ -384,17 +470,26 @@ export type DialogueAttemptWhereUniqueInput = Prisma.AtLeast<{
   session?: Prisma.XOR<Prisma.DialogueSessionScalarRelationFilter, Prisma.DialogueSessionWhereInput>
   node?: Prisma.XOR<Prisma.DialogueNodeNullableScalarRelationFilter, Prisma.DialogueNodeWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  profileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }, "id">
 
 export type DialogueAttemptOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   sessionId?: Prisma.SortOrder
-  scenarioId?: Prisma.SortOrder
+  scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   nodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
   inputMode?: Prisma.SortOrder
+  turnStatus?: Prisma.SortOrder
+  turnIndex?: Prisma.SortOrder
+  transcriptSource?: Prisma.SortOrder
   userText?: Prisma.SortOrder
   transcriptText?: Prisma.SortOrderInput | Prisma.SortOrder
+  transcriptJson?: Prisma.SortOrder
+  aiReplyJson?: Prisma.SortOrder
+  assessmentJson?: Prisma.SortOrderInput | Prisma.SortOrder
+  profileEventsJson?: Prisma.SortOrder
+  errorJson?: Prisma.SortOrderInput | Prisma.SortOrder
   routerIntent?: Prisma.SortOrder
   routerJson?: Prisma.SortOrder
   evaluatorJson?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -419,12 +514,20 @@ export type DialogueAttemptScalarWhereWithAggregatesInput = {
   NOT?: Prisma.DialogueAttemptScalarWhereWithAggregatesInput | Prisma.DialogueAttemptScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   sessionId?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
-  scenarioId?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  scenarioId?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
   nodeId?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
   userId?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   inputMode?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  turnStatus?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  turnIndex?: Prisma.IntWithAggregatesFilter<"DialogueAttempt"> | number
+  transcriptSource?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   userText?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   transcriptText?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
+  transcriptJson?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  aiReplyJson?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  assessmentJson?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
+  profileEventsJson?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
+  errorJson?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
   routerIntent?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   routerJson?: Prisma.StringWithAggregatesFilter<"DialogueAttempt"> | string
   evaluatorJson?: Prisma.StringNullableWithAggregatesFilter<"DialogueAttempt"> | string | null
@@ -440,10 +543,18 @@ export type DialogueAttemptScalarWhereWithAggregatesInput = {
 
 export type DialogueAttemptCreateInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -458,17 +569,26 @@ export type DialogueAttemptCreateInput = {
   session: Prisma.DialogueSessionCreateNestedOneWithoutAttemptsInput
   node?: Prisma.DialogueNodeCreateNestedOneWithoutAttemptsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueAttemptsInput
+  profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptUncheckedCreateInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -480,14 +600,23 @@ export type DialogueAttemptUncheckedCreateInput = {
   score?: number | null
   nextAction?: string
   createdAt?: Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -502,17 +631,26 @@ export type DialogueAttemptUpdateInput = {
   session?: Prisma.DialogueSessionUpdateOneRequiredWithoutAttemptsNestedInput
   node?: Prisma.DialogueNodeUpdateOneWithoutAttemptsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -524,17 +662,26 @@ export type DialogueAttemptUncheckedUpdateInput = {
   score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nextAction?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptCreateManyInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -550,10 +697,18 @@ export type DialogueAttemptCreateManyInput = {
 
 export type DialogueAttemptUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -570,12 +725,20 @@ export type DialogueAttemptUpdateManyMutationInput = {
 export type DialogueAttemptUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -606,8 +769,16 @@ export type DialogueAttemptCountOrderByAggregateInput = {
   nodeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   inputMode?: Prisma.SortOrder
+  turnStatus?: Prisma.SortOrder
+  turnIndex?: Prisma.SortOrder
+  transcriptSource?: Prisma.SortOrder
   userText?: Prisma.SortOrder
   transcriptText?: Prisma.SortOrder
+  transcriptJson?: Prisma.SortOrder
+  aiReplyJson?: Prisma.SortOrder
+  assessmentJson?: Prisma.SortOrder
+  profileEventsJson?: Prisma.SortOrder
+  errorJson?: Prisma.SortOrder
   routerIntent?: Prisma.SortOrder
   routerJson?: Prisma.SortOrder
   evaluatorJson?: Prisma.SortOrder
@@ -622,6 +793,7 @@ export type DialogueAttemptCountOrderByAggregateInput = {
 }
 
 export type DialogueAttemptAvgOrderByAggregateInput = {
+  turnIndex?: Prisma.SortOrder
   score?: Prisma.SortOrder
 }
 
@@ -632,8 +804,16 @@ export type DialogueAttemptMaxOrderByAggregateInput = {
   nodeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   inputMode?: Prisma.SortOrder
+  turnStatus?: Prisma.SortOrder
+  turnIndex?: Prisma.SortOrder
+  transcriptSource?: Prisma.SortOrder
   userText?: Prisma.SortOrder
   transcriptText?: Prisma.SortOrder
+  transcriptJson?: Prisma.SortOrder
+  aiReplyJson?: Prisma.SortOrder
+  assessmentJson?: Prisma.SortOrder
+  profileEventsJson?: Prisma.SortOrder
+  errorJson?: Prisma.SortOrder
   routerIntent?: Prisma.SortOrder
   routerJson?: Prisma.SortOrder
   evaluatorJson?: Prisma.SortOrder
@@ -654,8 +834,16 @@ export type DialogueAttemptMinOrderByAggregateInput = {
   nodeId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   inputMode?: Prisma.SortOrder
+  turnStatus?: Prisma.SortOrder
+  turnIndex?: Prisma.SortOrder
+  transcriptSource?: Prisma.SortOrder
   userText?: Prisma.SortOrder
   transcriptText?: Prisma.SortOrder
+  transcriptJson?: Prisma.SortOrder
+  aiReplyJson?: Prisma.SortOrder
+  assessmentJson?: Prisma.SortOrder
+  profileEventsJson?: Prisma.SortOrder
+  errorJson?: Prisma.SortOrder
   routerIntent?: Prisma.SortOrder
   routerJson?: Prisma.SortOrder
   evaluatorJson?: Prisma.SortOrder
@@ -670,7 +858,13 @@ export type DialogueAttemptMinOrderByAggregateInput = {
 }
 
 export type DialogueAttemptSumOrderByAggregateInput = {
+  turnIndex?: Prisma.SortOrder
   score?: Prisma.SortOrder
+}
+
+export type DialogueAttemptScalarRelationFilter = {
+  is?: Prisma.DialogueAttemptWhereInput
+  isNot?: Prisma.DialogueAttemptWhereInput
 }
 
 export type DialogueAttemptCreateNestedManyWithoutUserInput = {
@@ -811,12 +1005,34 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type DialogueAttemptCreateNestedOneWithoutProfileEventsInput = {
+  create?: Prisma.XOR<Prisma.DialogueAttemptCreateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedCreateWithoutProfileEventsInput>
+  connectOrCreate?: Prisma.DialogueAttemptCreateOrConnectWithoutProfileEventsInput
+  connect?: Prisma.DialogueAttemptWhereUniqueInput
+}
+
+export type DialogueAttemptUpdateOneRequiredWithoutProfileEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.DialogueAttemptCreateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedCreateWithoutProfileEventsInput>
+  connectOrCreate?: Prisma.DialogueAttemptCreateOrConnectWithoutProfileEventsInput
+  upsert?: Prisma.DialogueAttemptUpsertWithoutProfileEventsInput
+  connect?: Prisma.DialogueAttemptWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DialogueAttemptUpdateToOneWithWhereWithoutProfileEventsInput, Prisma.DialogueAttemptUpdateWithoutProfileEventsInput>, Prisma.DialogueAttemptUncheckedUpdateWithoutProfileEventsInput>
+}
+
 export type DialogueAttemptCreateWithoutUserInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -830,16 +1046,25 @@ export type DialogueAttemptCreateWithoutUserInput = {
   createdAt?: Date | string
   session: Prisma.DialogueSessionCreateNestedOneWithoutAttemptsInput
   node?: Prisma.DialogueNodeCreateNestedOneWithoutAttemptsInput
+  profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptUncheckedCreateWithoutUserInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -851,6 +1076,7 @@ export type DialogueAttemptUncheckedCreateWithoutUserInput = {
   score?: number | null
   nextAction?: string
   createdAt?: Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptCreateOrConnectWithoutUserInput = {
@@ -884,12 +1110,20 @@ export type DialogueAttemptScalarWhereInput = {
   NOT?: Prisma.DialogueAttemptScalarWhereInput | Prisma.DialogueAttemptScalarWhereInput[]
   id?: Prisma.StringFilter<"DialogueAttempt"> | string
   sessionId?: Prisma.StringFilter<"DialogueAttempt"> | string
-  scenarioId?: Prisma.StringFilter<"DialogueAttempt"> | string
+  scenarioId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   userId?: Prisma.StringFilter<"DialogueAttempt"> | string
   inputMode?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnStatus?: Prisma.StringFilter<"DialogueAttempt"> | string
+  turnIndex?: Prisma.IntFilter<"DialogueAttempt"> | number
+  transcriptSource?: Prisma.StringFilter<"DialogueAttempt"> | string
   userText?: Prisma.StringFilter<"DialogueAttempt"> | string
   transcriptText?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  transcriptJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  aiReplyJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  assessmentJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
+  profileEventsJson?: Prisma.StringFilter<"DialogueAttempt"> | string
+  errorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
   routerIntent?: Prisma.StringFilter<"DialogueAttempt"> | string
   routerJson?: Prisma.StringFilter<"DialogueAttempt"> | string
   evaluatorJson?: Prisma.StringNullableFilter<"DialogueAttempt"> | string | null
@@ -905,10 +1139,18 @@ export type DialogueAttemptScalarWhereInput = {
 
 export type DialogueAttemptCreateWithoutNodeInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -922,16 +1164,25 @@ export type DialogueAttemptCreateWithoutNodeInput = {
   createdAt?: Date | string
   session: Prisma.DialogueSessionCreateNestedOneWithoutAttemptsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueAttemptsInput
+  profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptUncheckedCreateWithoutNodeInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -943,6 +1194,7 @@ export type DialogueAttemptUncheckedCreateWithoutNodeInput = {
   score?: number | null
   nextAction?: string
   createdAt?: Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptCreateOrConnectWithoutNodeInput = {
@@ -972,10 +1224,18 @@ export type DialogueAttemptUpdateManyWithWhereWithoutNodeInput = {
 
 export type DialogueAttemptCreateWithoutSessionInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -989,16 +1249,25 @@ export type DialogueAttemptCreateWithoutSessionInput = {
   createdAt?: Date | string
   node?: Prisma.DialogueNodeCreateNestedOneWithoutAttemptsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueAttemptsInput
+  profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptUncheckedCreateWithoutSessionInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -1010,6 +1279,7 @@ export type DialogueAttemptUncheckedCreateWithoutSessionInput = {
   score?: number | null
   nextAction?: string
   createdAt?: Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutTurnInput
 }
 
 export type DialogueAttemptCreateOrConnectWithoutSessionInput = {
@@ -1037,14 +1307,158 @@ export type DialogueAttemptUpdateManyWithWhereWithoutSessionInput = {
   data: Prisma.XOR<Prisma.DialogueAttemptUpdateManyMutationInput, Prisma.DialogueAttemptUncheckedUpdateManyWithoutSessionInput>
 }
 
+export type DialogueAttemptCreateWithoutProfileEventsInput = {
+  id?: string
+  scenarioId?: string | null
+  inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
+  userText?: string
+  transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
+  routerIntent?: string
+  routerJson?: string
+  evaluatorJson?: string | null
+  coachJson?: string | null
+  roleReplyEn?: string | null
+  coachReplyZh?: string | null
+  betterAnswerEn?: string | null
+  passed?: boolean | null
+  score?: number | null
+  nextAction?: string
+  createdAt?: Date | string
+  session: Prisma.DialogueSessionCreateNestedOneWithoutAttemptsInput
+  node?: Prisma.DialogueNodeCreateNestedOneWithoutAttemptsInput
+  user: Prisma.UserCreateNestedOneWithoutDialogueAttemptsInput
+}
+
+export type DialogueAttemptUncheckedCreateWithoutProfileEventsInput = {
+  id?: string
+  sessionId: string
+  scenarioId?: string | null
+  nodeId?: string | null
+  userId: string
+  inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
+  userText?: string
+  transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
+  routerIntent?: string
+  routerJson?: string
+  evaluatorJson?: string | null
+  coachJson?: string | null
+  roleReplyEn?: string | null
+  coachReplyZh?: string | null
+  betterAnswerEn?: string | null
+  passed?: boolean | null
+  score?: number | null
+  nextAction?: string
+  createdAt?: Date | string
+}
+
+export type DialogueAttemptCreateOrConnectWithoutProfileEventsInput = {
+  where: Prisma.DialogueAttemptWhereUniqueInput
+  create: Prisma.XOR<Prisma.DialogueAttemptCreateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedCreateWithoutProfileEventsInput>
+}
+
+export type DialogueAttemptUpsertWithoutProfileEventsInput = {
+  update: Prisma.XOR<Prisma.DialogueAttemptUpdateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedUpdateWithoutProfileEventsInput>
+  create: Prisma.XOR<Prisma.DialogueAttemptCreateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedCreateWithoutProfileEventsInput>
+  where?: Prisma.DialogueAttemptWhereInput
+}
+
+export type DialogueAttemptUpdateToOneWithWhereWithoutProfileEventsInput = {
+  where?: Prisma.DialogueAttemptWhereInput
+  data: Prisma.XOR<Prisma.DialogueAttemptUpdateWithoutProfileEventsInput, Prisma.DialogueAttemptUncheckedUpdateWithoutProfileEventsInput>
+}
+
+export type DialogueAttemptUpdateWithoutProfileEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
+  userText?: Prisma.StringFieldUpdateOperationsInput | string
+  transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
+  routerJson?: Prisma.StringFieldUpdateOperationsInput | string
+  evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coachJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleReplyEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coachReplyZh?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  betterAnswerEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passed?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nextAction?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  session?: Prisma.DialogueSessionUpdateOneRequiredWithoutAttemptsNestedInput
+  node?: Prisma.DialogueNodeUpdateOneWithoutAttemptsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput
+}
+
+export type DialogueAttemptUncheckedUpdateWithoutProfileEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
+  userText?: Prisma.StringFieldUpdateOperationsInput | string
+  transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
+  routerJson?: Prisma.StringFieldUpdateOperationsInput | string
+  evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coachJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleReplyEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coachReplyZh?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  betterAnswerEn?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passed?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
+  score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  nextAction?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type DialogueAttemptCreateManyUserInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -1060,10 +1474,18 @@ export type DialogueAttemptCreateManyUserInput = {
 
 export type DialogueAttemptUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1077,16 +1499,25 @@ export type DialogueAttemptUpdateWithoutUserInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   session?: Prisma.DialogueSessionUpdateOneRequiredWithoutAttemptsNestedInput
   node?: Prisma.DialogueNodeUpdateOneWithoutAttemptsNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1098,16 +1529,25 @@ export type DialogueAttemptUncheckedUpdateWithoutUserInput = {
   score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nextAction?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1124,11 +1564,19 @@ export type DialogueAttemptUncheckedUpdateManyWithoutUserInput = {
 export type DialogueAttemptCreateManyNodeInput = {
   id?: string
   sessionId: string
-  scenarioId: string
+  scenarioId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -1144,10 +1592,18 @@ export type DialogueAttemptCreateManyNodeInput = {
 
 export type DialogueAttemptUpdateWithoutNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1161,16 +1617,25 @@ export type DialogueAttemptUpdateWithoutNodeInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   session?: Prisma.DialogueSessionUpdateOneRequiredWithoutAttemptsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateWithoutNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1182,16 +1647,25 @@ export type DialogueAttemptUncheckedUpdateWithoutNodeInput = {
   score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nextAction?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateManyWithoutNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1207,12 +1681,20 @@ export type DialogueAttemptUncheckedUpdateManyWithoutNodeInput = {
 
 export type DialogueAttemptCreateManySessionInput = {
   id?: string
-  scenarioId: string
+  scenarioId?: string | null
   nodeId?: string | null
   userId: string
   inputMode?: string
+  turnStatus?: string
+  turnIndex?: number
+  transcriptSource?: string
   userText?: string
   transcriptText?: string | null
+  transcriptJson?: string
+  aiReplyJson?: string
+  assessmentJson?: string | null
+  profileEventsJson?: string
+  errorJson?: string | null
   routerIntent?: string
   routerJson?: string
   evaluatorJson?: string | null
@@ -1228,10 +1710,18 @@ export type DialogueAttemptCreateManySessionInput = {
 
 export type DialogueAttemptUpdateWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1245,16 +1735,25 @@ export type DialogueAttemptUpdateWithoutSessionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   node?: Prisma.DialogueNodeUpdateOneWithoutAttemptsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueAttemptsNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1266,16 +1765,25 @@ export type DialogueAttemptUncheckedUpdateWithoutSessionInput = {
   score?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   nextAction?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  profileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutTurnNestedInput
 }
 
 export type DialogueAttemptUncheckedUpdateManyWithoutSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   inputMode?: Prisma.StringFieldUpdateOperationsInput | string
+  turnStatus?: Prisma.StringFieldUpdateOperationsInput | string
+  turnIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  transcriptSource?: Prisma.StringFieldUpdateOperationsInput | string
   userText?: Prisma.StringFieldUpdateOperationsInput | string
   transcriptText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  transcriptJson?: Prisma.StringFieldUpdateOperationsInput | string
+  aiReplyJson?: Prisma.StringFieldUpdateOperationsInput | string
+  assessmentJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profileEventsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  errorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   routerIntent?: Prisma.StringFieldUpdateOperationsInput | string
   routerJson?: Prisma.StringFieldUpdateOperationsInput | string
   evaluatorJson?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1289,6 +1797,35 @@ export type DialogueAttemptUncheckedUpdateManyWithoutSessionInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+
+/**
+ * Count Type DialogueAttemptCountOutputType
+ */
+
+export type DialogueAttemptCountOutputType = {
+  profileEvents: number
+}
+
+export type DialogueAttemptCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  profileEvents?: boolean | DialogueAttemptCountOutputTypeCountProfileEventsArgs
+}
+
+/**
+ * DialogueAttemptCountOutputType without action
+ */
+export type DialogueAttemptCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueAttemptCountOutputType
+   */
+  select?: Prisma.DialogueAttemptCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * DialogueAttemptCountOutputType without action
+ */
+export type DialogueAttemptCountOutputTypeCountProfileEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueProfileEventWhereInput
+}
 
 
 export type DialogueAttemptSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1298,8 +1835,16 @@ export type DialogueAttemptSelect<ExtArgs extends runtime.Types.Extensions.Inter
   nodeId?: boolean
   userId?: boolean
   inputMode?: boolean
+  turnStatus?: boolean
+  turnIndex?: boolean
+  transcriptSource?: boolean
   userText?: boolean
   transcriptText?: boolean
+  transcriptJson?: boolean
+  aiReplyJson?: boolean
+  assessmentJson?: boolean
+  profileEventsJson?: boolean
+  errorJson?: boolean
   routerIntent?: boolean
   routerJson?: boolean
   evaluatorJson?: boolean
@@ -1314,6 +1859,8 @@ export type DialogueAttemptSelect<ExtArgs extends runtime.Types.Extensions.Inter
   session?: boolean | Prisma.DialogueSessionDefaultArgs<ExtArgs>
   node?: boolean | Prisma.DialogueAttempt$nodeArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profileEvents?: boolean | Prisma.DialogueAttempt$profileEventsArgs<ExtArgs>
+  _count?: boolean | Prisma.DialogueAttemptCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dialogueAttempt"]>
 
 export type DialogueAttemptSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1323,8 +1870,16 @@ export type DialogueAttemptSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   nodeId?: boolean
   userId?: boolean
   inputMode?: boolean
+  turnStatus?: boolean
+  turnIndex?: boolean
+  transcriptSource?: boolean
   userText?: boolean
   transcriptText?: boolean
+  transcriptJson?: boolean
+  aiReplyJson?: boolean
+  assessmentJson?: boolean
+  profileEventsJson?: boolean
+  errorJson?: boolean
   routerIntent?: boolean
   routerJson?: boolean
   evaluatorJson?: boolean
@@ -1348,8 +1903,16 @@ export type DialogueAttemptSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   nodeId?: boolean
   userId?: boolean
   inputMode?: boolean
+  turnStatus?: boolean
+  turnIndex?: boolean
+  transcriptSource?: boolean
   userText?: boolean
   transcriptText?: boolean
+  transcriptJson?: boolean
+  aiReplyJson?: boolean
+  assessmentJson?: boolean
+  profileEventsJson?: boolean
+  errorJson?: boolean
   routerIntent?: boolean
   routerJson?: boolean
   evaluatorJson?: boolean
@@ -1373,8 +1936,16 @@ export type DialogueAttemptSelectScalar = {
   nodeId?: boolean
   userId?: boolean
   inputMode?: boolean
+  turnStatus?: boolean
+  turnIndex?: boolean
+  transcriptSource?: boolean
   userText?: boolean
   transcriptText?: boolean
+  transcriptJson?: boolean
+  aiReplyJson?: boolean
+  assessmentJson?: boolean
+  profileEventsJson?: boolean
+  errorJson?: boolean
   routerIntent?: boolean
   routerJson?: boolean
   evaluatorJson?: boolean
@@ -1388,11 +1959,13 @@ export type DialogueAttemptSelectScalar = {
   createdAt?: boolean
 }
 
-export type DialogueAttemptOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "scenarioId" | "nodeId" | "userId" | "inputMode" | "userText" | "transcriptText" | "routerIntent" | "routerJson" | "evaluatorJson" | "coachJson" | "roleReplyEn" | "coachReplyZh" | "betterAnswerEn" | "passed" | "score" | "nextAction" | "createdAt", ExtArgs["result"]["dialogueAttempt"]>
+export type DialogueAttemptOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sessionId" | "scenarioId" | "nodeId" | "userId" | "inputMode" | "turnStatus" | "turnIndex" | "transcriptSource" | "userText" | "transcriptText" | "transcriptJson" | "aiReplyJson" | "assessmentJson" | "profileEventsJson" | "errorJson" | "routerIntent" | "routerJson" | "evaluatorJson" | "coachJson" | "roleReplyEn" | "coachReplyZh" | "betterAnswerEn" | "passed" | "score" | "nextAction" | "createdAt", ExtArgs["result"]["dialogueAttempt"]>
 export type DialogueAttemptInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   session?: boolean | Prisma.DialogueSessionDefaultArgs<ExtArgs>
   node?: boolean | Prisma.DialogueAttempt$nodeArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  profileEvents?: boolean | Prisma.DialogueAttempt$profileEventsArgs<ExtArgs>
+  _count?: boolean | Prisma.DialogueAttemptCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DialogueAttemptIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   session?: boolean | Prisma.DialogueSessionDefaultArgs<ExtArgs>
@@ -1411,16 +1984,25 @@ export type $DialogueAttemptPayload<ExtArgs extends runtime.Types.Extensions.Int
     session: Prisma.$DialogueSessionPayload<ExtArgs>
     node: Prisma.$DialogueNodePayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs>
+    profileEvents: Prisma.$DialogueProfileEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     sessionId: string
-    scenarioId: string
+    scenarioId: string | null
     nodeId: string | null
     userId: string
     inputMode: string
+    turnStatus: string
+    turnIndex: number
+    transcriptSource: string
     userText: string
     transcriptText: string | null
+    transcriptJson: string
+    aiReplyJson: string
+    assessmentJson: string | null
+    profileEventsJson: string
+    errorJson: string | null
     routerIntent: string
     routerJson: string
     evaluatorJson: string | null
@@ -1829,6 +2411,7 @@ export interface Prisma__DialogueAttemptClient<T, Null = never, ExtArgs extends 
   session<T extends Prisma.DialogueSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__DialogueSessionClient<runtime.Types.Result.GetResult<Prisma.$DialogueSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   node<T extends Prisma.DialogueAttempt$nodeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueAttempt$nodeArgs<ExtArgs>>): Prisma.Prisma__DialogueNodeClient<runtime.Types.Result.GetResult<Prisma.$DialogueNodePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profileEvents<T extends Prisma.DialogueAttempt$profileEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueAttempt$profileEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueProfileEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1864,8 +2447,16 @@ export interface DialogueAttemptFieldRefs {
   readonly nodeId: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly userId: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly inputMode: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly turnStatus: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly turnIndex: Prisma.FieldRef<"DialogueAttempt", 'Int'>
+  readonly transcriptSource: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly userText: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly transcriptText: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly transcriptJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly aiReplyJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly assessmentJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly profileEventsJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
+  readonly errorJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly routerIntent: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly routerJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
   readonly evaluatorJson: Prisma.FieldRef<"DialogueAttempt", 'String'>
@@ -2287,6 +2878,30 @@ export type DialogueAttempt$nodeArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   include?: Prisma.DialogueNodeInclude<ExtArgs> | null
   where?: Prisma.DialogueNodeWhereInput
+}
+
+/**
+ * DialogueAttempt.profileEvents
+ */
+export type DialogueAttempt$profileEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueProfileEvent
+   */
+  select?: Prisma.DialogueProfileEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueProfileEvent
+   */
+  omit?: Prisma.DialogueProfileEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueProfileEventInclude<ExtArgs> | null
+  where?: Prisma.DialogueProfileEventWhereInput
+  orderBy?: Prisma.DialogueProfileEventOrderByWithRelationInput | Prisma.DialogueProfileEventOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueProfileEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueProfileEventScalarFieldEnum | Prisma.DialogueProfileEventScalarFieldEnum[]
 }
 
 /**

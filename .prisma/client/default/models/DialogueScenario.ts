@@ -529,6 +529,11 @@ export type DialogueScenarioScalarRelationFilter = {
   isNot?: Prisma.DialogueScenarioWhereInput
 }
 
+export type DialogueScenarioNullableScalarRelationFilter = {
+  is?: Prisma.DialogueScenarioWhereInput | null
+  isNot?: Prisma.DialogueScenarioWhereInput | null
+}
+
 export type DialogueScenarioCreateNestedOneWithoutNodesInput = {
   create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutNodesInput, Prisma.DialogueScenarioUncheckedCreateWithoutNodesInput>
   connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutNodesInput
@@ -563,10 +568,12 @@ export type DialogueScenarioCreateNestedOneWithoutSessionsInput = {
   connect?: Prisma.DialogueScenarioWhereUniqueInput
 }
 
-export type DialogueScenarioUpdateOneRequiredWithoutSessionsNestedInput = {
+export type DialogueScenarioUpdateOneWithoutSessionsNestedInput = {
   create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutSessionsInput, Prisma.DialogueScenarioUncheckedCreateWithoutSessionsInput>
   connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutSessionsInput
   upsert?: Prisma.DialogueScenarioUpsertWithoutSessionsInput
+  disconnect?: Prisma.DialogueScenarioWhereInput | boolean
+  delete?: Prisma.DialogueScenarioWhereInput | boolean
   connect?: Prisma.DialogueScenarioWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.DialogueScenarioUpdateToOneWithWhereWithoutSessionsInput, Prisma.DialogueScenarioUpdateWithoutSessionsInput>, Prisma.DialogueScenarioUncheckedUpdateWithoutSessionsInput>
 }

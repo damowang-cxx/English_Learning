@@ -399,6 +399,7 @@ export const ModelName = {
   DialogueEdge: 'DialogueEdge',
   DialogueSession: 'DialogueSession',
   DialogueAttempt: 'DialogueAttempt',
+  DialogueProfileEvent: 'DialogueProfileEvent',
   DialogueSpeechAsset: 'DialogueSpeechAsset'
 } as const
 
@@ -415,7 +416,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat" | "dialogueScenario" | "dialogueNode" | "dialogueEdge" | "dialogueSession" | "dialogueAttempt" | "dialogueSpeechAsset"
+    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat" | "dialogueScenario" | "dialogueNode" | "dialogueEdge" | "dialogueSession" | "dialogueAttempt" | "dialogueProfileEvent" | "dialogueSpeechAsset"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1529,6 +1530,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DialogueProfileEvent: {
+      payload: Prisma.$DialogueProfileEventPayload<ExtArgs>
+      fields: Prisma.DialogueProfileEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueProfileEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueProfileEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueProfileEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueProfileEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueProfileEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueProfileEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueProfileEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueProfileEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueProfileEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        update: {
+          args: Prisma.DialogueProfileEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueProfileEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueProfileEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueProfileEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueProfileEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueProfileEventPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueProfileEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueProfileEvent>
+        }
+        groupBy: {
+          args: Prisma.DialogueProfileEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueProfileEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueProfileEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueProfileEventCountAggregateOutputType> | number
+        }
+      }
+    }
     DialogueSpeechAsset: {
       payload: Prisma.$DialogueSpeechAssetPayload<ExtArgs>
       fields: Prisma.DialogueSpeechAssetFieldRefs
@@ -1834,10 +1909,12 @@ export type DialogueEdgeScalarFieldEnum = (typeof DialogueEdgeScalarFieldEnum)[k
 
 export const DialogueSessionScalarFieldEnum = {
   id: 'id',
+  mode: 'mode',
   scenarioId: 'scenarioId',
   userId: 'userId',
   currentNodeId: 'currentNodeId',
   status: 'status',
+  metadataJson: 'metadataJson',
   totalScore: 'totalScore',
   completedNodeCount: 'completedNodeCount',
   lastActivityAt: 'lastActivityAt',
@@ -1856,8 +1933,16 @@ export const DialogueAttemptScalarFieldEnum = {
   nodeId: 'nodeId',
   userId: 'userId',
   inputMode: 'inputMode',
+  turnStatus: 'turnStatus',
+  turnIndex: 'turnIndex',
+  transcriptSource: 'transcriptSource',
   userText: 'userText',
   transcriptText: 'transcriptText',
+  transcriptJson: 'transcriptJson',
+  aiReplyJson: 'aiReplyJson',
+  assessmentJson: 'assessmentJson',
+  profileEventsJson: 'profileEventsJson',
+  errorJson: 'errorJson',
   routerIntent: 'routerIntent',
   routerJson: 'routerJson',
   evaluatorJson: 'evaluatorJson',
@@ -1872,6 +1957,25 @@ export const DialogueAttemptScalarFieldEnum = {
 } as const
 
 export type DialogueAttemptScalarFieldEnum = (typeof DialogueAttemptScalarFieldEnum)[keyof typeof DialogueAttemptScalarFieldEnum]
+
+
+export const DialogueProfileEventScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  sessionId: 'sessionId',
+  turnId: 'turnId',
+  mode: 'mode',
+  scenarioId: 'scenarioId',
+  nodeId: 'nodeId',
+  type: 'type',
+  severity: 'severity',
+  evidence: 'evidence',
+  suggestion: 'suggestion',
+  metadataJson: 'metadataJson',
+  createdAt: 'createdAt'
+} as const
+
+export type DialogueProfileEventScalarFieldEnum = (typeof DialogueProfileEventScalarFieldEnum)[keyof typeof DialogueProfileEventScalarFieldEnum]
 
 
 export const DialogueSpeechAssetScalarFieldEnum = {
@@ -2054,6 +2158,7 @@ export type GlobalOmitConfig = {
   dialogueEdge?: Prisma.DialogueEdgeOmit
   dialogueSession?: Prisma.DialogueSessionOmit
   dialogueAttempt?: Prisma.DialogueAttemptOmit
+  dialogueProfileEvent?: Prisma.DialogueProfileEventOmit
   dialogueSpeechAsset?: Prisma.DialogueSpeechAssetOmit
 }
 

@@ -18,6 +18,7 @@ model User {
   userGuideSeenAt DateTime?
   dialogueSessions DialogueSession[]
   dialogueAttempts DialogueAttempt[]
+  dialogueProfileEvents DialogueProfileEvent[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -230,13 +231,15 @@ model DialogueEdge {
 
 model DialogueSession {
   id                 String             @id @default(cuid())
-  scenarioId         String
-  scenario           DialogueScenario   @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  mode               String             @default("scenario")
+  scenarioId         String?
+  scenario           DialogueScenario?  @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
   userId             String
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentNodeId      String?
   currentNode        DialogueNode?      @relation("DialogueCurrentNode", fields: [currentNodeId], references: [id], onDelete: SetNull)
   status             String             @default("active")
+  metadataJson       String             @default("{}")
   totalScore         Int                @default(0)
   completedNodeCount Int                @default(0)
   lastActivityAt     DateTime           @default(now())
@@ -244,8 +247,10 @@ model DialogueSession {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   attempts           DialogueAttempt[]
+  profileEvents      DialogueProfileEvent[]
 
   @@index([scenarioId])
+  @@index([mode])
   @@index([userId])
   @@index([status])
   @@index([lastActivityAt])
@@ -255,14 +260,22 @@ model DialogueAttempt {
   id              String           @id @default(cuid())
   sessionId       String
   session         DialogueSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  scenarioId      String
+  scenarioId      String?
   nodeId          String?
   node            DialogueNode?    @relation(fields: [nodeId], references: [id], onDelete: SetNull)
   userId          String
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   inputMode       String           @default("text")
+  turnStatus      String           @default("completed")
+  turnIndex       Int              @default(0)
+  transcriptSource String          @default("text_input")
   userText        String           @default("")
   transcriptText  String?
+  transcriptJson  String           @default("{}")
+  aiReplyJson     String           @default("{}")
+  assessmentJson  String?
+  profileEventsJson String         @default("[]")
+  errorJson       String?
   routerIntent    String           @default("scene_answer")
   routerJson      String           @default("{}")
   evaluatorJson   String?
@@ -274,11 +287,41 @@ model DialogueAttempt {
   score           Int?
   nextAction      String           @default("stay")
   createdAt       DateTime         @default(now())
+  profileEvents   DialogueProfileEvent[]
 
   @@index([sessionId])
+  @@index([sessionId, turnIndex])
   @@index([scenarioId])
   @@index([nodeId])
   @@index([userId])
+  @@index([createdAt])
+}
+
+model DialogueProfileEvent {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      DialogueSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  turnId       String
+  turn         DialogueAttempt @relation(fields: [turnId], references: [id], onDelete: Cascade)
+  mode         String
+  scenarioId   String?
+  nodeId       String?
+  type         String
+  severity     String          @default("low")
+  evidence     String          @default("")
+  suggestion   String          @default("")
+  metadataJson String          @default("{}")
+  createdAt    DateTime        @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([turnId])
+  @@index([mode])
+  @@index([scenarioId])
+  @@index([nodeId])
+  @@index([type])
   @@index([createdAt])
 }
 
