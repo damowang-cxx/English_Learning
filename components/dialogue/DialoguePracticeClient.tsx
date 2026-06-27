@@ -68,6 +68,19 @@ interface DialoguePracticePayload {
   roleReplyEn?: string | null
   coachReplyZh?: string | null
   transcriptText?: string | null
+  matchedEdge?: {
+    id: string
+    fromNodeId: string
+    toNodeId: string | null
+    onResult: string
+    label: string
+    priority: number
+    isFallback: boolean
+    confidence: number | null
+    reason: string | null
+  } | null
+  branchConfidence?: number | null
+  branchReason?: string | null
   nextAction?: string
 }
 
@@ -274,6 +287,14 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
 
       if (payload.evaluator?.missing_points?.length) {
         next.push(createMessage('system', `还缺：${payload.evaluator.missing_points.join(' / ')}`))
+      }
+
+      if (payload.nextAction === 'clarify_branch') {
+        next.push(createMessage('system', '分支不明确：请再说清楚你的选择，系统暂时不会推进剧情。'))
+      } else if (payload.nextAction === 'skip_unavailable') {
+        next.push(createMessage('system', '当前节点没有配置跳过分支，剧情未推进。'))
+      } else if (payload.matchedEdge?.label) {
+        next.push(createMessage('system', `进入分支：${payload.matchedEdge.label}`))
       }
 
       if (payload.roleReplyEn) {

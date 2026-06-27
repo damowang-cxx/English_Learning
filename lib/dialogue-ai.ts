@@ -37,7 +37,21 @@ export interface DialogueRouterOutput {
   confidence: number
   sceneAnswerText: string | null
   questionText: string | null
-  controlAction: 'retry' | 'continue' | 'exit' | 'repeat' | null
+  controlAction: 'exit' | 'repeat_role_line' | 'skip' | null
+}
+
+export interface DialogueEdgeMatcherOption {
+  edgeId: string
+  label: string
+  conditionJson: string
+  priority: number
+  isFallback: boolean
+}
+
+export interface DialogueEdgeMatcherOutput {
+  edgeId: string | null
+  confidence: number
+  reason: string
 }
 
 export interface DialogueEvaluatorOutput {
@@ -113,17 +127,28 @@ const ROUTER_SCHEMA = {
   properties: {
     intent: {
       type: 'string',
-      enum: ['scene_answer', 'ask_explanation', 'ask_translation', 'ask_hint', 'control', 'mixed'],
+      enum: ['scene_answer', 'ask_coach', 'request_hint', 'repeat_role_line', 'skip', 'exit', 'mixed'],
     },
     confidence: { type: 'number' },
     sceneAnswerText: { type: ['string', 'null'] },
     questionText: { type: ['string', 'null'] },
     controlAction: {
       type: ['string', 'null'],
-      enum: ['retry', 'continue', 'exit', 'repeat', null],
+      enum: ['exit', 'repeat_role_line', 'skip', null],
     },
   },
   required: ['intent', 'confidence', 'sceneAnswerText', 'questionText', 'controlAction'],
+}
+
+const EDGE_MATCHER_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    edgeId: { type: ['string', 'null'] },
+    confidence: { type: 'number' },
+    reason: { type: 'string' },
+  },
+  required: ['edgeId', 'confidence', 'reason'],
 }
 
 const EVALUATOR_SCHEMA = {
@@ -369,11 +394,48 @@ export async function routeDialogueInput({
     schema: ROUTER_SCHEMA,
     instructions: [
       'You route one learner message in an English dialogue practice app.',
-      'Classify whether the learner is answering the scene, asking the coach, asking for translation, asking for a hint, issuing a control command, or mixing a scene answer with a question.',
+      'Use exactly one intent: scene_answer, ask_coach, request_hint, repeat_role_line, skip, exit, or mixed.',
+      'scene_answer means the learner is trying to respond to the role line.',
+      'ask_coach means the learner asks for explanation, translation, vocabulary, grammar, or how to say something.',
+      'request_hint means the learner asks for a hint without giving a scene answer.',
+      'repeat_role_line means the learner asks to hear or see the role line again.',
+      'skip means the learner asks to skip this node, says they do not know, or asks for the next item.',
+      'exit means the learner wants to quit or end the practice.',
+      'mixed means the learner includes a possible scene answer plus a coach question in the same message.',
       'Preserve useful English answer text in sceneAnswerText. Preserve Chinese or meta question text in questionText.',
       'Do not evaluate correctness.',
     ].join('\n'),
     input: buildSceneInput(scenario, node, { userText }),
+  })
+
+  return {
+    ...output,
+    confidence: Math.min(1, Math.max(0, Number(output.confidence) || 0)),
+  }
+}
+
+export async function matchDialogueEdge({
+  scenario,
+  node,
+  answerText,
+  edges,
+}: {
+  scenario: DialogueAiScenarioContext
+  node: DialogueAiNodeContext
+  answerText: string
+  edges: DialogueEdgeMatcherOption[]
+}) {
+  const output = await callResponsesJson<DialogueEdgeMatcherOutput>({
+    model: getDialogueModel('DIALOGUE_EDGE_MATCHER_MODEL', 'gpt-5.4-mini'),
+    name: 'dialogue_edge_matcher',
+    schema: EDGE_MATCHER_SCHEMA,
+    instructions: [
+      'You choose the best scenario graph branch for a passed learner answer.',
+      'Use only the provided edge options. Match by label, conditionJson, examples, keywords, and user intent.',
+      'Return edgeId null if no non-fallback edge clearly matches.',
+      'Do not evaluate language correctness; the answer has already passed the node.',
+    ].join('\n'),
+    input: buildSceneInput(scenario, node, { answerText, edges }),
   })
 
   return {

@@ -56,6 +56,10 @@ interface RealtimeTurnDraft {
 
 const REALTIME_CALLS_URL = 'https://api.openai.com/v1/realtime/calls'
 
+function isRealtimeActiveStatus(status: RealtimeVoiceStatus) {
+  return status === 'connecting' || status === 'connected' || status === 'listening' || status === 'speaking'
+}
+
 function createTurnDraft(): RealtimeTurnDraft {
   return {
     id: `rt_${Date.now()}_${Math.random().toString(16).slice(2)}`,
@@ -102,6 +106,28 @@ function buildErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
 
+function buildRealtimeStartErrorMessage(error: unknown) {
+  if (!(error instanceof Error)) {
+    return '实时语音连接失败。'
+  }
+
+  switch (error.name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return '浏览器没有麦克风权限。请在地址栏权限设置中允许麦克风，然后重新开始实时交流。'
+    case 'NotFoundError':
+    case 'DevicesNotFoundError':
+      return '没有检测到可用麦克风。请连接麦克风后再试。'
+    case 'NotReadableError':
+    case 'TrackStartError':
+      return '麦克风当前被其他应用占用，关闭占用麦克风的软件后再试。'
+    case 'OverconstrainedError':
+      return '当前麦克风不满足浏览器音频约束，请换一个输入设备后再试。'
+    default:
+      return error.message || '实时语音连接失败。'
+  }
+}
+
 export function useRealtimeVoiceAdapter({
   conversationSessionId,
   disabled = false,
@@ -115,6 +141,7 @@ export function useRealtimeVoiceAdapter({
   const [model, setModel] = useState<string | null>(null)
   const [voice, setVoice] = useState<string | null>(null)
   const [lastSavedTurnId, setLastSavedTurnId] = useState<string | null>(null)
+  const [lastSaveError, setLastSaveError] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
   const dataChannelRef = useRef<RTCDataChannel | null>(null)
@@ -197,6 +224,7 @@ export function useRealtimeVoiceAdapter({
       }
 
       draft.committed = true
+      setLastSaveError(null)
       setLastSavedTurnId(payload.turnId || null)
       callbacksRef.current.onStatusMessage?.(null)
       callbacksRef.current.onTurnCommitted?.({
@@ -211,9 +239,10 @@ export function useRealtimeVoiceAdapter({
     } catch (error) {
       const message = buildErrorMessage(error, '实时对话保存失败。')
       draft.commitStarted = false
-      setStatus('error')
+      setLastSaveError(message)
       setErrorMessage(message)
-      callbacksRef.current.onStatusMessage?.(message)
+      setStatus((current) => (isRealtimeActiveStatus(current) ? current : 'connected'))
+      callbacksRef.current.onStatusMessage?.(`本轮对话已完成，但记录保存失败：${message}。实时连接仍可继续。`)
     }
   }, [])
 
@@ -225,7 +254,9 @@ export function useRealtimeVoiceAdapter({
     const draft = currentDraftRef.current
 
     if (!draft.committed && !draft.commitStarted && (draft.userTranscript || draft.assistantTranscript)) {
-      callbacksRef.current.onStatusMessage?.('上一轮实时字幕不完整，已跳过保存。')
+      callbacksRef.current.onStatusMessage?.(
+        draft.responseDone ? '上一轮实时对话未能保存，已继续下一轮。' : '上一轮实时字幕不完整，已跳过保存。'
+      )
     }
 
     currentDraftRef.current = createTurnDraft()
@@ -356,7 +387,7 @@ export function useRealtimeVoiceAdapter({
   )
 
   const start = useCallback(async () => {
-    if (disabled || status === 'connecting' || status === 'connected' || status === 'listening' || status === 'speaking') {
+    if (disabled || isRealtimeActiveStatus(status)) {
       return
     }
 
@@ -374,13 +405,24 @@ export function useRealtimeVoiceAdapter({
 
     setStatus('connecting')
     setErrorMessage(null)
+    setLastSaveError(null)
     setLiveUserTranscript('')
     setLiveAssistantTranscript('')
-    callbacksRef.current.onStatusMessage?.('正在连接实时语音教练...')
+    callbacksRef.current.onStatusMessage?.('正在请求麦克风权限...')
     cleanupConnection()
     currentDraftRef.current = createTurnDraft()
 
     try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
+      mediaStreamRef.current = mediaStream
+      callbacksRef.current.onStatusMessage?.('正在连接实时语音教练...')
+
       const tokenResponse = await fetch(withBasePath('/api/dialogue/realtime/session'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -410,8 +452,6 @@ export function useRealtimeVoiceAdapter({
         remoteAudio.srcObject = event.streams[0]
       }
 
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      mediaStreamRef.current = mediaStream
       mediaStream.getAudioTracks().forEach((track) => {
         peerConnection.addTrack(track, mediaStream)
       })
@@ -434,6 +474,9 @@ export function useRealtimeVoiceAdapter({
         setStatus('error')
         setErrorMessage(message)
         callbacksRef.current.onStatusMessage?.(message)
+      })
+      dataChannel.addEventListener('close', () => {
+        setStatus((current) => (current === 'error' ? current : 'disconnected'))
       })
 
       peerConnection.addEventListener('connectionstatechange', () => {
@@ -478,7 +521,7 @@ export function useRealtimeVoiceAdapter({
         sdp: await sdpResponse.text(),
       })
     } catch (error) {
-      const message = buildErrorMessage(error, '实时语音连接失败。')
+      const message = buildRealtimeStartErrorMessage(error)
       cleanupConnection()
       setStatus('error')
       setErrorMessage(message)
@@ -487,9 +530,21 @@ export function useRealtimeVoiceAdapter({
   }, [cleanupConnection, disabled, handleRealtimeEvent, status])
 
   const stop = useCallback(() => {
+    const draft = currentDraftRef.current
+
+    if (!draft.committed && !draft.commitStarted && (draft.userTranscript || draft.assistantTranscript)) {
+      callbacksRef.current.onStatusMessage?.('实时语音已结束，本轮未完成的字幕不会写入记录。')
+    } else {
+      callbacksRef.current.onStatusMessage?.('实时语音已结束。')
+    }
+
     cleanupConnection()
+    if (!draft.commitStarted) {
+      currentDraftRef.current = createTurnDraft()
+    }
+    setLiveUserTranscript('')
+    setLiveAssistantTranscript('')
     setStatus('disconnected')
-    callbacksRef.current.onStatusMessage?.('实时语音已结束。')
   }, [cleanupConnection])
 
   useEffect(() => {
@@ -498,7 +553,7 @@ export function useRealtimeVoiceAdapter({
     }
   }, [cleanupConnection])
 
-  const isActive = status === 'connecting' || status === 'connected' || status === 'listening' || status === 'speaking'
+  const isActive = isRealtimeActiveStatus(status)
 
   return {
     status,
@@ -508,6 +563,7 @@ export function useRealtimeVoiceAdapter({
     model,
     voice,
     lastSavedTurnId,
+    lastSaveError,
     errorMessage,
     start,
     stop,

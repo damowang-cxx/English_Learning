@@ -1899,6 +1899,10 @@ export const DialogueEdgeScalarFieldEnum = {
   scenarioId: 'scenarioId',
   fromNodeId: 'fromNodeId',
   onResult: 'onResult',
+  label: 'label',
+  conditionJson: 'conditionJson',
+  priority: 'priority',
+  isFallback: 'isFallback',
   toNodeId: 'toNodeId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

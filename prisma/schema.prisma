@@ -219,13 +219,18 @@ model DialogueEdge {
   fromNodeId  String
   fromNode    DialogueNode     @relation("DialogueEdgeFromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
   onResult    String
+  label       String           @default("")
+  conditionJson String         @default("{}")
+  priority    Int              @default(0)
+  isFallback  Boolean          @default(false)
   toNodeId    String?
   toNode      DialogueNode?    @relation("DialogueEdgeToNode", fields: [toNodeId], references: [id], onDelete: SetNull)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  @@unique([fromNodeId, onResult])
   @@index([scenarioId])
+  @@index([fromNodeId])
+  @@index([fromNodeId, onResult])
   @@index([toNodeId])
 }
 

@@ -116,6 +116,13 @@ export async function POST(request: NextRequest) {
       coachReplyZh: assistantTranscript,
       nextAction: 'reply',
     })
+    console.info('Dialogue realtime turn recorded', {
+      userId: guard.user.id,
+      conversationSessionId: conversationSession.id,
+      turnId: turn.turn.id,
+      userTranscriptLength: userTranscript.length,
+      assistantTranscriptLength: assistantTranscript.length,
+    })
 
     return NextResponse.json({
       conversationSessionId: conversationSession.id,

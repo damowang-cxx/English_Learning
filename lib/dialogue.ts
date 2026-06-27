@@ -15,18 +15,19 @@ export const DIALOGUE_VOICES = [
 ] as const
 
 export type DialogueVoice = (typeof DIALOGUE_VOICES)[number]
-export type DialogueEdgeResult = 'pass' | 'fail' | 'max_retry'
+export type DialogueEdgeResult = 'pass' | 'fail' | 'max_retry' | 'skip'
 export type DialogueSessionStatus = 'active' | 'completed' | 'abandoned'
 export type DialogueInputMode = 'text' | 'audio'
 export type DialogueRouterIntent =
   | 'scene_answer'
-  | 'ask_explanation'
-  | 'ask_translation'
-  | 'ask_hint'
-  | 'control'
+  | 'ask_coach'
+  | 'request_hint'
+  | 'repeat_role_line'
+  | 'skip'
+  | 'exit'
   | 'mixed'
 
-export const DIALOGUE_EDGE_RESULTS = ['pass', 'fail', 'max_retry'] as const
+export const DIALOGUE_EDGE_RESULTS = ['pass', 'fail', 'max_retry', 'skip'] as const
 export const DEFAULT_DIALOGUE_ROLE_VOICE: DialogueVoice = 'marin'
 export const DEFAULT_DIALOGUE_COACH_VOICE: DialogueVoice = 'cedar'
 

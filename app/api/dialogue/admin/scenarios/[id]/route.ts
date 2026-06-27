@@ -152,6 +152,10 @@ export async function PUT(
             scenarioId: id,
             fromNodeId: edge.fromNodeId,
             onResult: edge.onResult,
+            label: edge.label,
+            conditionJson: edge.conditionJson,
+            priority: edge.priority,
+            isFallback: edge.isFallback,
             toNodeId: edge.toNodeId,
           },
         })

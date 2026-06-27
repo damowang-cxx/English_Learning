@@ -522,6 +522,11 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
                   <div className="mt-1 truncate text-xs text-cyan-100/52">
                     {realtime.model ? `${realtime.model} / ${realtime.voice || 'voice'}` : 'WebRTC live session'}
                   </div>
+                  {realtime.lastSavedTurnId || realtime.lastSaveError ? (
+                    <div className="mt-1 text-xs text-cyan-100/48">
+                      {realtime.lastSaveError ? '上一轮记录保存失败，可继续实时交流' : '上一轮实时对话已保存'}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded border border-emerald-300/20 bg-black/24 px-2.5 py-1.5 font-mono text-[11px] text-emerald-100/75">

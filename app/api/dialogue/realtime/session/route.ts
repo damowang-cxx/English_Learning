@@ -24,6 +24,14 @@ export async function POST(request: NextRequest) {
     const clientSecret = await createDialogueRealtimeClientSecret({
       userId: guard.user.id,
     })
+    console.info('Dialogue realtime session created', {
+      userId: guard.user.id,
+      conversationSessionId: conversationSession.id,
+      realtimeSessionId: clientSecret.sessionId || null,
+      model: clientSecret.model,
+      voice: clientSecret.voice,
+      expiresAt: clientSecret.expiresAt,
+    })
 
     return NextResponse.json({
       conversationSessionId: conversationSession.id,

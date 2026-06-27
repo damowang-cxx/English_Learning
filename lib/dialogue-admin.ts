@@ -8,6 +8,7 @@ import {
   normalizeDialogueVoice,
   parseJsonString,
   safeJsonStringify,
+  type DialogueEdgeResult,
 } from '@/lib/dialogue'
 
 export interface DialogueAdminNodePayload {
@@ -29,7 +30,11 @@ export interface DialogueAdminNodePayload {
 export interface DialogueAdminEdgePayload {
   id?: string
   fromNodeId: string
-  onResult: 'pass' | 'fail' | 'max_retry'
+  onResult: DialogueEdgeResult
+  label: string
+  conditionJson: string
+  priority: number
+  isFallback: boolean
   toNodeId: string | null
 }
 
@@ -76,7 +81,7 @@ function normalizeNode(value: unknown, index: number): DialogueAdminNodePayload 
   const roleLineEn = String(candidate.roleLineEn || '').trim()
   const goal = String(candidate.goal || '').trim()
 
-  if (!id || !roleLineEn || !goal) {
+  if (!id) {
     return null
   }
 
@@ -112,11 +117,16 @@ function normalizeEdge(value: unknown): DialogueAdminEdgePayload | null {
   if (!fromNodeId || !isDialogueEdgeResult(onResult)) {
     return null
   }
+  const priority = Number(candidate.priority)
 
   return {
     id: String(candidate.id || '').trim() || undefined,
     fromNodeId,
     onResult,
+    label: String(candidate.label || '').trim(),
+    conditionJson: normalizeJsonField(candidate.conditionJson ?? candidate.condition, '{}'),
+    priority: Number.isFinite(priority) ? Math.round(priority) : 0,
+    isFallback: Boolean(candidate.isFallback),
     toNodeId: toNodeId || null,
   }
 }
@@ -142,7 +152,7 @@ export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScen
     ? body.edges.map(normalizeEdge).filter((edge): edge is DialogueAdminEdgePayload => Boolean(edge))
     : []
 
-  const dedupeEdgeKeys = new Set<string>()
+  const fallbackEdgeKeys = new Set<string>()
   const validEdges: DialogueAdminEdgePayload[] = []
 
   for (const edge of edges) {
@@ -155,11 +165,33 @@ export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScen
     }
 
     const edgeKey = `${edge.fromNodeId}:${edge.onResult}`
-    if (dedupeEdgeKeys.has(edgeKey)) {
-      throw new Error(`Duplicate ${edge.onResult} edge for node ${edge.fromNodeId}`)
+    if (edge.isFallback && fallbackEdgeKeys.has(edgeKey)) {
+      throw new Error(`Duplicate fallback ${edge.onResult} edge for node ${edge.fromNodeId}`)
     }
-    dedupeEdgeKeys.add(edgeKey)
+    if (edge.isFallback) {
+      fallbackEdgeKeys.add(edgeKey)
+    }
     validEdges.push(edge)
+  }
+  const passEdgesByNode = new Map<string, DialogueAdminEdgePayload[]>()
+  for (const edge of validEdges) {
+    if (edge.onResult !== 'pass') {
+      continue
+    }
+
+    passEdgesByNode.set(edge.fromNodeId, [...(passEdgesByNode.get(edge.fromNodeId) || []), edge])
+  }
+
+  for (const [fromNodeId, nodePassEdges] of passEdgesByNode) {
+    if (nodePassEdges.length <= 1) {
+      continue
+    }
+
+    for (const edge of nodePassEdges) {
+      if (!edge.isFallback && edge.conditionJson === '{}') {
+        throw new Error(`Pass edge from ${fromNodeId} needs conditionJson unless it is fallback.`)
+      }
+    }
   }
 
   const startNodeId = String(body.startNodeId || '').trim() || nodes[0].id
@@ -179,7 +211,7 @@ export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScen
     roleVoice: normalizeDialogueVoice(body.roleVoice, DEFAULT_DIALOGUE_ROLE_VOICE),
     coachVoice: normalizeDialogueVoice(body.coachVoice, DEFAULT_DIALOGUE_COACH_VOICE),
     nodes: nodes.sort((left, right) => left.order - right.order),
-    edges: validEdges,
+    edges: validEdges.sort((left, right) => left.priority - right.priority),
   }
 }
 
@@ -218,6 +250,33 @@ export function validateDialoguePublishGraph(payload: DialogueAdminScenarioPaylo
 
     if (edge.toNodeId && !nodeIds.has(edge.toNodeId)) {
       throw new Error(`Edge references unknown target node: ${edge.toNodeId}`)
+    }
+  }
+
+  const fallbackEdgeKeys = new Set<string>()
+  const passEdgesByNode = new Map<string, DialogueAdminEdgePayload[]>()
+  for (const edge of payload.edges) {
+    const edgeKey = `${edge.fromNodeId}:${edge.onResult}`
+    if (edge.isFallback && fallbackEdgeKeys.has(edgeKey)) {
+      throw new Error(`Only one fallback ${edge.onResult} edge is allowed for node ${edge.fromNodeId}.`)
+    }
+    if (edge.isFallback) {
+      fallbackEdgeKeys.add(edgeKey)
+    }
+    if (edge.onResult === 'pass') {
+      passEdgesByNode.set(edge.fromNodeId, [...(passEdgesByNode.get(edge.fromNodeId) || []), edge])
+    }
+  }
+
+  for (const [fromNodeId, nodePassEdges] of passEdgesByNode) {
+    if (nodePassEdges.length <= 1) {
+      continue
+    }
+
+    for (const edge of nodePassEdges) {
+      if (!edge.isFallback && edge.conditionJson === '{}') {
+        throw new Error(`Pass edge from ${fromNodeId} needs conditionJson unless it is fallback.`)
+      }
     }
   }
 }

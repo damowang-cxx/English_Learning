@@ -20,8 +20,18 @@ export type DialogueEdgeModel = runtime.Types.Result.DefaultSelection<Prisma.$Di
 
 export type AggregateDialogueEdge = {
   _count: DialogueEdgeCountAggregateOutputType | null
+  _avg: DialogueEdgeAvgAggregateOutputType | null
+  _sum: DialogueEdgeSumAggregateOutputType | null
   _min: DialogueEdgeMinAggregateOutputType | null
   _max: DialogueEdgeMaxAggregateOutputType | null
+}
+
+export type DialogueEdgeAvgAggregateOutputType = {
+  priority: number | null
+}
+
+export type DialogueEdgeSumAggregateOutputType = {
+  priority: number | null
 }
 
 export type DialogueEdgeMinAggregateOutputType = {
@@ -29,6 +39,10 @@ export type DialogueEdgeMinAggregateOutputType = {
   scenarioId: string | null
   fromNodeId: string | null
   onResult: string | null
+  label: string | null
+  conditionJson: string | null
+  priority: number | null
+  isFallback: boolean | null
   toNodeId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -39,6 +53,10 @@ export type DialogueEdgeMaxAggregateOutputType = {
   scenarioId: string | null
   fromNodeId: string | null
   onResult: string | null
+  label: string | null
+  conditionJson: string | null
+  priority: number | null
+  isFallback: boolean | null
   toNodeId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -49,6 +67,10 @@ export type DialogueEdgeCountAggregateOutputType = {
   scenarioId: number
   fromNodeId: number
   onResult: number
+  label: number
+  conditionJson: number
+  priority: number
+  isFallback: number
   toNodeId: number
   createdAt: number
   updatedAt: number
@@ -56,11 +78,23 @@ export type DialogueEdgeCountAggregateOutputType = {
 }
 
 
+export type DialogueEdgeAvgAggregateInputType = {
+  priority?: true
+}
+
+export type DialogueEdgeSumAggregateInputType = {
+  priority?: true
+}
+
 export type DialogueEdgeMinAggregateInputType = {
   id?: true
   scenarioId?: true
   fromNodeId?: true
   onResult?: true
+  label?: true
+  conditionJson?: true
+  priority?: true
+  isFallback?: true
   toNodeId?: true
   createdAt?: true
   updatedAt?: true
@@ -71,6 +105,10 @@ export type DialogueEdgeMaxAggregateInputType = {
   scenarioId?: true
   fromNodeId?: true
   onResult?: true
+  label?: true
+  conditionJson?: true
+  priority?: true
+  isFallback?: true
   toNodeId?: true
   createdAt?: true
   updatedAt?: true
@@ -81,6 +119,10 @@ export type DialogueEdgeCountAggregateInputType = {
   scenarioId?: true
   fromNodeId?: true
   onResult?: true
+  label?: true
+  conditionJson?: true
+  priority?: true
+  isFallback?: true
   toNodeId?: true
   createdAt?: true
   updatedAt?: true
@@ -125,6 +167,18 @@ export type DialogueEdgeAggregateArgs<ExtArgs extends runtime.Types.Extensions.I
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: DialogueEdgeAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: DialogueEdgeSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: DialogueEdgeMinAggregateInputType
@@ -155,6 +209,8 @@ export type DialogueEdgeGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   _count?: DialogueEdgeCountAggregateInputType | true
+  _avg?: DialogueEdgeAvgAggregateInputType
+  _sum?: DialogueEdgeSumAggregateInputType
   _min?: DialogueEdgeMinAggregateInputType
   _max?: DialogueEdgeMaxAggregateInputType
 }
@@ -164,10 +220,16 @@ export type DialogueEdgeGroupByOutputType = {
   scenarioId: string
   fromNodeId: string
   onResult: string
+  label: string
+  conditionJson: string
+  priority: number
+  isFallback: boolean
   toNodeId: string | null
   createdAt: Date
   updatedAt: Date
   _count: DialogueEdgeCountAggregateOutputType | null
+  _avg: DialogueEdgeAvgAggregateOutputType | null
+  _sum: DialogueEdgeSumAggregateOutputType | null
   _min: DialogueEdgeMinAggregateOutputType | null
   _max: DialogueEdgeMaxAggregateOutputType | null
 }
@@ -195,6 +257,10 @@ export type DialogueEdgeWhereInput = {
   scenarioId?: Prisma.StringFilter<"DialogueEdge"> | string
   fromNodeId?: Prisma.StringFilter<"DialogueEdge"> | string
   onResult?: Prisma.StringFilter<"DialogueEdge"> | string
+  label?: Prisma.StringFilter<"DialogueEdge"> | string
+  conditionJson?: Prisma.StringFilter<"DialogueEdge"> | string
+  priority?: Prisma.IntFilter<"DialogueEdge"> | number
+  isFallback?: Prisma.BoolFilter<"DialogueEdge"> | boolean
   toNodeId?: Prisma.StringNullableFilter<"DialogueEdge"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
@@ -208,6 +274,10 @@ export type DialogueEdgeOrderByWithRelationInput = {
   scenarioId?: Prisma.SortOrder
   fromNodeId?: Prisma.SortOrder
   onResult?: Prisma.SortOrder
+  label?: Prisma.SortOrder
+  conditionJson?: Prisma.SortOrder
+  priority?: Prisma.SortOrder
+  isFallback?: Prisma.SortOrder
   toNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -218,32 +288,41 @@ export type DialogueEdgeOrderByWithRelationInput = {
 
 export type DialogueEdgeWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  fromNodeId_onResult?: Prisma.DialogueEdgeFromNodeIdOnResultCompoundUniqueInput
   AND?: Prisma.DialogueEdgeWhereInput | Prisma.DialogueEdgeWhereInput[]
   OR?: Prisma.DialogueEdgeWhereInput[]
   NOT?: Prisma.DialogueEdgeWhereInput | Prisma.DialogueEdgeWhereInput[]
   scenarioId?: Prisma.StringFilter<"DialogueEdge"> | string
   fromNodeId?: Prisma.StringFilter<"DialogueEdge"> | string
   onResult?: Prisma.StringFilter<"DialogueEdge"> | string
+  label?: Prisma.StringFilter<"DialogueEdge"> | string
+  conditionJson?: Prisma.StringFilter<"DialogueEdge"> | string
+  priority?: Prisma.IntFilter<"DialogueEdge"> | number
+  isFallback?: Prisma.BoolFilter<"DialogueEdge"> | boolean
   toNodeId?: Prisma.StringNullableFilter<"DialogueEdge"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
   scenario?: Prisma.XOR<Prisma.DialogueScenarioScalarRelationFilter, Prisma.DialogueScenarioWhereInput>
   fromNode?: Prisma.XOR<Prisma.DialogueNodeScalarRelationFilter, Prisma.DialogueNodeWhereInput>
   toNode?: Prisma.XOR<Prisma.DialogueNodeNullableScalarRelationFilter, Prisma.DialogueNodeWhereInput> | null
-}, "id" | "fromNodeId_onResult">
+}, "id">
 
 export type DialogueEdgeOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrder
   fromNodeId?: Prisma.SortOrder
   onResult?: Prisma.SortOrder
+  label?: Prisma.SortOrder
+  conditionJson?: Prisma.SortOrder
+  priority?: Prisma.SortOrder
+  isFallback?: Prisma.SortOrder
   toNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DialogueEdgeCountOrderByAggregateInput
+  _avg?: Prisma.DialogueEdgeAvgOrderByAggregateInput
   _max?: Prisma.DialogueEdgeMaxOrderByAggregateInput
   _min?: Prisma.DialogueEdgeMinOrderByAggregateInput
+  _sum?: Prisma.DialogueEdgeSumOrderByAggregateInput
 }
 
 export type DialogueEdgeScalarWhereWithAggregatesInput = {
@@ -254,6 +333,10 @@ export type DialogueEdgeScalarWhereWithAggregatesInput = {
   scenarioId?: Prisma.StringWithAggregatesFilter<"DialogueEdge"> | string
   fromNodeId?: Prisma.StringWithAggregatesFilter<"DialogueEdge"> | string
   onResult?: Prisma.StringWithAggregatesFilter<"DialogueEdge"> | string
+  label?: Prisma.StringWithAggregatesFilter<"DialogueEdge"> | string
+  conditionJson?: Prisma.StringWithAggregatesFilter<"DialogueEdge"> | string
+  priority?: Prisma.IntWithAggregatesFilter<"DialogueEdge"> | number
+  isFallback?: Prisma.BoolWithAggregatesFilter<"DialogueEdge"> | boolean
   toNodeId?: Prisma.StringNullableWithAggregatesFilter<"DialogueEdge"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DialogueEdge"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DialogueEdge"> | Date | string
@@ -262,6 +345,10 @@ export type DialogueEdgeScalarWhereWithAggregatesInput = {
 export type DialogueEdgeCreateInput = {
   id?: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   scenario: Prisma.DialogueScenarioCreateNestedOneWithoutEdgesInput
@@ -274,6 +361,10 @@ export type DialogueEdgeUncheckedCreateInput = {
   scenarioId: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -282,6 +373,10 @@ export type DialogueEdgeUncheckedCreateInput = {
 export type DialogueEdgeUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scenario?: Prisma.DialogueScenarioUpdateOneRequiredWithoutEdgesNestedInput
@@ -294,6 +389,10 @@ export type DialogueEdgeUncheckedUpdateInput = {
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -304,6 +403,10 @@ export type DialogueEdgeCreateManyInput = {
   scenarioId: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -312,6 +415,10 @@ export type DialogueEdgeCreateManyInput = {
 export type DialogueEdgeUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -321,6 +428,10 @@ export type DialogueEdgeUncheckedUpdateManyInput = {
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -336,19 +447,22 @@ export type DialogueEdgeOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type DialogueEdgeFromNodeIdOnResultCompoundUniqueInput = {
-  fromNodeId: string
-  onResult: string
-}
-
 export type DialogueEdgeCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrder
   fromNodeId?: Prisma.SortOrder
   onResult?: Prisma.SortOrder
+  label?: Prisma.SortOrder
+  conditionJson?: Prisma.SortOrder
+  priority?: Prisma.SortOrder
+  isFallback?: Prisma.SortOrder
   toNodeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DialogueEdgeAvgOrderByAggregateInput = {
+  priority?: Prisma.SortOrder
 }
 
 export type DialogueEdgeMaxOrderByAggregateInput = {
@@ -356,6 +470,10 @@ export type DialogueEdgeMaxOrderByAggregateInput = {
   scenarioId?: Prisma.SortOrder
   fromNodeId?: Prisma.SortOrder
   onResult?: Prisma.SortOrder
+  label?: Prisma.SortOrder
+  conditionJson?: Prisma.SortOrder
+  priority?: Prisma.SortOrder
+  isFallback?: Prisma.SortOrder
   toNodeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -366,9 +484,17 @@ export type DialogueEdgeMinOrderByAggregateInput = {
   scenarioId?: Prisma.SortOrder
   fromNodeId?: Prisma.SortOrder
   onResult?: Prisma.SortOrder
+  label?: Prisma.SortOrder
+  conditionJson?: Prisma.SortOrder
+  priority?: Prisma.SortOrder
+  isFallback?: Prisma.SortOrder
   toNodeId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DialogueEdgeSumOrderByAggregateInput = {
+  priority?: Prisma.SortOrder
 }
 
 export type DialogueEdgeCreateNestedManyWithoutScenarioInput = {
@@ -500,6 +626,10 @@ export type DialogueEdgeUncheckedUpdateManyWithoutToNodeNestedInput = {
 export type DialogueEdgeCreateWithoutScenarioInput = {
   id?: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   fromNode: Prisma.DialogueNodeCreateNestedOneWithoutOutgoingEdgesInput
@@ -510,6 +640,10 @@ export type DialogueEdgeUncheckedCreateWithoutScenarioInput = {
   id?: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -548,6 +682,10 @@ export type DialogueEdgeScalarWhereInput = {
   scenarioId?: Prisma.StringFilter<"DialogueEdge"> | string
   fromNodeId?: Prisma.StringFilter<"DialogueEdge"> | string
   onResult?: Prisma.StringFilter<"DialogueEdge"> | string
+  label?: Prisma.StringFilter<"DialogueEdge"> | string
+  conditionJson?: Prisma.StringFilter<"DialogueEdge"> | string
+  priority?: Prisma.IntFilter<"DialogueEdge"> | number
+  isFallback?: Prisma.BoolFilter<"DialogueEdge"> | boolean
   toNodeId?: Prisma.StringNullableFilter<"DialogueEdge"> | string | null
   createdAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DialogueEdge"> | Date | string
@@ -556,6 +694,10 @@ export type DialogueEdgeScalarWhereInput = {
 export type DialogueEdgeCreateWithoutFromNodeInput = {
   id?: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   scenario: Prisma.DialogueScenarioCreateNestedOneWithoutEdgesInput
@@ -566,6 +708,10 @@ export type DialogueEdgeUncheckedCreateWithoutFromNodeInput = {
   id?: string
   scenarioId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -583,6 +729,10 @@ export type DialogueEdgeCreateManyFromNodeInputEnvelope = {
 export type DialogueEdgeCreateWithoutToNodeInput = {
   id?: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   scenario: Prisma.DialogueScenarioCreateNestedOneWithoutEdgesInput
@@ -594,6 +744,10 @@ export type DialogueEdgeUncheckedCreateWithoutToNodeInput = {
   scenarioId: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -643,6 +797,10 @@ export type DialogueEdgeCreateManyScenarioInput = {
   id?: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -651,6 +809,10 @@ export type DialogueEdgeCreateManyScenarioInput = {
 export type DialogueEdgeUpdateWithoutScenarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   fromNode?: Prisma.DialogueNodeUpdateOneRequiredWithoutOutgoingEdgesNestedInput
@@ -661,6 +823,10 @@ export type DialogueEdgeUncheckedUpdateWithoutScenarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -670,6 +836,10 @@ export type DialogueEdgeUncheckedUpdateManyWithoutScenarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -679,6 +849,10 @@ export type DialogueEdgeCreateManyFromNodeInput = {
   id?: string
   scenarioId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   toNodeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -689,6 +863,10 @@ export type DialogueEdgeCreateManyToNodeInput = {
   scenarioId: string
   fromNodeId: string
   onResult: string
+  label?: string
+  conditionJson?: string
+  priority?: number
+  isFallback?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -696,6 +874,10 @@ export type DialogueEdgeCreateManyToNodeInput = {
 export type DialogueEdgeUpdateWithoutFromNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scenario?: Prisma.DialogueScenarioUpdateOneRequiredWithoutEdgesNestedInput
@@ -706,6 +888,10 @@ export type DialogueEdgeUncheckedUpdateWithoutFromNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -715,6 +901,10 @@ export type DialogueEdgeUncheckedUpdateManyWithoutFromNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   toNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -723,6 +913,10 @@ export type DialogueEdgeUncheckedUpdateManyWithoutFromNodeInput = {
 export type DialogueEdgeUpdateWithoutToNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scenario?: Prisma.DialogueScenarioUpdateOneRequiredWithoutEdgesNestedInput
@@ -734,6 +928,10 @@ export type DialogueEdgeUncheckedUpdateWithoutToNodeInput = {
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -743,6 +941,10 @@ export type DialogueEdgeUncheckedUpdateManyWithoutToNodeInput = {
   scenarioId?: Prisma.StringFieldUpdateOperationsInput | string
   fromNodeId?: Prisma.StringFieldUpdateOperationsInput | string
   onResult?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  conditionJson?: Prisma.StringFieldUpdateOperationsInput | string
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  isFallback?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -754,6 +956,10 @@ export type DialogueEdgeSelect<ExtArgs extends runtime.Types.Extensions.Internal
   scenarioId?: boolean
   fromNodeId?: boolean
   onResult?: boolean
+  label?: boolean
+  conditionJson?: boolean
+  priority?: boolean
+  isFallback?: boolean
   toNodeId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -767,6 +973,10 @@ export type DialogueEdgeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   scenarioId?: boolean
   fromNodeId?: boolean
   onResult?: boolean
+  label?: boolean
+  conditionJson?: boolean
+  priority?: boolean
+  isFallback?: boolean
   toNodeId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -780,6 +990,10 @@ export type DialogueEdgeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   scenarioId?: boolean
   fromNodeId?: boolean
   onResult?: boolean
+  label?: boolean
+  conditionJson?: boolean
+  priority?: boolean
+  isFallback?: boolean
   toNodeId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -793,12 +1007,16 @@ export type DialogueEdgeSelectScalar = {
   scenarioId?: boolean
   fromNodeId?: boolean
   onResult?: boolean
+  label?: boolean
+  conditionJson?: boolean
+  priority?: boolean
+  isFallback?: boolean
   toNodeId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DialogueEdgeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scenarioId" | "fromNodeId" | "onResult" | "toNodeId" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueEdge"]>
+export type DialogueEdgeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scenarioId" | "fromNodeId" | "onResult" | "label" | "conditionJson" | "priority" | "isFallback" | "toNodeId" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueEdge"]>
 export type DialogueEdgeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scenario?: boolean | Prisma.DialogueScenarioDefaultArgs<ExtArgs>
   fromNode?: boolean | Prisma.DialogueNodeDefaultArgs<ExtArgs>
@@ -827,6 +1045,10 @@ export type $DialogueEdgePayload<ExtArgs extends runtime.Types.Extensions.Intern
     scenarioId: string
     fromNodeId: string
     onResult: string
+    label: string
+    conditionJson: string
+    priority: number
+    isFallback: boolean
     toNodeId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1260,6 +1482,10 @@ export interface DialogueEdgeFieldRefs {
   readonly scenarioId: Prisma.FieldRef<"DialogueEdge", 'String'>
   readonly fromNodeId: Prisma.FieldRef<"DialogueEdge", 'String'>
   readonly onResult: Prisma.FieldRef<"DialogueEdge", 'String'>
+  readonly label: Prisma.FieldRef<"DialogueEdge", 'String'>
+  readonly conditionJson: Prisma.FieldRef<"DialogueEdge", 'String'>
+  readonly priority: Prisma.FieldRef<"DialogueEdge", 'Int'>
+  readonly isFallback: Prisma.FieldRef<"DialogueEdge", 'Boolean'>
   readonly toNodeId: Prisma.FieldRef<"DialogueEdge", 'String'>
   readonly createdAt: Prisma.FieldRef<"DialogueEdge", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"DialogueEdge", 'DateTime'>

@@ -50,10 +50,25 @@ type Detail = {
   roleVoice: string
   coachVoice: string
   nodes: DNode[]
-  edges: Array<{ id: string; fromNodeId: string; onResult: DialogueEdgeResult; toNodeId: string | null }>
+  edges: Array<{
+    id: string
+    fromNodeId: string
+    onResult: DialogueEdgeResult
+    label: string
+    conditionJson: string
+    priority: number
+    isFallback: boolean
+    toNodeId: string | null
+  }>
 }
 type NodeData = Record<string, unknown> & { label: string; dialogue: DNode }
-type EdgeData = Record<string, unknown> & { onResult: DialogueEdgeResult }
+type EdgeData = Record<string, unknown> & {
+  onResult: DialogueEdgeResult
+  label: string
+  conditionJson: string
+  priority: number
+  isFallback: boolean
+}
 type FlowNode = Node<NodeData>
 type FlowEdge = Edge<EdgeData>
 
@@ -85,9 +100,15 @@ function toFlowEdge(edge: Detail['edges'][number]): FlowEdge {
     id: edge.id,
     source: edge.fromNodeId,
     target: edge.toNodeId || '',
-    label: edge.onResult,
+    label: edge.label || edge.onResult,
     animated: edge.onResult === 'pass',
-    data: { onResult: edge.onResult },
+    data: {
+      onResult: edge.onResult,
+      label: edge.label || edge.onResult,
+      conditionJson: edge.conditionJson || '{}',
+      priority: edge.priority || 0,
+      isFallback: Boolean(edge.isFallback),
+    },
   }
 }
 
@@ -111,6 +132,47 @@ function emptyNode(order: number): DNode {
 
 function edgeResult(value: unknown): DialogueEdgeResult {
   return DIALOGUE_EDGE_RESULTS.includes(value as DialogueEdgeResult) ? value as DialogueEdgeResult : 'pass'
+}
+
+function edgeLabel(edge: FlowEdge) {
+  return typeof edge.label === 'string' && edge.label.trim()
+    ? edge.label.trim()
+    : edgeResult(edge.data?.onResult)
+}
+
+function edgePriority(value: unknown) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? Math.round(numericValue) : 0
+}
+
+function edgeConditionJson(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value : '{}'
+}
+
+function normalizeEdgeData(edge: FlowEdge): EdgeData {
+  return {
+    onResult: edgeResult(edge.data?.onResult),
+    label: typeof edge.data?.label === 'string' && edge.data.label.trim()
+      ? edge.data.label
+      : edgeLabel(edge),
+    conditionJson: edgeConditionJson(edge.data?.conditionJson),
+    priority: edgePriority(edge.data?.priority),
+    isFallback: Boolean(edge.data?.isFallback),
+  }
+}
+
+function updateFlowEdgeData(edge: FlowEdge, patch: Partial<EdgeData>): FlowEdge {
+  const data = {
+    ...normalizeEdgeData(edge),
+    ...patch,
+  }
+
+  return {
+    ...edge,
+    label: data.label || data.onResult,
+    animated: data.onResult === 'pass',
+    data,
+  }
 }
 
 export default function DialogueScenarioEditor() {
@@ -181,15 +243,21 @@ export default function DialogueScenarioEditor() {
 
   const onConnect = useCallback((connection: Connection) => {
     if (!connection.source || !connection.target) return
-    const used = new Set(edges.filter((edge) => edge.source === connection.source).map((edge) => edge.data?.onResult))
-    const result = DIALOGUE_EDGE_RESULTS.find((item) => !used.has(item)) || 'pass'
+    const result: DialogueEdgeResult = 'pass'
+    const sourceEdgeCount = edges.filter((edge) => edge.source === connection.source).length
     setEdges((items) => addEdge({
       id: localEdgeId(),
       source: connection.source || '',
       target: connection.target || '',
-      label: result,
+      label: 'New branch',
       animated: result === 'pass',
-      data: { onResult: result },
+      data: {
+        onResult: result,
+        label: 'New branch',
+        conditionJson: '{\n  "intent": "",\n  "examples": [],\n  "keywords": []\n}',
+        priority: sourceEdgeCount,
+        isFallback: false,
+      },
     }, items))
   }, [edges, setEdges])
 
@@ -216,6 +284,12 @@ export default function DialogueScenarioEditor() {
 
   const addNode = () => {
     const node = emptyNode(nodes.length)
+    const parentNode = selectedNodeId ? nodes.find((item) => item.id === selectedNodeId) : null
+    if (parentNode) {
+      const siblingCount = edges.filter((edge) => edge.source === parentNode.id).length
+      node.positionX = parentNode.position.x + siblingCount * 220
+      node.positionY = parentNode.position.y + 220
+    }
     setNodes((items) => [...items, toFlowNode(node)])
     setSelectedNodeId(node.id)
     if (!scenario?.startNodeId) updateScenario('startNodeId', node.id)
@@ -247,6 +321,10 @@ export default function DialogueScenarioEditor() {
           fromNodeId: edge.source,
           toNodeId: edge.target,
           onResult: edgeResult(edge.data?.onResult),
+          label: edgeLabel(edge),
+          conditionJson: edgeConditionJson(edge.data?.conditionJson),
+          priority: edgePriority(edge.data?.priority),
+          isFallback: Boolean(edge.data?.isFallback),
         })),
       }
       const response = await fetch(withBasePath(`/api/dialogue/admin/scenarios/${scenario.id}`), {
@@ -425,7 +503,18 @@ export default function DialogueScenarioEditor() {
                   {edges.map((edge) => (
                     <div key={edge.id} className="rounded-md border border-cyan-500/18 bg-black/28 p-3">
                       <div className="mb-2 truncate text-xs text-cyan-100/58">{edge.source} -&gt; {edge.target}</div>
-                      <div className="flex gap-2"><select value={edgeResult(edge.data?.onResult)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? { ...item, label: e.target.value, animated: e.target.value === 'pass', data: { onResult: e.target.value as DialogueEdgeResult } } : item))} className={fieldClass}>{DIALOGUE_EDGE_RESULTS.map((result) => <option key={result} value={result}>{result}</option>)}</select><button type="button" onClick={() => setEdges((items) => items.filter((item) => item.id !== edge.id))} className={buttonClass}>DEL</button></div>
+                      <div className="grid gap-2">
+                        <div className="flex gap-2">
+                          <select value={edgeResult(edge.data?.onResult)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? updateFlowEdgeData(item, { onResult: e.target.value as DialogueEdgeResult }) : item))} className={fieldClass}>{DIALOGUE_EDGE_RESULTS.map((result) => <option key={result} value={result}>{result}</option>)}</select>
+                          <button type="button" onClick={() => setEdges((items) => items.filter((item) => item.id !== edge.id))} className={buttonClass}>DEL</button>
+                        </div>
+                        <input value={edgeLabel(edge)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? updateFlowEdgeData(item, { label: e.target.value }) : item))} className={fieldClass} placeholder="Branch label, e.g. eat out" />
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                          <input type="number" value={edgePriority(edge.data?.priority)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? updateFlowEdgeData(item, { priority: edgePriority(e.target.value) }) : item))} className={fieldClass} placeholder="Priority" />
+                          <label className="flex items-center gap-2 rounded-md border border-cyan-500/18 bg-black/24 px-3 py-2 text-xs text-cyan-100/70"><input type="checkbox" checked={Boolean(edge.data?.isFallback)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? updateFlowEdgeData(item, { isFallback: e.target.checked }) : item))} /> Fallback</label>
+                        </div>
+                        <textarea value={edgeConditionJson(edge.data?.conditionJson)} onChange={(e) => setEdges((items) => items.map((item) => item.id === edge.id ? updateFlowEdgeData(item, { conditionJson: e.target.value }) : item))} rows={4} className={`${fieldClass} font-mono text-xs`} placeholder="Condition JSON" />
+                      </div>
                     </div>
                   ))}
                   {edges.length === 0 ? <div className="rounded-md border border-cyan-500/16 bg-black/28 px-3 py-3 text-sm text-cyan-100/58">Drag from one node handle to another.</div> : null}

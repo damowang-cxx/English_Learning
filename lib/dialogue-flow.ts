@@ -3,12 +3,14 @@ import {
   parseJsonString,
   safeJsonStringify,
   normalizeDialogueTags,
+  type DialogueEdgeResult,
   type DialogueInputMode,
 } from '@/lib/dialogue'
 import {
   coachDialogueLearner,
   evaluateDialogueAnswer,
   generateDialogueRoleFollowup,
+  matchDialogueEdge,
   routeDialogueInput,
   type DialogueCoachOutput,
   type DialogueEvaluatorOutput,
@@ -28,6 +30,9 @@ type DialogueSessionWithContext = Awaited<ReturnType<typeof getSessionWithContex
 type LoadedDialogueSession = NonNullable<DialogueSessionWithContext>
 type LoadedDialogueScenario = NonNullable<LoadedDialogueSession['scenario']>
 type LoadedDialogueNode = LoadedDialogueScenario['nodes'][number]
+type LoadedDialogueEdge = LoadedDialogueScenario['edges'][number]
+
+const BRANCH_MATCH_CONFIDENCE_THRESHOLD = 0.62
 
 async function getScenarioWithGraph(scenarioId: string) {
   return prisma.dialogueScenario.findUnique({
@@ -196,12 +201,149 @@ function getStartNode(scenario: NonNullable<DialogueScenarioWithGraph>) {
   )
 }
 
-function getEdge(
+function getEdgesForResult(
   scenario: LoadedDialogueScenario,
   fromNodeId: string,
-  result: string
+  result: DialogueEdgeResult
 ) {
-  return scenario.edges.find((edge) => edge.fromNodeId === fromNodeId && edge.onResult === result) || null
+  return scenario.edges
+    .filter((edge) => edge.fromNodeId === fromNodeId && edge.onResult === result)
+    .sort((left, right) => left.priority - right.priority || left.createdAt.getTime() - right.createdAt.getTime())
+}
+
+function getFallbackEdge(edges: LoadedDialogueEdge[]) {
+  return edges.find((edge) => edge.isFallback) || null
+}
+
+function serializeMatchedEdge(edge: LoadedDialogueEdge | null, confidence: number | null, reason?: string | null) {
+  if (!edge) {
+    return null
+  }
+
+  return {
+    id: edge.id,
+    fromNodeId: edge.fromNodeId,
+    toNodeId: edge.toNodeId,
+    onResult: edge.onResult,
+    label: edge.label,
+    condition: parseJsonString<Record<string, unknown>>(edge.conditionJson, {}),
+    priority: edge.priority,
+    isFallback: edge.isFallback,
+    confidence,
+    reason: reason || null,
+  }
+}
+
+async function matchEdgeForResult({
+  scenario,
+  node,
+  result,
+  answerText,
+}: {
+  scenario: LoadedDialogueScenario
+  node: LoadedDialogueNode
+  result: DialogueEdgeResult
+  answerText: string
+}) {
+  const candidateEdges = getEdgesForResult(scenario, node.id, result)
+  const fallbackEdge = getFallbackEdge(candidateEdges)
+  const nonFallbackEdges = candidateEdges.filter((edge) => !edge.isFallback)
+
+  if (candidateEdges.length === 0) {
+    return {
+      edge: null,
+      confidence: null,
+      reason: 'No edge for result.',
+      needsClarification: false,
+    }
+  }
+
+  if (result !== 'pass') {
+    return {
+      edge: nonFallbackEdges[0] || fallbackEdge || candidateEdges[0],
+      confidence: 1,
+      reason: 'Matched by result.',
+      needsClarification: false,
+    }
+  }
+
+  if (candidateEdges.length === 1) {
+    return {
+      edge: candidateEdges[0],
+      confidence: 1,
+      reason: 'Single pass edge.',
+      needsClarification: false,
+    }
+  }
+
+  if (nonFallbackEdges.length > 0) {
+    try {
+      const matcher = await matchDialogueEdge({
+        scenario: scenarioToContext(scenario),
+        node: nodeToContext(node),
+        answerText,
+        edges: nonFallbackEdges.map((edge) => ({
+          edgeId: edge.id,
+          label: edge.label || edge.onResult,
+          conditionJson: edge.conditionJson,
+          priority: edge.priority,
+          isFallback: edge.isFallback,
+        })),
+      })
+      const matchedEdge = matcher.edgeId
+        ? nonFallbackEdges.find((edge) => edge.id === matcher.edgeId) || null
+        : null
+
+      if (matchedEdge && matcher.confidence >= BRANCH_MATCH_CONFIDENCE_THRESHOLD) {
+        return {
+          edge: matchedEdge,
+          confidence: matcher.confidence,
+          reason: matcher.reason,
+          needsClarification: false,
+        }
+      }
+
+      if (fallbackEdge) {
+        return {
+          edge: fallbackEdge,
+          confidence: matcher.confidence,
+          reason: matcher.reason || 'Used fallback edge.',
+          needsClarification: false,
+        }
+      }
+
+      return {
+        edge: null,
+        confidence: matcher.confidence,
+        reason: matcher.reason || 'No confident branch match.',
+        needsClarification: true,
+      }
+    } catch (error) {
+      console.error('Dialogue edge matcher failed:', error)
+      if (fallbackEdge) {
+        return {
+          edge: fallbackEdge,
+          confidence: null,
+          reason: 'Edge matcher failed; used fallback edge.',
+          needsClarification: false,
+        }
+      }
+
+      return {
+        edge: null,
+        confidence: null,
+        reason: 'Edge matcher failed and no fallback edge exists.',
+        needsClarification: true,
+      }
+    }
+  }
+
+  return {
+    edge: fallbackEdge,
+    confidence: fallbackEdge ? 1 : null,
+    reason: fallbackEdge ? 'Used fallback edge.' : 'No pass branch condition exists.',
+    needsClarification: !fallbackEdge,
+  }
 }
 
 async function buildNextRoleReply({
@@ -240,13 +382,34 @@ async function advanceFromNode({
   node,
   result,
   scoreToAdd,
+  answerText,
 }: {
   scenario: LoadedDialogueScenario
   node: LoadedDialogueNode
-  result: 'pass' | 'fail' | 'max_retry'
+  result: DialogueEdgeResult
   scoreToAdd: number
+  answerText: string
 }) {
-  const edge = getEdge(scenario, node.id, result)
+  const matched = await matchEdgeForResult({
+    scenario,
+    node,
+    result,
+    answerText,
+  })
+  const edge = matched.edge
+
+  if (matched.needsClarification) {
+    return {
+      currentNodeId: node.id,
+      status: 'active',
+      completedAt: null,
+      completedDelta: 0,
+      matchedEdge: null,
+      branchConfidence: matched.confidence,
+      branchReason: matched.reason,
+      needsClarification: true,
+    } as const
+  }
 
   if (!edge) {
     if (result === 'pass') {
@@ -255,6 +418,10 @@ async function advanceFromNode({
         status: 'completed',
         completedAt: new Date(),
         completedDelta: 1,
+        matchedEdge: null,
+        branchConfidence: matched.confidence,
+        branchReason: matched.reason,
+        needsClarification: false,
       } as const
     }
 
@@ -263,6 +430,10 @@ async function advanceFromNode({
       status: 'active',
       completedAt: null,
       completedDelta: 0,
+      matchedEdge: null,
+      branchConfidence: matched.confidence,
+      branchReason: matched.reason,
+      needsClarification: false,
     } as const
   }
 
@@ -271,7 +442,11 @@ async function advanceFromNode({
       currentNodeId: null,
       status: 'completed',
       completedAt: new Date(),
-      completedDelta: 1,
+      completedDelta: result === 'fail' || result === 'skip' ? 0 : 1,
+      matchedEdge: serializeMatchedEdge(edge, matched.confidence, matched.reason),
+      branchConfidence: matched.confidence,
+      branchReason: matched.reason,
+      needsClarification: false,
     } as const
   }
 
@@ -279,8 +454,12 @@ async function advanceFromNode({
     currentNodeId: edge.toNodeId,
     status: 'active',
     completedAt: null,
-    completedDelta: result === 'fail' ? 0 : 1,
+    completedDelta: result === 'fail' || result === 'skip' ? 0 : 1,
     scoreToAdd,
+    matchedEdge: serializeMatchedEdge(edge, matched.confidence, matched.reason),
+    branchConfidence: matched.confidence,
+    branchReason: matched.reason,
+    needsClarification: false,
   } as const
 }
 
@@ -445,6 +624,9 @@ async function recordScenarioTurn({
   passed,
   score,
   nextAction,
+  matchedEdge,
+  branchConfidence,
+  branchReason,
 }: {
   session: LoadedDialogueSession
   scenario: LoadedDialogueScenario
@@ -462,7 +644,18 @@ async function recordScenarioTurn({
   passed?: boolean | null
   score?: number | null
   nextAction: string
+  matchedEdge?: ReturnType<typeof serializeMatchedEdge>
+  branchConfidence?: number | null
+  branchReason?: string | null
 }) {
+  const routerSnapshot = router && typeof router === 'object'
+    ? {
+        ...(router as Record<string, unknown>),
+        ...(matchedEdge ? { matchedEdge } : {}),
+        ...(branchConfidence !== undefined ? { branchConfidence } : {}),
+        ...(branchReason !== undefined ? { branchReason } : {}),
+      }
+    : router
   const assessment = evaluator ? buildAssessmentFromEvaluator(evaluator) : null
   const profileEvents = buildProfileEventsFromAssessment({
     assessment,
@@ -478,6 +671,9 @@ async function recordScenarioTurn({
       scenarioId: scenario.id,
       nodeId: node.id,
       nextAction,
+      matchedEdge: matchedEdge || null,
+      branchConfidence: branchConfidence ?? null,
+      branchReason: branchReason ?? null,
     },
   })
   const result = await recordCompletedConversationTurn({
@@ -494,7 +690,7 @@ async function recordScenarioTurn({
       language: 'en',
     },
     routerIntent,
-    router,
+    router: routerSnapshot,
     evaluator,
     coach,
     aiReply,
@@ -652,50 +848,16 @@ export async function respondToDialogueSession({
     (attempt) => attempt.nodeId === node.id && attempt.passed === false
   ).length
 
-  if (routerIntent === 'control') {
-    let nextAction: string = router.controlAction || 'repeat'
+  if (routerIntent === 'exit') {
+    await prisma.dialogueSession.update({
+      where: { id: session.id },
+      data: {
+        status: 'abandoned',
+        lastActivityAt: new Date(),
+      },
+    })
 
-    if (router.controlAction === 'exit') {
-      await prisma.dialogueSession.update({
-        where: { id: session.id },
-        data: {
-          status: 'abandoned',
-          lastActivityAt: new Date(),
-        },
-      })
-      nextAction = 'exit'
-    } else if (router.controlAction === 'continue') {
-      const lastPassedAttempt = [...session.attempts]
-        .reverse()
-        .find((attempt) => attempt.nodeId === node.id && attempt.passed === true)
-
-      if (lastPassedAttempt) {
-        const advanced = await advanceFromNode({
-          scenario,
-          node,
-          result: 'pass',
-          scoreToAdd: lastPassedAttempt.score || 0,
-        })
-        await prisma.dialogueSession.update({
-          where: { id: session.id },
-          data: {
-            currentNodeId: advanced.currentNodeId,
-            status: advanced.status,
-            completedAt: advanced.completedAt,
-            completedNodeCount: {
-              increment: advanced.completedDelta,
-            },
-            totalScore: {
-              increment: advanced.completedDelta ? (lastPassedAttempt.score || 0) : 0,
-            },
-            lastActivityAt: new Date(),
-          },
-        })
-        nextAction = 'advance'
-      }
-    }
-
-    await recordScenarioTurn({
+    const attempt = await recordScenarioTurn({
       session,
       scenario,
       node,
@@ -704,9 +866,8 @@ export async function respondToDialogueSession({
       transcriptText,
       routerIntent,
       router,
-      nextAction,
+      nextAction: 'exit',
     })
-
     const reloaded = await getSessionWithContext(session.id, userId)
     if (!reloaded) {
       throw new Error('Dialogue session could not be loaded.')
@@ -717,30 +878,62 @@ export async function respondToDialogueSession({
       router,
       evaluator: null,
       coach: null,
-      attempt: null,
-      roleReplyEn: reloaded.currentNode?.roleLineEn || null,
+      attempt: serializeAttempt(attempt),
+      roleReplyEn: null,
       coachReplyZh: null,
       transcriptText: transcriptText || null,
-      nextAction,
+      nextAction: 'exit',
+      matchedEdge: null,
+      branchConfidence: null,
+      branchReason: null,
     }
   }
 
-  const needsCoachOnly =
-    routerIntent === 'ask_explanation'
-    || routerIntent === 'ask_translation'
-    || routerIntent === 'ask_hint'
+  if (routerIntent === 'repeat_role_line') {
+    const attempt = await recordScenarioTurn({
+      session,
+      scenario,
+      node,
+      inputMode,
+      userText,
+      transcriptText,
+      routerIntent,
+      router,
+      roleReplyEn: node.roleLineEn,
+      nextAction: 'repeat_role_line',
+    })
+    await prisma.dialogueSession.update({
+      where: { id: session.id },
+      data: { lastActivityAt: new Date() },
+    })
+    const reloaded = await getSessionWithContext(session.id, userId)
+    if (!reloaded) {
+      throw new Error('Dialogue session could not be loaded.')
+    }
 
-  if (needsCoachOnly) {
+    return {
+      ...buildSessionPayload(reloaded),
+      router,
+      evaluator: null,
+      coach: null,
+      attempt: serializeAttempt(attempt),
+      roleReplyEn: node.roleLineEn,
+      coachReplyZh: null,
+      transcriptText: transcriptText || null,
+      nextAction: 'repeat_role_line',
+      matchedEdge: null,
+      branchConfidence: null,
+      branchReason: null,
+    }
+  }
+
+  if (routerIntent === 'ask_coach' || routerIntent === 'request_hint' || routerIntent === 'mixed') {
     const coach = await coachDialogueLearner({
       scenario: scenarioContext,
       node: nodeContext,
       userQuestion: questionText,
-      mode:
-        routerIntent === 'ask_translation'
-          ? 'translation'
-          : routerIntent === 'ask_hint'
-            ? 'hint'
-            : 'explanation',
+      mode: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed' : 'explanation',
+      betterAnswerEn: routerIntent === 'mixed' ? answerText || node.sampleAnswer : node.sampleAnswer,
     })
 
     const attempt = await recordScenarioTurn({
@@ -755,7 +948,7 @@ export async function respondToDialogueSession({
       coach,
       coachReplyZh: coach.coach_reply_zh,
       betterAnswerEn: coach.better_answer_en,
-      nextAction: 'coach',
+      nextAction: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed_coach' : 'coach',
     })
 
     await prisma.dialogueSession.update({
@@ -779,26 +972,30 @@ export async function respondToDialogueSession({
       roleReplyEn: null,
       coachReplyZh: coach.coach_reply_zh,
       transcriptText: transcriptText || null,
-      nextAction: 'coach',
+      nextAction: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed_coach' : 'coach',
+      matchedEdge: null,
+      branchConfidence: null,
+      branchReason: null,
     }
   }
 
-  const evaluator = await evaluateDialogueAnswer({
-    scenario: scenarioContext,
-    node: nodeContext,
-    answerText,
-    previousFailures,
-  })
-
-  if (routerIntent === 'mixed') {
-    const coach = await coachDialogueLearner({
-      scenario: scenarioContext,
-      node: nodeContext,
-      userQuestion: questionText,
-      mode: 'mixed',
-      lastEvaluator: evaluator,
-      betterAnswerEn: evaluator.better_answer_en,
+  if (routerIntent === 'skip') {
+    const advanced = await advanceFromNode({
+      scenario,
+      node,
+      result: 'skip',
+      scoreToAdd: 0,
+      answerText: userText,
     })
+    const hasSkipEdge = Boolean(advanced.matchedEdge)
+    const nextNode =
+      advanced.currentNodeId
+        ? scenario.nodes.find((entry) => entry.id === advanced.currentNodeId) || null
+        : null
+    const roleReplyEn = hasSkipEdge && nextNode ? nextNode.roleLineEn : null
+    const coachReplyZh = hasSkipEdge
+      ? '好的，我们跳过这个节点，继续下一个场景。'
+      : '已收到跳过请求，但当前节点没有配置跳过分支。你可以请求提示，或再试一次。'
 
     const attempt = await recordScenarioTurn({
       session,
@@ -809,21 +1006,35 @@ export async function respondToDialogueSession({
       transcriptText,
       routerIntent,
       router,
-      evaluator,
-      coach,
-      coachReplyZh: coach.coach_reply_zh,
-      betterAnswerEn: evaluator.better_answer_en || coach.better_answer_en,
-      passed: evaluator.passed,
-      score: evaluator.score,
-      nextAction: 'mixed_review',
+      roleReplyEn,
+      coachReplyZh,
+      passed: null,
+      score: null,
+      nextAction: hasSkipEdge ? 'skip' : 'skip_unavailable',
+      matchedEdge: advanced.matchedEdge,
+      branchConfidence: advanced.branchConfidence,
+      branchReason: advanced.branchReason,
     })
 
-    await prisma.dialogueSession.update({
-      where: { id: session.id },
-      data: {
-        lastActivityAt: new Date(),
-      },
-    })
+    if (hasSkipEdge) {
+      await prisma.dialogueSession.update({
+        where: { id: session.id },
+        data: {
+          currentNodeId: advanced.currentNodeId || null,
+          status: advanced.status,
+          completedAt: advanced.completedAt,
+          completedNodeCount: {
+            increment: advanced.completedDelta,
+          },
+          lastActivityAt: new Date(),
+        },
+      })
+    } else {
+      await prisma.dialogueSession.update({
+        where: { id: session.id },
+        data: { lastActivityAt: new Date() },
+      })
+    }
 
     const reloaded = await getSessionWithContext(session.id, userId)
     if (!reloaded) {
@@ -833,24 +1044,37 @@ export async function respondToDialogueSession({
     return {
       ...buildSessionPayload(reloaded),
       router,
-      evaluator,
-      coach,
+      evaluator: null,
+      coach: null,
       attempt: serializeAttempt(attempt),
-      roleReplyEn: null,
-      coachReplyZh: coach.coach_reply_zh,
+      roleReplyEn,
+      coachReplyZh,
       transcriptText: transcriptText || null,
-      nextAction: 'mixed_review',
+      nextAction: hasSkipEdge ? 'skip' : 'skip_unavailable',
+      matchedEdge: advanced.matchedEdge,
+      branchConfidence: advanced.branchConfidence,
+      branchReason: advanced.branchReason,
     }
   }
 
+  const evaluator = await evaluateDialogueAnswer({
+    scenario: scenarioContext,
+    node: nodeContext,
+    answerText,
+    previousFailures,
+  })
+
   const currentFailureCount = evaluator.passed ? previousFailures : previousFailures + 1
   const reachedRetryLimit = !evaluator.passed && currentFailureCount >= node.retryLimit
-  const advanceResult = evaluator.passed ? 'pass' : reachedRetryLimit ? 'max_retry' : null
-  const nextAction = evaluator.passed ? 'advance' : reachedRetryLimit ? 'max_retry' : 'retry'
+  const advanceResult: DialogueEdgeResult | null = evaluator.passed ? 'pass' : reachedRetryLimit ? 'max_retry' : null
+  let nextAction = evaluator.passed ? 'advance' : reachedRetryLimit ? 'max_retry' : 'retry'
   let nextNodeId = node.id
   let nextStatus = 'active'
   let completedAt: Date | null = null
   let completedDelta = 0
+  let matchedEdge: ReturnType<typeof serializeMatchedEdge> = null
+  let branchConfidence: number | null = null
+  let branchReason: string | null = null
 
   if (advanceResult) {
     const advanced = await advanceFromNode({
@@ -858,11 +1082,20 @@ export async function respondToDialogueSession({
       node,
       result: advanceResult,
       scoreToAdd: evaluator.score,
+      answerText,
     })
+
+    if (advanced.needsClarification) {
+      nextAction = 'clarify_branch'
+    }
+
     nextNodeId = advanced.currentNodeId || ''
     nextStatus = advanced.status
     completedAt = advanced.completedAt
     completedDelta = advanced.completedDelta
+    matchedEdge = advanced.matchedEdge
+    branchConfidence = advanced.branchConfidence
+    branchReason = advanced.branchReason
   }
 
   const nextNode =
@@ -870,12 +1103,16 @@ export async function respondToDialogueSession({
       ? scenario.nodes.find((entry) => entry.id === nextNodeId) || null
       : null
   const roleReplyEn = advanceResult && nextNode
+    && nextAction !== 'clarify_branch'
     ? await buildNextRoleReply({
         scenario,
         nextNode,
         learnerAnswer: answerText,
       })
     : null
+  const coachReplyZh = nextAction === 'clarify_branch'
+    ? '你的回答已经基本达成当前目标，但我还不能确定你想进入哪个分支。请再说清楚你的选择，比如你想“去餐厅”“点外卖”还是“在家做饭”。'
+    : evaluator.coach_feedback_zh
 
   const attempt = await recordScenarioTurn({
     session,
@@ -888,32 +1125,42 @@ export async function respondToDialogueSession({
     router,
     evaluator,
     coach: {
-      coach_reply_zh: evaluator.coach_feedback_zh,
+      coach_reply_zh: coachReplyZh,
       better_answer_en: evaluator.better_answer_en,
     },
     roleReplyEn,
-    coachReplyZh: evaluator.coach_feedback_zh,
+    coachReplyZh,
     betterAnswerEn: evaluator.better_answer_en,
     passed: evaluator.passed,
     score: evaluator.score,
     nextAction,
+    matchedEdge,
+    branchConfidence,
+    branchReason,
   })
 
-  await prisma.dialogueSession.update({
-    where: { id: session.id },
-    data: {
-      currentNodeId: nextNodeId || null,
-      status: nextStatus,
-      completedAt,
-      completedNodeCount: {
-        increment: completedDelta,
+  if (nextAction === 'clarify_branch') {
+    await prisma.dialogueSession.update({
+      where: { id: session.id },
+      data: { lastActivityAt: new Date() },
+    })
+  } else {
+    await prisma.dialogueSession.update({
+      where: { id: session.id },
+      data: {
+        currentNodeId: nextNodeId || null,
+        status: nextStatus,
+        completedAt,
+        completedNodeCount: {
+          increment: completedDelta,
+        },
+        totalScore: {
+          increment: completedDelta ? evaluator.score : 0,
+        },
+        lastActivityAt: new Date(),
       },
-      totalScore: {
-        increment: completedDelta ? evaluator.score : 0,
-      },
-      lastActivityAt: new Date(),
-    },
-  })
+    })
+  }
 
   const reloaded = await getSessionWithContext(session.id, userId)
   if (!reloaded) {
@@ -927,9 +1174,12 @@ export async function respondToDialogueSession({
     coach: null as DialogueCoachOutput | null,
     attempt: serializeAttempt(attempt),
     roleReplyEn,
-    coachReplyZh: evaluator.coach_feedback_zh,
+    coachReplyZh,
     transcriptText: transcriptText || null,
     nextAction,
+    matchedEdge,
+    branchConfidence,
+    branchReason,
   }
 }
 
@@ -977,7 +1227,8 @@ export async function askDialogueCoach({
     betterAnswerEn: lastAttempt?.betterAnswerEn || node.sampleAnswer,
   })
 
-  const routerIntent = mode === 'hint' ? 'ask_hint' : mode === 'translation' ? 'ask_translation' : 'ask_explanation'
+  const routerIntent = mode === 'hint' ? 'request_hint' : 'ask_coach'
+  const nextAction = mode === 'hint' ? 'hint' : 'coach'
   const attempt = await recordScenarioTurn({
     session,
     scenario,
@@ -985,11 +1236,11 @@ export async function askDialogueCoach({
     inputMode: 'text',
     userText: question,
     routerIntent,
-    router: { intent: mode, confidence: 1 },
+    router: { intent: routerIntent, mode, confidence: 1 },
     coach,
     coachReplyZh: coach.coach_reply_zh,
     betterAnswerEn: coach.better_answer_en,
-    nextAction: 'coach',
+    nextAction,
   })
 
   await prisma.dialogueSession.update({
@@ -1009,7 +1260,10 @@ export async function askDialogueCoach({
     coach,
     attempt: serializeAttempt(attempt),
     coachReplyZh: coach.coach_reply_zh,
-    nextAction: 'coach',
+    nextAction,
+    matchedEdge: null,
+    branchConfidence: null,
+    branchReason: null,
   }
 }
 
@@ -1049,12 +1303,12 @@ export async function revealDialogueAnswer(sessionId: string, userId: string) {
     node,
     inputMode: 'text',
     userText: '[reveal_answer]',
-    routerIntent: 'ask_hint',
-    router: { intent: 'reveal_answer', confidence: 1 },
+    routerIntent: 'request_hint',
+    router: { intent: 'request_hint', action: 'reveal_answer', confidence: 1 },
     coach,
     coachReplyZh: coach.coach_reply_zh,
     betterAnswerEn: node.sampleAnswer || null,
-    nextAction: 'coach',
+    nextAction: 'hint',
   })
 
   await prisma.dialogueSession.update({
@@ -1074,6 +1328,9 @@ export async function revealDialogueAnswer(sessionId: string, userId: string) {
     coach,
     attempt: serializeAttempt(attempt),
     coachReplyZh: coach.coach_reply_zh,
-    nextAction: 'coach',
+    nextAction: 'hint',
+    matchedEdge: null,
+    branchConfidence: null,
+    branchReason: null,
   }
 }
