@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:deploy": "prisma migrate deploy && prisma generate",
     "postinstall": "node scripts/fix-prisma-path.js",
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:dialogue-demo": "node scripts/seed-dialogue-demo.mjs",
