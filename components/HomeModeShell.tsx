@@ -21,8 +21,8 @@ const MODE_LINKS = [
 ]
 
 export default function HomeModeShell({ mode, isAdmin = false, children }: HomeModeShellProps) {
-  const uploadHref = mode === 'video' ? '/video/upload' : mode === 'dialogue' ? '/dialogue/upload' : '/upload'
-  const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : mode === 'dialogue' ? 'UPLOAD DIALOGUE' : 'UPLOAD LISTENING'
+  const uploadHref = mode === 'video' ? '/video/upload' : mode === 'dialogue' ? '/dialogue/builder' : '/upload'
+  const uploadLabel = mode === 'video' ? 'UPLOAD VIDEO' : mode === 'dialogue' ? 'SCENARIO BUILDER' : 'UPLOAD LISTENING'
   const viewportStyle = mode === 'video' || mode === 'dialogue'
     ? {
         position: 'relative' as const,

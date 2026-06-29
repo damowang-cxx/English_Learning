@@ -1,5 +1,5 @@
-import DialogueScenarioEditor from '@/components/dialogue/DialogueScenarioEditor'
+import { redirect } from 'next/navigation'
 
 export default function DialogueUploadPage() {
-  return <DialogueScenarioEditor />
+  redirect('/dialogue/builder')
 }
