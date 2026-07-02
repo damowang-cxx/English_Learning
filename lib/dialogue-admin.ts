@@ -1,41 +1,38 @@
 import {
   DEFAULT_DIALOGUE_COACH_VOICE,
   DEFAULT_DIALOGUE_ROLE_VOICE,
-  clampDialogueRetryLimit,
-  isDialogueEdgeResult,
   normalizeDialoguePosition,
   normalizeDialogueTags,
   normalizeDialogueVoice,
   parseJsonString,
   safeJsonStringify,
-  type DialogueEdgeResult,
 } from '@/lib/dialogue'
 
-export interface DialogueAdminNodePayload {
+export interface DialogueAdminStagePayload {
   id: string
   order: number
   title: string
-  roleLineEn: string
-  roleLineZh: string | null
-  goal: string
-  rubricJson: string
-  hintJson: string
-  sampleAnswer: string
-  retryLimit: number
-  allowDynamicFollowup: boolean
+  openingLineEn: string
+  openingLineZh: string | null
+  objective: string
+  slotsJson: string
+  completionJson: string
+  assessmentJson: string
+  hintsJson: string
+  outcomesJson: string
   positionX: number
   positionY: number
 }
 
-export interface DialogueAdminEdgePayload {
+export interface DialogueAdminTransitionPayload {
   id?: string
-  fromNodeId: string
-  onResult: DialogueEdgeResult
+  fromStageId: string
+  outcomeKey: string
   label: string
   conditionJson: string
   priority: number
   isFallback: boolean
-  toNodeId: string | null
+  toStageId: string | null
 }
 
 export interface DialogueAdminScenarioPayload {
@@ -46,11 +43,11 @@ export interface DialogueAdminScenarioPayload {
   aiRole: string
   tags: string[]
   coverUrl: string | null
-  startNodeId: string | null
+  startStageId: string | null
   roleVoice: string
   coachVoice: string
-  nodes: DialogueAdminNodePayload[]
-  edges: DialogueAdminEdgePayload[]
+  stages: DialogueAdminStagePayload[]
+  transitions: DialogueAdminTransitionPayload[]
 }
 
 function normalizeJsonField(value: unknown, fallback: '[]' | '{}') {
@@ -71,64 +68,94 @@ function normalizeJsonField(value: unknown, fallback: '[]' | '{}') {
   return safeJsonStringify(value, fallback)
 }
 
-function normalizeNode(value: unknown, index: number): DialogueAdminNodePayload | null {
+function parseObject(value: string) {
+  return parseJsonString<Record<string, unknown>>(value, {})
+}
+
+function parseArray(value: string) {
+  return parseJsonString<unknown[]>(value, [])
+}
+
+function normalizeStage(value: unknown, index: number): DialogueAdminStagePayload | null {
   if (!value || typeof value !== 'object') {
     return null
   }
 
   const candidate = value as Record<string, unknown>
   const id = String(candidate.id || '').trim()
-  const roleLineEn = String(candidate.roleLineEn || '').trim()
-  const goal = String(candidate.goal || '').trim()
+  const order = Number(candidate.order)
 
   if (!id) {
     return null
   }
 
-  const order = Number(candidate.order)
-
   return {
     id,
     order: Number.isFinite(order) ? Math.round(order) : index,
     title: String(candidate.title || '').trim(),
-    roleLineEn,
-    roleLineZh: String(candidate.roleLineZh || '').trim() || null,
-    goal,
-    rubricJson: normalizeJsonField(candidate.rubricJson ?? candidate.rubric, '{}'),
-    hintJson: normalizeJsonField(candidate.hintJson ?? candidate.hints, '{}'),
-    sampleAnswer: String(candidate.sampleAnswer || '').trim(),
-    retryLimit: clampDialogueRetryLimit(candidate.retryLimit),
-    allowDynamicFollowup: Boolean(candidate.allowDynamicFollowup),
+    openingLineEn: String(candidate.openingLineEn || '').trim(),
+    openingLineZh: String(candidate.openingLineZh || '').trim() || null,
+    objective: String(candidate.objective || '').trim(),
+    slotsJson: normalizeJsonField(candidate.slotsJson ?? candidate.slots, '[]'),
+    completionJson: normalizeJsonField(candidate.completionJson ?? candidate.completion, '{}'),
+    assessmentJson: normalizeJsonField(candidate.assessmentJson ?? candidate.assessment, '{}'),
+    hintsJson: normalizeJsonField(candidate.hintsJson ?? candidate.hints, '{}'),
+    outcomesJson: normalizeJsonField(candidate.outcomesJson ?? candidate.outcomes, '[]'),
     positionX: normalizeDialoguePosition(candidate.positionX),
     positionY: normalizeDialoguePosition(candidate.positionY),
   }
 }
 
-function normalizeEdge(value: unknown): DialogueAdminEdgePayload | null {
+function normalizeTransition(value: unknown): DialogueAdminTransitionPayload | null {
   if (!value || typeof value !== 'object') {
     return null
   }
 
   const candidate = value as Record<string, unknown>
-  const fromNodeId = String(candidate.fromNodeId || '').trim()
-  const toNodeId = String(candidate.toNodeId || '').trim()
-  const onResult = String(candidate.onResult || '').trim()
+  const fromStageId = String(candidate.fromStageId || '').trim()
+  const toStageId = String(candidate.toStageId || '').trim()
+  const outcomeKey = String(candidate.outcomeKey || '').trim()
+  const priority = Number(candidate.priority)
 
-  if (!fromNodeId || !isDialogueEdgeResult(onResult)) {
+  if (!fromStageId || !outcomeKey) {
     return null
   }
-  const priority = Number(candidate.priority)
 
   return {
     id: String(candidate.id || '').trim() || undefined,
-    fromNodeId,
-    onResult,
+    fromStageId,
+    outcomeKey,
     label: String(candidate.label || '').trim(),
     conditionJson: normalizeJsonField(candidate.conditionJson ?? candidate.condition, '{}'),
     priority: Number.isFinite(priority) ? Math.round(priority) : 0,
     isFallback: Boolean(candidate.isFallback),
-    toNodeId: toNodeId || null,
+    toStageId: toStageId || null,
   }
+}
+
+function getSlotKeys(stage: DialogueAdminStagePayload, requiredOnly: boolean) {
+  return parseArray(stage.slotsJson)
+    .map((slot) => slot && typeof slot === 'object' ? slot as Record<string, unknown> : null)
+    .filter((slot): slot is Record<string, unknown> => Boolean(slot))
+    .filter((slot) => !requiredOnly || slot.required !== false)
+    .map((slot) => String(slot.key || '').trim())
+    .filter(Boolean)
+}
+
+function getOutcomeKeys(stage: DialogueAdminStagePayload) {
+  return parseArray(stage.outcomesJson)
+    .map((outcome) => outcome && typeof outcome === 'object' ? outcome as Record<string, unknown> : null)
+    .filter((outcome): outcome is Record<string, unknown> => Boolean(outcome))
+    .map((outcome) => String(outcome.key || '').trim())
+    .filter(Boolean)
+}
+
+function hasMeaningfulTransitionCondition(transition: DialogueAdminTransitionPayload) {
+  const condition = parseObject(transition.conditionJson)
+  const intent = String(condition.intent || '').trim()
+  const keywords = Array.isArray(condition.keywords) ? condition.keywords : []
+  const examples = Array.isArray(condition.examples) ? condition.examples : []
+  return Boolean(intent || keywords.length || examples.length)
 }
 
 export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScenarioPayload {
@@ -139,64 +166,45 @@ export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScen
     throw new Error('Title is required.')
   }
 
-  const nodes = Array.isArray(body.nodes)
-    ? body.nodes.map(normalizeNode).filter((node): node is DialogueAdminNodePayload => Boolean(node))
+  const stages = Array.isArray(body.stages)
+    ? body.stages.map(normalizeStage).filter((stage): stage is DialogueAdminStagePayload => Boolean(stage))
     : []
 
-  if (nodes.length === 0) {
-    throw new Error('At least one valid dialogue node is required.')
+  if (stages.length === 0) {
+    throw new Error('At least one valid dialogue stage is required.')
   }
 
-  const nodeIds = new Set(nodes.map((node) => node.id))
-  const edges = Array.isArray(body.edges)
-    ? body.edges.map(normalizeEdge).filter((edge): edge is DialogueAdminEdgePayload => Boolean(edge))
+  const stageIds = new Set(stages.map((stage) => stage.id))
+  const transitions = Array.isArray(body.transitions)
+    ? body.transitions.map(normalizeTransition).filter((transition): transition is DialogueAdminTransitionPayload => Boolean(transition))
     : []
 
-  const fallbackEdgeKeys = new Set<string>()
-  const validEdges: DialogueAdminEdgePayload[] = []
+  const validTransitions: DialogueAdminTransitionPayload[] = []
+  const fallbackKeys = new Set<string>()
 
-  for (const edge of edges) {
-    if (!nodeIds.has(edge.fromNodeId)) {
-      throw new Error(`Edge references unknown fromNodeId: ${edge.fromNodeId}`)
-    }
-
-    if (edge.toNodeId && !nodeIds.has(edge.toNodeId)) {
-      throw new Error(`Edge references unknown toNodeId: ${edge.toNodeId}`)
+  for (const transition of transitions) {
+    if (!stageIds.has(transition.fromStageId)) {
+      throw new Error(`Transition references unknown fromStageId: ${transition.fromStageId}`)
     }
 
-    const edgeKey = `${edge.fromNodeId}:${edge.onResult}`
-    if (edge.isFallback && fallbackEdgeKeys.has(edgeKey)) {
-      throw new Error(`Duplicate fallback ${edge.onResult} edge for node ${edge.fromNodeId}`)
-    }
-    if (edge.isFallback) {
-      fallbackEdgeKeys.add(edgeKey)
-    }
-    validEdges.push(edge)
-  }
-  const passEdgesByNode = new Map<string, DialogueAdminEdgePayload[]>()
-  for (const edge of validEdges) {
-    if (edge.onResult !== 'pass') {
-      continue
+    if (transition.toStageId && !stageIds.has(transition.toStageId)) {
+      throw new Error(`Transition references unknown toStageId: ${transition.toStageId}`)
     }
 
-    passEdgesByNode.set(edge.fromNodeId, [...(passEdgesByNode.get(edge.fromNodeId) || []), edge])
+    const key = `${transition.fromStageId}:${transition.outcomeKey}`
+    if (transition.isFallback && fallbackKeys.has(key)) {
+      throw new Error(`Duplicate fallback ${transition.outcomeKey} transition for stage ${transition.fromStageId}`)
+    }
+    if (transition.isFallback) {
+      fallbackKeys.add(key)
+    }
+
+    validTransitions.push(transition)
   }
 
-  for (const [fromNodeId, nodePassEdges] of passEdgesByNode) {
-    if (nodePassEdges.length <= 1) {
-      continue
-    }
-
-    for (const edge of nodePassEdges) {
-      if (!edge.isFallback && edge.conditionJson === '{}') {
-        throw new Error(`Pass edge from ${fromNodeId} needs conditionJson unless it is fallback.`)
-      }
-    }
-  }
-
-  const startNodeId = String(body.startNodeId || '').trim() || nodes[0].id
-  if (!nodeIds.has(startNodeId)) {
-    throw new Error('Start node must reference an existing node.')
+  const startStageId = String(body.startStageId || '').trim() || stages[0].id
+  if (!stageIds.has(startStageId)) {
+    throw new Error('Start stage must reference an existing stage.')
   }
 
   return {
@@ -207,11 +215,11 @@ export function normalizeDialogueAdminPayload(value: unknown): DialogueAdminScen
     aiRole: String(body.aiRole || '').trim(),
     tags: normalizeDialogueTags(body.tags ?? body.tagsJson),
     coverUrl: String(body.coverUrl || '').trim() || null,
-    startNodeId,
+    startStageId,
     roleVoice: normalizeDialogueVoice(body.roleVoice, DEFAULT_DIALOGUE_ROLE_VOICE),
     coachVoice: normalizeDialogueVoice(body.coachVoice, DEFAULT_DIALOGUE_COACH_VOICE),
-    nodes: nodes.sort((left, right) => left.order - right.order),
-    edges: validEdges.sort((left, right) => left.priority - right.priority),
+    stages: stages.sort((left, right) => left.order - right.order),
+    transitions: validTransitions.sort((left, right) => left.priority - right.priority),
   }
 }
 
@@ -220,62 +228,72 @@ export function validateDialoguePublishGraph(payload: DialogueAdminScenarioPaylo
     throw new Error('Title is required before publishing.')
   }
 
-  if (!payload.startNodeId) {
-    throw new Error('Choose a start node before publishing.')
+  if (!payload.startStageId) {
+    throw new Error('Choose a start stage before publishing.')
   }
 
-  if (payload.nodes.length === 0) {
-    throw new Error('Add at least one node before publishing.')
+  if (payload.stages.length === 0) {
+    throw new Error('Add at least one stage before publishing.')
   }
 
-  const nodeIds = new Set(payload.nodes.map((node) => node.id))
-  if (!nodeIds.has(payload.startNodeId)) {
-    throw new Error('Start node must exist before publishing.')
+  const stageIds = new Set(payload.stages.map((stage) => stage.id))
+  if (!stageIds.has(payload.startStageId)) {
+    throw new Error('Start stage must exist before publishing.')
   }
 
-  for (const node of payload.nodes) {
-    if (!node.roleLineEn.trim()) {
-      throw new Error(`Node ${node.title || node.id} needs an English role line.`)
+  const transitionsByStageOutcome = new Map<string, DialogueAdminTransitionPayload[]>()
+  for (const transition of payload.transitions) {
+    if (!stageIds.has(transition.fromStageId)) {
+      throw new Error(`Transition references unknown from stage: ${transition.fromStageId}`)
     }
 
-    if (!node.goal.trim()) {
-      throw new Error(`Node ${node.title || node.id} needs a learner goal.`)
+    if (transition.toStageId && !stageIds.has(transition.toStageId)) {
+      throw new Error(`Transition references unknown target stage: ${transition.toStageId}`)
     }
+
+    const key = `${transition.fromStageId}:${transition.outcomeKey}`
+    transitionsByStageOutcome.set(key, [...(transitionsByStageOutcome.get(key) || []), transition])
   }
 
-  for (const edge of payload.edges) {
-    if (!nodeIds.has(edge.fromNodeId)) {
-      throw new Error(`Edge references unknown from node: ${edge.fromNodeId}`)
+  const fallbackKeys = new Set<string>()
+  for (const transition of payload.transitions) {
+    const key = `${transition.fromStageId}:${transition.outcomeKey}`
+    if (transition.isFallback && fallbackKeys.has(key)) {
+      throw new Error(`Only one fallback ${transition.outcomeKey} transition is allowed for stage ${transition.fromStageId}.`)
     }
-
-    if (edge.toNodeId && !nodeIds.has(edge.toNodeId)) {
-      throw new Error(`Edge references unknown target node: ${edge.toNodeId}`)
-    }
-  }
-
-  const fallbackEdgeKeys = new Set<string>()
-  const passEdgesByNode = new Map<string, DialogueAdminEdgePayload[]>()
-  for (const edge of payload.edges) {
-    const edgeKey = `${edge.fromNodeId}:${edge.onResult}`
-    if (edge.isFallback && fallbackEdgeKeys.has(edgeKey)) {
-      throw new Error(`Only one fallback ${edge.onResult} edge is allowed for node ${edge.fromNodeId}.`)
-    }
-    if (edge.isFallback) {
-      fallbackEdgeKeys.add(edgeKey)
-    }
-    if (edge.onResult === 'pass') {
-      passEdgesByNode.set(edge.fromNodeId, [...(passEdgesByNode.get(edge.fromNodeId) || []), edge])
+    if (transition.isFallback) {
+      fallbackKeys.add(key)
     }
   }
 
-  for (const [fromNodeId, nodePassEdges] of passEdgesByNode) {
-    if (nodePassEdges.length <= 1) {
+  for (const stage of payload.stages) {
+    if (!stage.openingLineEn.trim()) {
+      throw new Error(`Stage ${stage.title || stage.id} needs an English opening line.`)
+    }
+
+    if (!stage.objective.trim()) {
+      throw new Error(`Stage ${stage.title || stage.id} needs an objective.`)
+    }
+
+    if (getSlotKeys(stage, true).length === 0) {
+      throw new Error(`Stage ${stage.title || stage.id} needs at least one required slot.`)
+    }
+
+    for (const outcomeKey of getOutcomeKeys(stage)) {
+      if (!transitionsByStageOutcome.has(`${stage.id}:${outcomeKey}`)) {
+        throw new Error(`Stage ${stage.title || stage.id} outcome ${outcomeKey} needs a transition.`)
+      }
+    }
+  }
+
+  for (const [key, transitions] of transitionsByStageOutcome) {
+    if (transitions.length <= 1) {
       continue
     }
 
-    for (const edge of nodePassEdges) {
-      if (!edge.isFallback && edge.conditionJson === '{}') {
-        throw new Error(`Pass edge from ${fromNodeId} needs conditionJson unless it is fallback.`)
+    for (const transition of transitions) {
+      if (!transition.isFallback && !hasMeaningfulTransitionCondition(transition)) {
+        throw new Error(`Transition ${key} needs conditionJson unless it is fallback.`)
       }
     }
   }
@@ -284,16 +302,30 @@ export function validateDialoguePublishGraph(payload: DialogueAdminScenarioPaylo
 export function serializeDialogueAdminScenario<
   T extends {
     tagsJson: string
-    nodes?: Array<{ rubricJson: string; hintJson: string }>
+    stages?: Array<{
+      slotsJson: string
+      completionJson: string
+      assessmentJson: string
+      hintsJson: string
+      outcomesJson: string
+    }>
+    transitions?: Array<{ conditionJson: string }>
   }
 >(scenario: T) {
   return {
     ...scenario,
     tags: normalizeDialogueTags(scenario.tagsJson),
-    nodes: scenario.nodes?.map((node) => ({
-      ...node,
-      rubric: parseJsonString<Record<string, unknown>>(node.rubricJson, {}),
-      hints: parseJsonString<Record<string, unknown>>(node.hintJson, {}),
+    stages: scenario.stages?.map((stage) => ({
+      ...stage,
+      slots: parseJsonString<unknown[]>(stage.slotsJson, []),
+      completion: parseJsonString<Record<string, unknown>>(stage.completionJson, {}),
+      assessment: parseJsonString<Record<string, unknown>>(stage.assessmentJson, {}),
+      hints: parseJsonString<Record<string, unknown>>(stage.hintsJson, {}),
+      outcomes: parseJsonString<unknown[]>(stage.outcomesJson, []),
+    })),
+    transitions: scenario.transitions?.map((transition) => ({
+      ...transition,
+      condition: parseJsonString<Record<string, unknown>>(transition.conditionJson, {}),
     })),
   }
 }

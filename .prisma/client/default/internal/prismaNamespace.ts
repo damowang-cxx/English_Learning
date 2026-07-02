@@ -395,6 +395,8 @@ export const ModelName = {
   VideoCaptionNote: 'VideoCaptionNote',
   LearningDailyStat: 'LearningDailyStat',
   DialogueScenario: 'DialogueScenario',
+  DialogueStage: 'DialogueStage',
+  DialogueTransition: 'DialogueTransition',
   DialogueNode: 'DialogueNode',
   DialogueEdge: 'DialogueEdge',
   DialogueSession: 'DialogueSession',
@@ -416,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat" | "dialogueScenario" | "dialogueNode" | "dialogueEdge" | "dialogueSession" | "dialogueAttempt" | "dialogueProfileEvent" | "dialogueSpeechAsset"
+    modelProps: "user" | "trainingItem" | "sentence" | "userNote" | "videoTrainingItem" | "videoCaption" | "videoCharacter" | "videoPhraseNote" | "videoCaptionNote" | "learningDailyStat" | "dialogueScenario" | "dialogueStage" | "dialogueTransition" | "dialogueNode" | "dialogueEdge" | "dialogueSession" | "dialogueAttempt" | "dialogueProfileEvent" | "dialogueSpeechAsset"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1234,6 +1236,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DialogueStage: {
+      payload: Prisma.$DialogueStagePayload<ExtArgs>
+      fields: Prisma.DialogueStageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueStageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueStageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueStageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueStageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        findMany: {
+          args: Prisma.DialogueStageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>[]
+        }
+        create: {
+          args: Prisma.DialogueStageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        createMany: {
+          args: Prisma.DialogueStageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueStageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueStageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        update: {
+          args: Prisma.DialogueStageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueStageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueStageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueStageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueStageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueStagePayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueStageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueStage>
+        }
+        groupBy: {
+          args: Prisma.DialogueStageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueStageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueStageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueStageCountAggregateOutputType> | number
+        }
+      }
+    }
+    DialogueTransition: {
+      payload: Prisma.$DialogueTransitionPayload<ExtArgs>
+      fields: Prisma.DialogueTransitionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DialogueTransitionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DialogueTransitionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        findFirst: {
+          args: Prisma.DialogueTransitionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DialogueTransitionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        findMany: {
+          args: Prisma.DialogueTransitionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>[]
+        }
+        create: {
+          args: Prisma.DialogueTransitionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        createMany: {
+          args: Prisma.DialogueTransitionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DialogueTransitionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>[]
+        }
+        delete: {
+          args: Prisma.DialogueTransitionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        update: {
+          args: Prisma.DialogueTransitionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        deleteMany: {
+          args: Prisma.DialogueTransitionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DialogueTransitionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DialogueTransitionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>[]
+        }
+        upsert: {
+          args: Prisma.DialogueTransitionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DialogueTransitionPayload>
+        }
+        aggregate: {
+          args: Prisma.DialogueTransitionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDialogueTransition>
+        }
+        groupBy: {
+          args: Prisma.DialogueTransitionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueTransitionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DialogueTransitionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DialogueTransitionCountAggregateOutputType> | number
+        }
+      }
+    }
     DialogueNode: {
       payload: Prisma.$DialogueNodePayload<ExtArgs>
       fields: Prisma.DialogueNodeFieldRefs
@@ -1863,6 +2013,7 @@ export const DialogueScenarioScalarFieldEnum = {
   coverUrl: 'coverUrl',
   isPublished: 'isPublished',
   startNodeId: 'startNodeId',
+  startStageId: 'startStageId',
   roleVoice: 'roleVoice',
   coachVoice: 'coachVoice',
   createdAt: 'createdAt',
@@ -1870,6 +2021,45 @@ export const DialogueScenarioScalarFieldEnum = {
 } as const
 
 export type DialogueScenarioScalarFieldEnum = (typeof DialogueScenarioScalarFieldEnum)[keyof typeof DialogueScenarioScalarFieldEnum]
+
+
+export const DialogueStageScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  order: 'order',
+  title: 'title',
+  openingLineEn: 'openingLineEn',
+  openingLineZh: 'openingLineZh',
+  objective: 'objective',
+  slotsJson: 'slotsJson',
+  completionJson: 'completionJson',
+  assessmentJson: 'assessmentJson',
+  hintsJson: 'hintsJson',
+  outcomesJson: 'outcomesJson',
+  positionX: 'positionX',
+  positionY: 'positionY',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueStageScalarFieldEnum = (typeof DialogueStageScalarFieldEnum)[keyof typeof DialogueStageScalarFieldEnum]
+
+
+export const DialogueTransitionScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  fromStageId: 'fromStageId',
+  outcomeKey: 'outcomeKey',
+  label: 'label',
+  conditionJson: 'conditionJson',
+  priority: 'priority',
+  isFallback: 'isFallback',
+  toStageId: 'toStageId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueTransitionScalarFieldEnum = (typeof DialogueTransitionScalarFieldEnum)[keyof typeof DialogueTransitionScalarFieldEnum]
 
 
 export const DialogueNodeScalarFieldEnum = {
@@ -1917,6 +2107,8 @@ export const DialogueSessionScalarFieldEnum = {
   scenarioId: 'scenarioId',
   userId: 'userId',
   currentNodeId: 'currentNodeId',
+  currentStageId: 'currentStageId',
+  stageStateJson: 'stageStateJson',
   status: 'status',
   metadataJson: 'metadataJson',
   totalScore: 'totalScore',
@@ -1935,6 +2127,7 @@ export const DialogueAttemptScalarFieldEnum = {
   sessionId: 'sessionId',
   scenarioId: 'scenarioId',
   nodeId: 'nodeId',
+  stageId: 'stageId',
   userId: 'userId',
   inputMode: 'inputMode',
   turnStatus: 'turnStatus',
@@ -1947,6 +2140,7 @@ export const DialogueAttemptScalarFieldEnum = {
   assessmentJson: 'assessmentJson',
   profileEventsJson: 'profileEventsJson',
   errorJson: 'errorJson',
+  stageStateJson: 'stageStateJson',
   routerIntent: 'routerIntent',
   routerJson: 'routerJson',
   evaluatorJson: 'evaluatorJson',
@@ -1971,6 +2165,7 @@ export const DialogueProfileEventScalarFieldEnum = {
   mode: 'mode',
   scenarioId: 'scenarioId',
   nodeId: 'nodeId',
+  stageId: 'stageId',
   type: 'type',
   severity: 'severity',
   evidence: 'evidence',
@@ -2158,6 +2353,8 @@ export type GlobalOmitConfig = {
   videoCaptionNote?: Prisma.VideoCaptionNoteOmit
   learningDailyStat?: Prisma.LearningDailyStatOmit
   dialogueScenario?: Prisma.DialogueScenarioOmit
+  dialogueStage?: Prisma.DialogueStageOmit
+  dialogueTransition?: Prisma.DialogueTransitionOmit
   dialogueNode?: Prisma.DialogueNodeOmit
   dialogueEdge?: Prisma.DialogueEdgeOmit
   dialogueSession?: Prisma.DialogueSessionOmit

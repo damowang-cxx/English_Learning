@@ -73,6 +73,16 @@ export type LearningDailyStat = Prisma.LearningDailyStatModel
  */
 export type DialogueScenario = Prisma.DialogueScenarioModel
 /**
+ * Model DialogueStage
+ * 
+ */
+export type DialogueStage = Prisma.DialogueStageModel
+/**
+ * Model DialogueTransition
+ * 
+ */
+export type DialogueTransition = Prisma.DialogueTransitionModel
+/**
  * Model DialogueNode
  * 
  */

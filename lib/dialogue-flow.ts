@@ -1,19 +1,16 @@
 import { prisma } from '@/lib/prisma'
 import {
+  normalizeDialogueTags,
   parseJsonString,
   safeJsonStringify,
-  normalizeDialogueTags,
-  type DialogueEdgeResult,
   type DialogueInputMode,
 } from '@/lib/dialogue'
 import {
   coachDialogueLearner,
-  evaluateDialogueAnswer,
-  generateDialogueRoleFollowup,
-  matchDialogueEdge,
   routeDialogueInput,
+  runDialogueStageAgent,
+  type DialogueAiStageContext,
   type DialogueCoachOutput,
-  type DialogueEvaluatorOutput,
 } from '@/lib/dialogue-ai'
 import {
   recordCompletedConversationTurn,
@@ -29,24 +26,27 @@ type DialogueScenarioWithGraph = Awaited<ReturnType<typeof getScenarioWithGraph>
 type DialogueSessionWithContext = Awaited<ReturnType<typeof getSessionWithContext>>
 type LoadedDialogueSession = NonNullable<DialogueSessionWithContext>
 type LoadedDialogueScenario = NonNullable<LoadedDialogueSession['scenario']>
-type LoadedDialogueNode = LoadedDialogueScenario['nodes'][number]
-type LoadedDialogueEdge = LoadedDialogueScenario['edges'][number]
+type LoadedDialogueStage = LoadedDialogueScenario['stages'][number]
+type LoadedDialogueTransition = LoadedDialogueScenario['transitions'][number]
+type ScenarioStageMemory = {
+  globalSlots: Record<string, unknown>
+  activeStageState: Record<string, unknown>
+  history: Array<Record<string, unknown>>
+}
 
-const BRANCH_MATCH_CONFIDENCE_THRESHOLD = 0.62
-
-async function getScenarioWithGraph(scenarioId: string) {
+function getScenarioWithGraph(scenarioId: string) {
   return prisma.dialogueScenario.findUnique({
     where: { id: scenarioId },
     include: {
-      nodes: {
+      stages: {
         orderBy: { order: 'asc' },
       },
-      edges: true,
+      transitions: true,
     },
   })
 }
 
-async function getSessionWithContext(sessionId: string, userId: string) {
+function getSessionWithContext(sessionId: string, userId: string) {
   return prisma.dialogueSession.findFirst({
     where: {
       id: sessionId,
@@ -56,16 +56,16 @@ async function getSessionWithContext(sessionId: string, userId: string) {
     include: {
       scenario: {
         include: {
-          nodes: {
+          stages: {
             orderBy: { order: 'asc' },
           },
-          edges: true,
+          transitions: true,
         },
       },
-      currentNode: true,
+      currentStage: true,
       attempts: {
         orderBy: { createdAt: 'asc' },
-        take: 80,
+        take: 120,
       },
     },
   })
@@ -81,40 +81,98 @@ function scenarioToContext(scenario: NonNullable<DialogueScenarioWithGraph> | Lo
   }
 }
 
-function nodeToContext(node: LoadedDialogueNode) {
+function stageToContext(stage: LoadedDialogueStage): DialogueAiStageContext {
   return {
-    id: node.id,
-    title: node.title,
-    roleLineEn: node.roleLineEn,
-    roleLineZh: node.roleLineZh,
-    goal: node.goal,
-    rubricJson: node.rubricJson,
-    hintJson: node.hintJson,
-    sampleAnswer: node.sampleAnswer,
-    retryLimit: node.retryLimit,
-    allowDynamicFollowup: node.allowDynamicFollowup,
+    id: stage.id,
+    title: stage.title,
+    openingLineEn: stage.openingLineEn,
+    openingLineZh: stage.openingLineZh,
+    objective: stage.objective,
+    slotsJson: stage.slotsJson,
+    completionJson: stage.completionJson,
+    assessmentJson: stage.assessmentJson,
+    hintsJson: stage.hintsJson,
+    outcomesJson: stage.outcomesJson,
   }
 }
 
-function serializeNode(node: LoadedDialogueNode | null) {
-  if (!node) {
+function stageToLegacyNodeContext(stage: LoadedDialogueStage) {
+  const hints = parseJsonString<Record<string, unknown>>(stage.hintsJson, {})
+  const sampleAnswer = String(hints.sampleAnswer || hints.example || '').trim()
+
+  return {
+    id: stage.id,
+    title: stage.title,
+    roleLineEn: stage.openingLineEn,
+    roleLineZh: stage.openingLineZh,
+    goal: stage.objective,
+    rubricJson: stage.assessmentJson,
+    hintJson: stage.hintsJson,
+    sampleAnswer,
+    retryLimit: 2,
+    allowDynamicFollowup: true,
+  }
+}
+
+function serializeStage(stage: LoadedDialogueStage | null) {
+  if (!stage) {
+    return null
+  }
+
+  const hints = parseJsonString<Record<string, unknown>>(stage.hintsJson, {})
+
+  return {
+    id: stage.id,
+    order: stage.order,
+    title: stage.title,
+    openingLineEn: stage.openingLineEn,
+    openingLineZh: stage.openingLineZh,
+    objective: stage.objective,
+    slots: parseJsonString<unknown[]>(stage.slotsJson, []),
+    completion: parseJsonString<Record<string, unknown>>(stage.completionJson, {}),
+    assessment: parseJsonString<Record<string, unknown>>(stage.assessmentJson, {}),
+    hints,
+    outcomes: parseJsonString<unknown[]>(stage.outcomesJson, []),
+    positionX: stage.positionX,
+    positionY: stage.positionY,
+  }
+}
+
+function serializeCurrentNode(stage: LoadedDialogueStage | null) {
+  if (!stage) {
+    return null
+  }
+
+  const hints = parseJsonString<Record<string, unknown>>(stage.hintsJson, {})
+
+  return {
+    id: stage.id,
+    order: stage.order,
+    title: stage.title,
+    roleLineEn: stage.openingLineEn,
+    roleLineZh: stage.openingLineZh,
+    goal: stage.objective,
+    sampleAnswer: String(hints.sampleAnswer || hints.example || '').trim(),
+    retryLimit: 0,
+  }
+}
+
+function serializeTransition(transition: LoadedDialogueTransition | null, confidence?: number | null, reason?: string | null) {
+  if (!transition) {
     return null
   }
 
   return {
-    id: node.id,
-    order: node.order,
-    title: node.title,
-    roleLineEn: node.roleLineEn,
-    roleLineZh: node.roleLineZh,
-    goal: node.goal,
-    rubric: parseJsonString<Record<string, unknown>>(node.rubricJson, {}),
-    hints: parseJsonString<Record<string, unknown>>(node.hintJson, {}),
-    sampleAnswer: node.sampleAnswer,
-    retryLimit: node.retryLimit,
-    allowDynamicFollowup: node.allowDynamicFollowup,
-    positionX: node.positionX,
-    positionY: node.positionY,
+    id: transition.id,
+    fromStageId: transition.fromStageId,
+    toStageId: transition.toStageId,
+    outcomeKey: transition.outcomeKey,
+    label: transition.label,
+    condition: parseJsonString<Record<string, unknown>>(transition.conditionJson, {}),
+    priority: transition.priority,
+    isFallback: transition.isFallback,
+    confidence: confidence ?? null,
+    reason: reason || null,
   }
 }
 
@@ -122,6 +180,7 @@ function serializeAttempt(attempt: LoadedDialogueSession['attempts'][number]) {
   return {
     id: attempt.id,
     nodeId: attempt.nodeId,
+    stageId: attempt.stageId,
     inputMode: attempt.inputMode,
     turnStatus: attempt.turnStatus,
     turnIndex: attempt.turnIndex,
@@ -133,6 +192,7 @@ function serializeAttempt(attempt: LoadedDialogueSession['attempts'][number]) {
     assessment: parseJsonString<Record<string, unknown>>(attempt.assessmentJson, {}),
     profileEvents: parseJsonString<Record<string, unknown>[]>(attempt.profileEventsJson, []),
     error: parseJsonString<Record<string, unknown> | null>(attempt.errorJson, null),
+    stageState: parseJsonString<Record<string, unknown>>(attempt.stageStateJson, {}),
     routerIntent: attempt.routerIntent,
     router: parseJsonString<Record<string, unknown>>(attempt.routerJson, {}),
     evaluator: parseJsonString<Record<string, unknown>>(attempt.evaluatorJson, {}),
@@ -147,17 +207,19 @@ function serializeAttempt(attempt: LoadedDialogueSession['attempts'][number]) {
   }
 }
 
-function buildSessionPayload(session: LoadedDialogueSession) {
-  if (!session.scenario) {
-    throw new Error('Dialogue session is not attached to a scenario.')
-  }
-
-  const scenario = session.scenario
-  const tags = normalizeDialogueTags(scenario.tagsJson)
-  const currentNode =
-    session.currentNode
-    || scenario.nodes.find((node) => node.id === session.currentNodeId)
+function getCurrentStage(session: LoadedDialogueSession) {
+  const scenario = requireScenario(session)
+  return (
+    session.currentStage
+    || scenario.stages.find((stage) => stage.id === session.currentStageId)
     || null
+  )
+}
+
+function buildSessionPayload(session: LoadedDialogueSession) {
+  const scenario = requireScenario(session)
+  const tags = normalizeDialogueTags(scenario.tagsJson)
+  const currentStage = getCurrentStage(session)
   const averageScore =
     session.completedNodeCount > 0
       ? Math.round(session.totalScore / session.completedNodeCount)
@@ -168,7 +230,9 @@ function buildSessionPayload(session: LoadedDialogueSession) {
       id: session.id,
       mode: session.mode,
       scenarioId: session.scenarioId,
-      currentNodeId: session.currentNodeId,
+      currentNodeId: null,
+      currentStageId: session.currentStageId,
+      stageState: parseScenarioStageMemory(session.stageStateJson),
       status: session.status,
       totalScore: session.totalScore,
       averageScore,
@@ -188,279 +252,18 @@ function buildSessionPayload(session: LoadedDialogueSession) {
       roleVoice: scenario.roleVoice,
       coachVoice: scenario.coachVoice,
     },
-    currentNode: serializeNode(currentNode),
+    currentNode: serializeCurrentNode(currentStage),
+    currentStage: serializeStage(currentStage),
     attempts: session.attempts.map(serializeAttempt),
   }
 }
 
-function getStartNode(scenario: NonNullable<DialogueScenarioWithGraph>) {
+function getStartStage(scenario: NonNullable<DialogueScenarioWithGraph> | LoadedDialogueScenario) {
   return (
-    scenario.nodes.find((node) => node.id === scenario.startNodeId)
-    || scenario.nodes[0]
+    scenario.stages.find((stage) => stage.id === scenario.startStageId)
+    || scenario.stages[0]
     || null
   )
-}
-
-function getEdgesForResult(
-  scenario: LoadedDialogueScenario,
-  fromNodeId: string,
-  result: DialogueEdgeResult
-) {
-  return scenario.edges
-    .filter((edge) => edge.fromNodeId === fromNodeId && edge.onResult === result)
-    .sort((left, right) => left.priority - right.priority || left.createdAt.getTime() - right.createdAt.getTime())
-}
-
-function getFallbackEdge(edges: LoadedDialogueEdge[]) {
-  return edges.find((edge) => edge.isFallback) || null
-}
-
-function serializeMatchedEdge(edge: LoadedDialogueEdge | null, confidence: number | null, reason?: string | null) {
-  if (!edge) {
-    return null
-  }
-
-  return {
-    id: edge.id,
-    fromNodeId: edge.fromNodeId,
-    toNodeId: edge.toNodeId,
-    onResult: edge.onResult,
-    label: edge.label,
-    condition: parseJsonString<Record<string, unknown>>(edge.conditionJson, {}),
-    priority: edge.priority,
-    isFallback: edge.isFallback,
-    confidence,
-    reason: reason || null,
-  }
-}
-
-async function matchEdgeForResult({
-  scenario,
-  node,
-  result,
-  answerText,
-}: {
-  scenario: LoadedDialogueScenario
-  node: LoadedDialogueNode
-  result: DialogueEdgeResult
-  answerText: string
-}) {
-  const candidateEdges = getEdgesForResult(scenario, node.id, result)
-  const fallbackEdge = getFallbackEdge(candidateEdges)
-  const nonFallbackEdges = candidateEdges.filter((edge) => !edge.isFallback)
-
-  if (candidateEdges.length === 0) {
-    return {
-      edge: null,
-      confidence: null,
-      reason: 'No edge for result.',
-      needsClarification: false,
-    }
-  }
-
-  if (result !== 'pass') {
-    return {
-      edge: nonFallbackEdges[0] || fallbackEdge || candidateEdges[0],
-      confidence: 1,
-      reason: 'Matched by result.',
-      needsClarification: false,
-    }
-  }
-
-  if (candidateEdges.length === 1) {
-    return {
-      edge: candidateEdges[0],
-      confidence: 1,
-      reason: 'Single pass edge.',
-      needsClarification: false,
-    }
-  }
-
-  if (nonFallbackEdges.length > 0) {
-    try {
-      const matcher = await matchDialogueEdge({
-        scenario: scenarioToContext(scenario),
-        node: nodeToContext(node),
-        answerText,
-        edges: nonFallbackEdges.map((edge) => ({
-          edgeId: edge.id,
-          label: edge.label || edge.onResult,
-          conditionJson: edge.conditionJson,
-          priority: edge.priority,
-          isFallback: edge.isFallback,
-        })),
-      })
-      const matchedEdge = matcher.edgeId
-        ? nonFallbackEdges.find((edge) => edge.id === matcher.edgeId) || null
-        : null
-
-      if (matchedEdge && matcher.confidence >= BRANCH_MATCH_CONFIDENCE_THRESHOLD) {
-        return {
-          edge: matchedEdge,
-          confidence: matcher.confidence,
-          reason: matcher.reason,
-          needsClarification: false,
-        }
-      }
-
-      if (fallbackEdge) {
-        return {
-          edge: fallbackEdge,
-          confidence: matcher.confidence,
-          reason: matcher.reason || 'Used fallback edge.',
-          needsClarification: false,
-        }
-      }
-
-      return {
-        edge: null,
-        confidence: matcher.confidence,
-        reason: matcher.reason || 'No confident branch match.',
-        needsClarification: true,
-      }
-    } catch (error) {
-      console.error('Dialogue edge matcher failed:', error)
-      if (fallbackEdge) {
-        return {
-          edge: fallbackEdge,
-          confidence: null,
-          reason: 'Edge matcher failed; used fallback edge.',
-          needsClarification: false,
-        }
-      }
-
-      return {
-        edge: null,
-        confidence: null,
-        reason: 'Edge matcher failed and no fallback edge exists.',
-        needsClarification: true,
-      }
-    }
-  }
-
-  return {
-    edge: fallbackEdge,
-    confidence: fallbackEdge ? 1 : null,
-    reason: fallbackEdge ? 'Used fallback edge.' : 'No pass branch condition exists.',
-    needsClarification: !fallbackEdge,
-  }
-}
-
-async function buildNextRoleReply({
-  scenario,
-  nextNode,
-  learnerAnswer,
-}: {
-  scenario: LoadedDialogueScenario
-  nextNode: LoadedDialogueNode | null
-  learnerAnswer: string
-}) {
-  if (!nextNode) {
-    return null
-  }
-
-  if (!nextNode.allowDynamicFollowup) {
-    return nextNode.roleLineEn
-  }
-
-  try {
-    const followup = await generateDialogueRoleFollowup({
-      scenario: scenarioToContext(scenario),
-      node: nodeToContext(nextNode),
-      learnerAnswer,
-    })
-    const prefix = followup.role_reply_en.trim()
-    return prefix ? `${prefix} ${nextNode.roleLineEn}` : nextNode.roleLineEn
-  } catch (error) {
-    console.error('Dialogue role followup failed:', error)
-    return nextNode.roleLineEn
-  }
-}
-
-async function advanceFromNode({
-  scenario,
-  node,
-  result,
-  scoreToAdd,
-  answerText,
-}: {
-  scenario: LoadedDialogueScenario
-  node: LoadedDialogueNode
-  result: DialogueEdgeResult
-  scoreToAdd: number
-  answerText: string
-}) {
-  const matched = await matchEdgeForResult({
-    scenario,
-    node,
-    result,
-    answerText,
-  })
-  const edge = matched.edge
-
-  if (matched.needsClarification) {
-    return {
-      currentNodeId: node.id,
-      status: 'active',
-      completedAt: null,
-      completedDelta: 0,
-      matchedEdge: null,
-      branchConfidence: matched.confidence,
-      branchReason: matched.reason,
-      needsClarification: true,
-    } as const
-  }
-
-  if (!edge) {
-    if (result === 'pass') {
-      return {
-        currentNodeId: null,
-        status: 'completed',
-        completedAt: new Date(),
-        completedDelta: 1,
-        matchedEdge: null,
-        branchConfidence: matched.confidence,
-        branchReason: matched.reason,
-        needsClarification: false,
-      } as const
-    }
-
-    return {
-      currentNodeId: node.id,
-      status: 'active',
-      completedAt: null,
-      completedDelta: 0,
-      matchedEdge: null,
-      branchConfidence: matched.confidence,
-      branchReason: matched.reason,
-      needsClarification: false,
-    } as const
-  }
-
-  if (!edge.toNodeId) {
-    return {
-      currentNodeId: null,
-      status: 'completed',
-      completedAt: new Date(),
-      completedDelta: result === 'fail' || result === 'skip' ? 0 : 1,
-      matchedEdge: serializeMatchedEdge(edge, matched.confidence, matched.reason),
-      branchConfidence: matched.confidence,
-      branchReason: matched.reason,
-      needsClarification: false,
-    } as const
-  }
-
-  return {
-    currentNodeId: edge.toNodeId,
-    status: 'active',
-    completedAt: null,
-    completedDelta: result === 'fail' || result === 'skip' ? 0 : 1,
-    scoreToAdd,
-    matchedEdge: serializeMatchedEdge(edge, matched.confidence, matched.reason),
-    branchConfidence: matched.confidence,
-    branchReason: matched.reason,
-    needsClarification: false,
-  } as const
 }
 
 function requireScenario(session: LoadedDialogueSession): LoadedDialogueScenario {
@@ -479,70 +282,167 @@ function normalizeConversationInputMode(inputMode: DialogueInputMode): Conversat
   return inputMode === 'audio' ? 'audio' : 'text'
 }
 
+function getStageOutcomeKeys(stage: LoadedDialogueStage) {
+  return parseJsonString<unknown[]>(stage.outcomesJson, [])
+    .map((outcome) => outcome && typeof outcome === 'object' ? outcome as Record<string, unknown> : null)
+    .filter((outcome): outcome is Record<string, unknown> => Boolean(outcome))
+    .map((outcome) => String(outcome.key || '').trim())
+    .filter(Boolean)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function emptyScenarioStageMemory(): ScenarioStageMemory {
+  return {
+    globalSlots: {},
+    activeStageState: {},
+    history: [],
+  }
+}
+
+function parseScenarioStageMemory(value: string | null | undefined): ScenarioStageMemory {
+  const parsed = parseJsonString<Record<string, unknown>>(value, {})
+
+  if (
+    isRecord(parsed.globalSlots)
+    || isRecord(parsed.activeStageState)
+    || Array.isArray(parsed.history)
+  ) {
+    return {
+      globalSlots: isRecord(parsed.globalSlots) ? parsed.globalSlots : {},
+      activeStageState: isRecord(parsed.activeStageState) ? parsed.activeStageState : {},
+      history: Array.isArray(parsed.history)
+        ? parsed.history.filter(isRecord).slice(-16)
+        : [],
+    }
+  }
+
+  return {
+    ...emptyScenarioStageMemory(),
+    activeStageState: parsed,
+  }
+}
+
+function applySlotUpdatesToGlobalSlots(
+  globalSlots: Record<string, unknown>,
+  slotUpdates: Awaited<ReturnType<typeof runDialogueStageAgent>>['slotUpdates']
+) {
+  const nextGlobalSlots = { ...globalSlots }
+
+  for (const update of slotUpdates) {
+    const key = String(update?.key || '').trim()
+    const value = typeof update?.value === 'string' ? update.value.trim() : update?.value
+
+    if (key && value !== '' && value !== null && value !== undefined) {
+      nextGlobalSlots[key] = value
+    }
+  }
+
+  return nextGlobalSlots
+}
+
+function completeStageMemory({
+  memory,
+  stage,
+  outcomeKey,
+  nextStage,
+  userText,
+}: {
+  memory: ScenarioStageMemory
+  stage: LoadedDialogueStage
+  outcomeKey: string | null
+  nextStage: LoadedDialogueStage | null
+  userText: string
+}): ScenarioStageMemory {
+  return {
+    globalSlots: memory.globalSlots,
+    activeStageState: {},
+    history: [
+      ...memory.history,
+      {
+        stageId: stage.id,
+        stageTitle: stage.title,
+        outcomeKey,
+        nextStageId: nextStage?.id || null,
+        completedAt: new Date().toISOString(),
+        lastUserText: userText.slice(0, 500),
+        stageState: memory.activeStageState,
+      },
+    ].slice(-16),
+  }
+}
+
+function parseAgentState(value: string) {
+  const parsed = parseJsonString<Record<string, unknown>>(value, {})
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+}
+
+function mergeStageState(existing: Record<string, unknown>, next: Record<string, unknown>) {
+  return {
+    ...existing,
+    ...next,
+  }
+}
+
 function inferIssueType(value: string): AssessmentIssueType {
   const text = value.toLowerCase()
 
-  if (text.includes('tense') || text.includes('grammar') || text.includes('时态') || text.includes('语法')) {
+  if (text.includes('tense') || text.includes('grammar') || text.includes('语法')) {
     return 'grammar_tense'
   }
-
-  if (text.includes('vocab') || text.includes('word') || text.includes('词汇') || text.includes('用词')) {
+  if (text.includes('vocab') || text.includes('word') || text.includes('词')) {
     return 'vocab_limited'
   }
-
-  if (text.includes('pronunciation') || text.includes('accent') || text.includes('发音')) {
-    return 'pronunciation_low_confidence'
-  }
-
-  if (text.includes('tone') || text.includes('polite') || text.includes('direct') || text.includes('语气') || text.includes('礼貌')) {
+  if (text.includes('tone') || text.includes('polite') || text.includes('direct') || text.includes('语气')) {
     return 'tone_too_direct'
   }
-
-  if (text.includes('goal') || text.includes('missing') || text.includes('objective') || text.includes('目的') || text.includes('要点')) {
+  if (text.includes('goal') || text.includes('missing') || text.includes('objective') || text.includes('目标')) {
     return 'goal_missing'
   }
-
-  if (text.includes('fluency') || text.includes('pause') || text.includes('停顿') || text.includes('流利')) {
+  if (text.includes('fluency') || text.includes('pause')) {
     return 'fluency_pause'
   }
-
-  if (text.includes('short') || text.includes('too brief') || text.includes('太短')) {
+  if (text.includes('short') || text.includes('brief')) {
     return 'sentence_too_short'
   }
 
   return 'other'
 }
 
-function buildAssessmentFromEvaluator(evaluator: DialogueEvaluatorOutput): Assessment {
-  const issueSeed = [
-    evaluator.major_issue || '',
-    ...evaluator.missing_points,
-  ].join(' ')
-  const issueTypes = evaluator.passed ? [] : [inferIssueType(issueSeed)]
+function buildAssessmentFromStageAgent(agentAssessment: Awaited<ReturnType<typeof runDialogueStageAgent>>['assessment']): Assessment | null {
+  if (!agentAssessment) {
+    return null
+  }
+
+  const issueTypes = agentAssessment.issueTypes.length
+    ? agentAssessment.issueTypes.map(inferIssueType)
+    : agentAssessment.passed === false
+      ? [inferIssueType([agentAssessment.feedbackZh, ...agentAssessment.missingPoints].join(' '))]
+      : []
 
   return {
-    score: evaluator.score,
-    passed: evaluator.passed,
-    goalAchieved: evaluator.goal_achieved,
+    score: agentAssessment.score,
+    passed: agentAssessment.passed,
+    goalAchieved: agentAssessment.goalAchieved,
     issueTypes,
-    feedbackZh: evaluator.coach_feedback_zh,
-    betterAnswerEn: evaluator.better_answer_en,
-    coveredPoints: evaluator.covered_points,
-    missingPoints: evaluator.missing_points,
-    raw: evaluator,
+    feedbackZh: agentAssessment.feedbackZh,
+    betterAnswerEn: agentAssessment.betterAnswerEn,
+    coveredPoints: agentAssessment.coveredPoints,
+    missingPoints: agentAssessment.missingPoints,
+    raw: agentAssessment,
   }
 }
 
 function buildProfileEventsFromAssessment({
   assessment,
-  mode,
   scenarioId,
-  nodeId,
+  stageId,
 }: {
   assessment: Assessment | null
-  mode: 'scenario'
   scenarioId: string | null
-  nodeId: string | null
+  stageId: string | null
 }): ProfileEvent[] {
   if (!assessment || assessment.passed || !assessment.issueTypes.length) {
     return []
@@ -553,16 +453,16 @@ function buildProfileEventsFromAssessment({
   const evidence =
     assessment.missingPoints?.join(' / ')
     || assessment.feedbackZh
-    || 'The learner answer did not fully satisfy the current scene goal.'
+    || 'The learner answer did not fully satisfy the current stage objective.'
 
   return assessment.issueTypes.map((type) => ({
     type,
     severity,
     evidence,
     suggestion: assessment.betterAnswerEn || assessment.feedbackZh || '',
-    mode,
+    mode: 'scenario',
     scenarioId,
-    nodeId,
+    stageId,
     metadata: {
       score,
       goalAchieved: assessment.goalAchieved,
@@ -581,6 +481,20 @@ function buildAiReply({
   betterAnswerEn?: string | null
   metadata?: Record<string, unknown>
 }): AiReply | null {
+  if (roleReplyEn) {
+    return {
+      role: 'role',
+      text: roleReplyEn,
+      language: 'en',
+      speechText: roleReplyEn,
+      metadata: {
+        ...metadata,
+        coachReplyZh: coachReplyZh || null,
+        betterAnswerEn: betterAnswerEn || null,
+      },
+    }
+  }
+
   if (coachReplyZh) {
     return {
       role: 'coach',
@@ -594,93 +508,100 @@ function buildAiReply({
     }
   }
 
-  if (roleReplyEn) {
-    return {
-      role: 'role',
-      text: roleReplyEn,
-      language: 'en',
-      speechText: roleReplyEn,
-      metadata,
-    }
+  return null
+}
+
+function getRecentTurns(session: LoadedDialogueSession, stageId: string) {
+  return session.attempts
+    .filter((attempt) => attempt.stageId === stageId)
+    .slice(-8)
+    .flatMap((attempt) => {
+      const turns: Array<{ role: 'user' | 'assistant' | 'coach' | 'system'; text: string }> = []
+      if (attempt.userText) {
+        turns.push({ role: 'user', text: attempt.userText })
+      }
+      if (attempt.roleReplyEn) {
+        turns.push({ role: 'assistant', text: attempt.roleReplyEn })
+      }
+      if (attempt.coachReplyZh) {
+        turns.push({ role: 'coach', text: attempt.coachReplyZh })
+      }
+      return turns
+    })
+}
+
+function matchTransitionForOutcome({
+  scenario,
+  stage,
+  outcomeKey,
+}: {
+  scenario: LoadedDialogueScenario
+  stage: LoadedDialogueStage
+  outcomeKey: string | null
+}) {
+  const transitions = scenario.transitions
+    .filter((transition) => transition.fromStageId === stage.id)
+    .sort((left, right) => left.priority - right.priority || left.createdAt.getTime() - right.createdAt.getTime())
+
+  if (!outcomeKey) {
+    return transitions.find((transition) => transition.isFallback) || null
   }
 
-  return null
+  const exact = transitions.filter((transition) => transition.outcomeKey === outcomeKey)
+  return exact.find((transition) => !transition.isFallback) || exact[0] || transitions.find((transition) => transition.isFallback) || null
 }
 
 async function recordScenarioTurn({
   session,
   scenario,
-  node,
+  stage,
   inputMode,
   userText,
   transcriptText,
   routerIntent,
   router,
-  evaluator,
   coach,
   roleReplyEn,
   coachReplyZh,
   betterAnswerEn,
-  passed,
-  score,
+  assessment,
+  profileEvents,
+  stageState,
   nextAction,
-  matchedEdge,
-  branchConfidence,
-  branchReason,
 }: {
   session: LoadedDialogueSession
   scenario: LoadedDialogueScenario
-  node: LoadedDialogueNode
+  stage: LoadedDialogueStage
   inputMode: DialogueInputMode
   userText: string
   transcriptText?: string | null
   routerIntent: string
   router: unknown
-  evaluator?: DialogueEvaluatorOutput | null
   coach?: DialogueCoachOutput | Record<string, unknown> | null
   roleReplyEn?: string | null
   coachReplyZh?: string | null
   betterAnswerEn?: string | null
-  passed?: boolean | null
-  score?: number | null
+  assessment?: Assessment | null
+  profileEvents?: ProfileEvent[]
+  stageState: Record<string, unknown>
   nextAction: string
-  matchedEdge?: ReturnType<typeof serializeMatchedEdge>
-  branchConfidence?: number | null
-  branchReason?: string | null
 }) {
-  const routerSnapshot = router && typeof router === 'object'
-    ? {
-        ...(router as Record<string, unknown>),
-        ...(matchedEdge ? { matchedEdge } : {}),
-        ...(branchConfidence !== undefined ? { branchConfidence } : {}),
-        ...(branchReason !== undefined ? { branchReason } : {}),
-      }
-    : router
-  const assessment = evaluator ? buildAssessmentFromEvaluator(evaluator) : null
-  const profileEvents = buildProfileEventsFromAssessment({
-    assessment,
-    mode: 'scenario',
-    scenarioId: session.scenarioId,
-    nodeId: node.id,
-  })
   const aiReply = buildAiReply({
     roleReplyEn,
     coachReplyZh,
     betterAnswerEn,
     metadata: {
       scenarioId: scenario.id,
-      nodeId: node.id,
+      stageId: stage.id,
       nextAction,
-      matchedEdge: matchedEdge || null,
-      branchConfidence: branchConfidence ?? null,
-      branchReason: branchReason ?? null,
+      stageState,
     },
   })
   const result = await recordCompletedConversationTurn({
     sessionId: session.id,
     userId: session.userId,
     scenarioId: session.scenarioId,
-    nodeId: node.id,
+    stageId: stage.id,
     inputMode: normalizeConversationInputMode(inputMode),
     transcriptSource: getTranscriptSource(inputMode),
     userText,
@@ -689,18 +610,18 @@ async function recordScenarioTurn({
       source: getTranscriptSource(inputMode),
       language: 'en',
     },
+    stageState,
     routerIntent,
-    router: routerSnapshot,
-    evaluator,
+    router,
     coach,
     aiReply,
     assessment,
-    profileEvents,
+    profileEvents: profileEvents || [],
     roleReplyEn,
     coachReplyZh,
     betterAnswerEn,
-    passed: passed ?? evaluator?.passed ?? null,
-    score: score ?? evaluator?.score ?? null,
+    passed: assessment?.passed ?? null,
+    score: assessment?.score ?? null,
     nextAction,
   })
 
@@ -724,10 +645,10 @@ export async function createDialogueSession(scenarioId: string, userId: string) 
     throw new Error('Dialogue scenario not found.')
   }
 
-  const startNode = getStartNode(scenario)
+  const startStage = getStartStage(scenario)
 
-  if (!startNode) {
-    throw new Error('Dialogue scenario has no starting node.')
+  if (!startStage) {
+    throw new Error('Dialogue scenario has no starting stage.')
   }
 
   const session = await prisma.dialogueSession.create({
@@ -735,11 +656,14 @@ export async function createDialogueSession(scenarioId: string, userId: string) 
       mode: 'scenario',
       scenarioId,
       userId,
-      currentNodeId: startNode.id,
+      currentStageId: startStage.id,
+      currentNodeId: null,
+      stageStateJson: safeJsonStringify(emptyScenarioStageMemory()),
       status: 'active',
       metadataJson: safeJsonStringify({
         scenarioTitle: scenario.title,
-        startNodeId: startNode.id,
+        startStageId: startStage.id,
+        runtimeVersion: 'v2',
       }),
     },
   })
@@ -761,10 +685,10 @@ export async function resetDialogueSession(sessionId: string, userId: string) {
   }
 
   const scenario = requireScenario(session)
-  const startNode = getStartNode(scenario)
+  const startStage = getStartStage(scenario)
 
-  if (!startNode) {
-    throw new Error('Dialogue scenario has no starting node.')
+  if (!startStage) {
+    throw new Error('Dialogue scenario has no starting stage.')
   }
 
   await prisma.dialogueAttempt.deleteMany({
@@ -777,7 +701,9 @@ export async function resetDialogueSession(sessionId: string, userId: string) {
   await prisma.dialogueSession.update({
     where: { id: session.id },
     data: {
-      currentNodeId: startNode.id,
+      currentNodeId: null,
+      currentStageId: startStage.id,
+      stageStateJson: safeJsonStringify(emptyScenarioStageMemory()),
       status: 'active',
       totalScore: 0,
       completedNodeCount: 0,
@@ -824,17 +750,15 @@ export async function respondToDialogueSession({
   }
 
   const scenario = requireScenario(session)
-  const node =
-    session.currentNode
-    || scenario.nodes.find((entry) => entry.id === session.currentNodeId)
-    || null
+  const stage = getCurrentStage(session)
 
-  if (!node) {
-    throw new Error('Dialogue session has no current node.')
+  if (!stage) {
+    throw new Error('Dialogue session has no current stage.')
   }
 
   const scenarioContext = scenarioToContext(scenario)
-  const nodeContext = nodeToContext(node)
+  const stageContext = stageToContext(stage)
+  const nodeContext = stageToLegacyNodeContext(stage)
   const router = await routeDialogueInput({
     scenario: scenarioContext,
     node: nodeContext,
@@ -844,9 +768,8 @@ export async function respondToDialogueSession({
   const routerIntent = router.intent
   const answerText = (router.sceneAnswerText || userText).trim()
   const questionText = (router.questionText || userText).trim()
-  const previousFailures = session.attempts.filter(
-    (attempt) => attempt.nodeId === node.id && attempt.passed === false
-  ).length
+  const currentMemory = parseScenarioStageMemory(session.stageStateJson)
+  const currentStageState = currentMemory.activeStageState
 
   if (routerIntent === 'exit') {
     await prisma.dialogueSession.update({
@@ -860,12 +783,13 @@ export async function respondToDialogueSession({
     const attempt = await recordScenarioTurn({
       session,
       scenario,
-      node,
+      stage,
       inputMode,
       userText,
       transcriptText,
       routerIntent,
       router,
+      stageState: currentMemory,
       nextAction: 'exit',
     })
     const reloaded = await getSessionWithContext(session.id, userId)
@@ -882,10 +806,12 @@ export async function respondToDialogueSession({
       roleReplyEn: null,
       coachReplyZh: null,
       transcriptText: transcriptText || null,
+      stageState: currentMemory,
+      stageCompleted: false,
+      outcomeKey: null,
+      matchedTransition: null,
+      nextStage: null,
       nextAction: 'exit',
-      matchedEdge: null,
-      branchConfidence: null,
-      branchReason: null,
     }
   }
 
@@ -893,13 +819,14 @@ export async function respondToDialogueSession({
     const attempt = await recordScenarioTurn({
       session,
       scenario,
-      node,
+      stage,
       inputMode,
       userText,
       transcriptText,
       routerIntent,
       router,
-      roleReplyEn: node.roleLineEn,
+      roleReplyEn: stage.openingLineEn,
+      stageState: currentMemory,
       nextAction: 'repeat_role_line',
     })
     await prisma.dialogueSession.update({
@@ -917,13 +844,15 @@ export async function respondToDialogueSession({
       evaluator: null,
       coach: null,
       attempt: serializeAttempt(attempt),
-      roleReplyEn: node.roleLineEn,
+      roleReplyEn: stage.openingLineEn,
       coachReplyZh: null,
       transcriptText: transcriptText || null,
+      stageState: currentMemory,
+      stageCompleted: false,
+      outcomeKey: null,
+      matchedTransition: null,
+      nextStage: null,
       nextAction: 'repeat_role_line',
-      matchedEdge: null,
-      branchConfidence: null,
-      branchReason: null,
     }
   }
 
@@ -933,13 +862,14 @@ export async function respondToDialogueSession({
       node: nodeContext,
       userQuestion: questionText,
       mode: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed' : 'explanation',
-      betterAnswerEn: routerIntent === 'mixed' ? answerText || node.sampleAnswer : node.sampleAnswer,
+      betterAnswerEn: answerText || '',
     })
 
+    const nextAction = routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed_coach' : 'coach'
     const attempt = await recordScenarioTurn({
       session,
       scenario,
-      node,
+      stage,
       inputMode,
       userText,
       transcriptText,
@@ -948,7 +878,8 @@ export async function respondToDialogueSession({
       coach,
       coachReplyZh: coach.coach_reply_zh,
       betterAnswerEn: coach.better_answer_en,
-      nextAction: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed_coach' : 'coach',
+      stageState: currentMemory,
+      nextAction,
     })
 
     await prisma.dialogueSession.update({
@@ -972,35 +903,44 @@ export async function respondToDialogueSession({
       roleReplyEn: null,
       coachReplyZh: coach.coach_reply_zh,
       transcriptText: transcriptText || null,
-      nextAction: routerIntent === 'request_hint' ? 'hint' : routerIntent === 'mixed' ? 'mixed_coach' : 'coach',
-      matchedEdge: null,
-      branchConfidence: null,
-      branchReason: null,
+      stageState: currentMemory,
+      stageCompleted: false,
+      outcomeKey: null,
+      matchedTransition: null,
+      nextStage: null,
+      nextAction,
     }
   }
 
   if (routerIntent === 'skip') {
-    const advanced = await advanceFromNode({
+    const transition = matchTransitionForOutcome({
       scenario,
-      node,
-      result: 'skip',
-      scoreToAdd: 0,
-      answerText: userText,
+      stage,
+      outcomeKey: 'skip',
     })
-    const hasSkipEdge = Boolean(advanced.matchedEdge)
-    const nextNode =
-      advanced.currentNodeId
-        ? scenario.nodes.find((entry) => entry.id === advanced.currentNodeId) || null
+    const nextStage =
+      transition?.toStageId
+        ? scenario.stages.find((entry) => entry.id === transition.toStageId) || null
         : null
-    const roleReplyEn = hasSkipEdge && nextNode ? nextNode.roleLineEn : null
-    const coachReplyZh = hasSkipEdge
-      ? '好的，我们跳过这个节点，继续下一个场景。'
-      : '已收到跳过请求，但当前节点没有配置跳过分支。你可以请求提示，或再试一次。'
-
+    const stageCompleted = Boolean(transition)
+    const roleReplyEn = nextStage ? nextStage.openingLineEn : null
+    const coachReplyZh = stageCompleted
+      ? '好的，我们跳过当前阶段，继续下一个阶段。'
+      : '当前阶段没有配置 skip 分支，你可以请求提示，或继续尝试回答。'
+    const nextAction = stageCompleted ? 'skip' : 'skip_unavailable'
+    const skipMemory = stageCompleted
+      ? completeStageMemory({
+          memory: currentMemory,
+          stage,
+          outcomeKey: 'skip',
+          nextStage,
+          userText,
+        })
+      : currentMemory
     const attempt = await recordScenarioTurn({
       session,
       scenario,
-      node,
+      stage,
       inputMode,
       userText,
       transcriptText,
@@ -1008,23 +948,20 @@ export async function respondToDialogueSession({
       router,
       roleReplyEn,
       coachReplyZh,
-      passed: null,
-      score: null,
-      nextAction: hasSkipEdge ? 'skip' : 'skip_unavailable',
-      matchedEdge: advanced.matchedEdge,
-      branchConfidence: advanced.branchConfidence,
-      branchReason: advanced.branchReason,
+      stageState: skipMemory,
+      nextAction,
     })
 
-    if (hasSkipEdge) {
+    if (stageCompleted) {
       await prisma.dialogueSession.update({
         where: { id: session.id },
         data: {
-          currentNodeId: advanced.currentNodeId || null,
-          status: advanced.status,
-          completedAt: advanced.completedAt,
+          currentStageId: nextStage?.id || null,
+          stageStateJson: safeJsonStringify(skipMemory),
+          status: nextStage ? 'active' : 'completed',
+          completedAt: nextStage ? null : new Date(),
           completedNodeCount: {
-            increment: advanced.completedDelta,
+            increment: 1,
           },
           lastActivityAt: new Date(),
         },
@@ -1050,113 +987,112 @@ export async function respondToDialogueSession({
       roleReplyEn,
       coachReplyZh,
       transcriptText: transcriptText || null,
-      nextAction: hasSkipEdge ? 'skip' : 'skip_unavailable',
-      matchedEdge: advanced.matchedEdge,
-      branchConfidence: advanced.branchConfidence,
-      branchReason: advanced.branchReason,
+      stageState: skipMemory,
+      stageCompleted,
+      outcomeKey: 'skip',
+      matchedTransition: serializeTransition(transition, stageCompleted ? 1 : null, 'Matched skip control action.'),
+      nextStage: serializeStage(nextStage),
+      nextAction,
     }
   }
 
-  const evaluator = await evaluateDialogueAnswer({
+  const agent = await runDialogueStageAgent({
     scenario: scenarioContext,
-    node: nodeContext,
-    answerText,
-    previousFailures,
+    stage: stageContext,
+    userText: answerText,
+    stageState: currentStageState,
+    globalSlots: currentMemory.globalSlots,
+    history: currentMemory.history,
+    recentTurns: getRecentTurns(session, stage.id),
   })
-
-  const currentFailureCount = evaluator.passed ? previousFailures : previousFailures + 1
-  const reachedRetryLimit = !evaluator.passed && currentFailureCount >= node.retryLimit
-  const advanceResult: DialogueEdgeResult | null = evaluator.passed ? 'pass' : reachedRetryLimit ? 'max_retry' : null
-  let nextAction = evaluator.passed ? 'advance' : reachedRetryLimit ? 'max_retry' : 'retry'
-  let nextNodeId = node.id
-  let nextStatus = 'active'
-  let completedAt: Date | null = null
-  let completedDelta = 0
-  let matchedEdge: ReturnType<typeof serializeMatchedEdge> = null
-  let branchConfidence: number | null = null
-  let branchReason: string | null = null
-
-  if (advanceResult) {
-    const advanced = await advanceFromNode({
-      scenario,
-      node,
-      result: advanceResult,
-      scoreToAdd: evaluator.score,
-      answerText,
-    })
-
-    if (advanced.needsClarification) {
-      nextAction = 'clarify_branch'
-    }
-
-    nextNodeId = advanced.currentNodeId || ''
-    nextStatus = advanced.status
-    completedAt = advanced.completedAt
-    completedDelta = advanced.completedDelta
-    matchedEdge = advanced.matchedEdge
-    branchConfidence = advanced.branchConfidence
-    branchReason = advanced.branchReason
-  }
-
-  const nextNode =
-    nextNodeId
-      ? scenario.nodes.find((entry) => entry.id === nextNodeId) || null
-      : null
-  const roleReplyEn = advanceResult && nextNode
-    && nextAction !== 'clarify_branch'
-    ? await buildNextRoleReply({
+  const nextStageState = mergeStageState(currentStageState, parseAgentState(agent.stageStateJson))
+  const assessment = buildAssessmentFromStageAgent(agent.assessment)
+  const profileEvents = buildProfileEventsFromAssessment({
+    assessment,
+    scenarioId: session.scenarioId,
+    stageId: stage.id,
+  })
+  const stageOutcomeKeys = getStageOutcomeKeys(stage)
+  const requiresOutcome = stageOutcomeKeys.length > 0
+  const stageCompleted = Boolean(agent.isStageComplete && (!requiresOutcome || agent.outcomeKey))
+  const transition = stageCompleted && agent.outcomeKey
+    ? matchTransitionForOutcome({
         scenario,
-        nextNode,
-        learnerAnswer: answerText,
+        stage,
+        outcomeKey: agent.outcomeKey,
       })
     : null
-  const coachReplyZh = nextAction === 'clarify_branch'
-    ? '你的回答已经基本达成当前目标，但我还不能确定你想进入哪个分支。请再说清楚你的选择，比如你想“去餐厅”“点外卖”还是“在家做饭”。'
-    : evaluator.coach_feedback_zh
+  const nextStage =
+    transition?.toStageId
+      ? scenario.stages.find((entry) => entry.id === transition.toStageId) || null
+      : null
+  const nextMemoryBeforeTransition: ScenarioStageMemory = {
+    globalSlots: applySlotUpdatesToGlobalSlots(currentMemory.globalSlots, agent.slotUpdates),
+    activeStageState: nextStageState,
+    history: currentMemory.history,
+  }
+  const nextMemory = stageCompleted
+    ? completeStageMemory({
+        memory: nextMemoryBeforeTransition,
+        stage,
+        outcomeKey: agent.outcomeKey,
+        nextStage,
+        userText,
+      })
+    : nextMemoryBeforeTransition
+  const roleReplyEn = stageCompleted
+    ? nextStage?.openingLineEn || agent.roleReplyEn || null
+    : agent.roleReplyEn || null
+  const coachReplyZh = stageCompleted ? agent.coachFeedbackZh : null
+  const nextAction = stageCompleted ? 'complete_stage' : agent.nextAction
+  const routerSnapshot = {
+    ...router,
+    stageAgent: agent,
+    stageState: nextMemory,
+    matchedTransition: serializeTransition(transition, agent.outcomeConfidence, 'Matched by stage outcome.'),
+  }
 
   const attempt = await recordScenarioTurn({
     session,
     scenario,
-    node,
+    stage,
     inputMode,
     userText,
     transcriptText,
     routerIntent,
-    router,
-    evaluator,
-    coach: {
-      coach_reply_zh: coachReplyZh,
-      better_answer_en: evaluator.better_answer_en,
-    },
+    router: routerSnapshot,
+    coach: agent.coachFeedbackZh ? { coach_reply_zh: agent.coachFeedbackZh } : null,
     roleReplyEn,
     coachReplyZh,
-    betterAnswerEn: evaluator.better_answer_en,
-    passed: evaluator.passed,
-    score: evaluator.score,
+    betterAnswerEn: assessment?.betterAnswerEn || null,
+    assessment,
+    profileEvents,
+    stageState: nextMemory,
     nextAction,
-    matchedEdge,
-    branchConfidence,
-    branchReason,
   })
 
-  if (nextAction === 'clarify_branch') {
+  if (stageCompleted) {
     await prisma.dialogueSession.update({
       where: { id: session.id },
-      data: { lastActivityAt: new Date() },
+      data: {
+        currentStageId: nextStage?.id || null,
+        stageStateJson: safeJsonStringify(nextMemory),
+        status: nextStage ? 'active' : 'completed',
+        completedAt: nextStage ? null : new Date(),
+        completedNodeCount: {
+          increment: 1,
+        },
+        totalScore: {
+          increment: typeof assessment?.score === 'number' ? assessment.score : 0,
+        },
+        lastActivityAt: new Date(),
+      },
     })
   } else {
     await prisma.dialogueSession.update({
       where: { id: session.id },
       data: {
-        currentNodeId: nextNodeId || null,
-        status: nextStatus,
-        completedAt,
-        completedNodeCount: {
-          increment: completedDelta,
-        },
-        totalScore: {
-          increment: completedDelta ? evaluator.score : 0,
-        },
+        stageStateJson: safeJsonStringify(nextMemory),
         lastActivityAt: new Date(),
       },
     })
@@ -1169,17 +1105,29 @@ export async function respondToDialogueSession({
 
   return {
     ...buildSessionPayload(reloaded),
-    router,
-    evaluator,
+    router: routerSnapshot,
+    evaluator: assessment
+      ? {
+          passed: Boolean(assessment.passed),
+          score: assessment.score || 0,
+          coach_feedback_zh: assessment.feedbackZh || agent.coachFeedbackZh || '',
+          better_answer_en: assessment.betterAnswerEn || '',
+          missing_points: assessment.missingPoints || [],
+          covered_points: assessment.coveredPoints || [],
+        }
+      : null,
     coach: null as DialogueCoachOutput | null,
     attempt: serializeAttempt(attempt),
     roleReplyEn,
     coachReplyZh,
     transcriptText: transcriptText || null,
+    stageState: nextMemory,
+    stageCompleted,
+    outcomeKey: agent.outcomeKey,
+    outcomeConfidence: agent.outcomeConfidence,
+    matchedTransition: serializeTransition(transition, agent.outcomeConfidence, 'Matched by stage outcome.'),
+    nextStage: serializeStage(nextStage),
     nextAction,
-    matchedEdge,
-    branchConfidence,
-    branchReason,
   }
 }
 
@@ -1205,34 +1153,27 @@ export async function askDialogueCoach({
   }
 
   const scenario = requireScenario(session)
-  const node =
-    session.currentNode
-    || scenario.nodes.find((entry) => entry.id === session.currentNodeId)
-    || null
+  const stage = getCurrentStage(session)
 
-  if (!node) {
-    throw new Error('Dialogue session has no current node.')
+  if (!stage) {
+    throw new Error('Dialogue session has no current stage.')
   }
 
-  const lastAttempt = [...session.attempts]
-    .reverse()
-    .find((attempt) => attempt.nodeId === node.id && attempt.evaluatorJson)
-  const lastEvaluator = parseJsonString<DialogueEvaluatorOutput | null>(lastAttempt?.evaluatorJson, null)
   const coach = await coachDialogueLearner({
     scenario: scenarioToContext(scenario),
-    node: nodeToContext(node),
+    node: stageToLegacyNodeContext(stage),
     userQuestion: question,
     mode,
-    lastEvaluator,
-    betterAnswerEn: lastAttempt?.betterAnswerEn || node.sampleAnswer,
+    betterAnswerEn: '',
   })
 
   const routerIntent = mode === 'hint' ? 'request_hint' : 'ask_coach'
+  const stageState = parseScenarioStageMemory(session.stageStateJson)
   const nextAction = mode === 'hint' ? 'hint' : 'coach'
   const attempt = await recordScenarioTurn({
     session,
     scenario,
-    node,
+    stage,
     inputMode: 'text',
     userText: question,
     routerIntent,
@@ -1240,6 +1181,7 @@ export async function askDialogueCoach({
     coach,
     coachReplyZh: coach.coach_reply_zh,
     betterAnswerEn: coach.better_answer_en,
+    stageState,
     nextAction,
   })
 
@@ -1260,10 +1202,12 @@ export async function askDialogueCoach({
     coach,
     attempt: serializeAttempt(attempt),
     coachReplyZh: coach.coach_reply_zh,
+    stageState,
+    stageCompleted: false,
+    outcomeKey: null,
+    matchedTransition: null,
+    nextStage: null,
     nextAction,
-    matchedEdge: null,
-    branchConfidence: null,
-    branchReason: null,
   }
 }
 
@@ -1275,39 +1219,39 @@ export async function revealDialogueAnswer(sessionId: string, userId: string) {
   }
 
   const scenario = requireScenario(session)
-  const node =
-    session.currentNode
-    || scenario.nodes.find((entry) => entry.id === session.currentNodeId)
-    || null
+  const stage = getCurrentStage(session)
 
-  if (!node) {
-    throw new Error('Dialogue session has no current node.')
+  if (!stage) {
+    throw new Error('Dialogue session has no current stage.')
   }
 
+  const hints = parseJsonString<Record<string, unknown>>(stage.hintsJson, {})
+  const sampleAnswer = String(hints.sampleAnswer || hints.example || '').trim()
   const coach: DialogueCoachOutput = {
-    coach_reply_zh: node.sampleAnswer
-      ? `推荐回答：${node.sampleAnswer}`
-      : '这个节点还没有配置推荐答案。',
+    coach_reply_zh: sampleAnswer
+      ? `推荐表达：${sampleAnswer}`
+      : '这个阶段还没有配置推荐表达。你可以先回答当前角色的问题。',
     vocab_notes: [],
     grammar_notes: [],
-    better_answer_en: node.sampleAnswer || null,
+    better_answer_en: sampleAnswer || null,
     invite_retry: true,
-    tts_text_zh: node.sampleAnswer
-      ? `推荐回答：${node.sampleAnswer}`
-      : '这个节点还没有配置推荐答案。',
+    tts_text_zh: sampleAnswer
+      ? `推荐表达：${sampleAnswer}`
+      : '这个阶段还没有配置推荐表达。你可以先回答当前角色的问题。',
   }
-
+  const stageState = parseScenarioStageMemory(session.stageStateJson)
   const attempt = await recordScenarioTurn({
     session,
     scenario,
-    node,
+    stage,
     inputMode: 'text',
     userText: '[reveal_answer]',
     routerIntent: 'request_hint',
     router: { intent: 'request_hint', action: 'reveal_answer', confidence: 1 },
     coach,
     coachReplyZh: coach.coach_reply_zh,
-    betterAnswerEn: node.sampleAnswer || null,
+    betterAnswerEn: sampleAnswer || null,
+    stageState,
     nextAction: 'hint',
   })
 
@@ -1328,9 +1272,11 @@ export async function revealDialogueAnswer(sessionId: string, userId: string) {
     coach,
     attempt: serializeAttempt(attempt),
     coachReplyZh: coach.coach_reply_zh,
+    stageState,
+    stageCompleted: false,
+    outcomeKey: null,
+    matchedTransition: null,
+    nextStage: null,
     nextAction: 'hint',
-    matchedEdge: null,
-    branchConfidence: null,
-    branchReason: null,
   }
 }

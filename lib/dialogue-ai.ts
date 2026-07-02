@@ -32,6 +32,19 @@ export interface DialogueAiNodeContext {
   allowDynamicFollowup: boolean
 }
 
+export interface DialogueAiStageContext {
+  id: string
+  title: string
+  openingLineEn: string
+  openingLineZh: string | null
+  objective: string
+  slotsJson: string
+  completionJson: string
+  assessmentJson: string
+  hintsJson: string
+  outcomesJson: string
+}
+
 export interface DialogueRouterOutput {
   intent: DialogueRouterIntent
   confidence: number
@@ -79,6 +92,32 @@ export interface DialogueRoleOutput {
   role_reply_en: string
   emotion: 'normal' | 'encouraging' | 'confused' | 'corrective'
   tts_instructions: string
+}
+
+export interface DialogueStageAgentOutput {
+  slotUpdates: Array<{
+    key: string
+    value: string
+    confidence: number
+    evidence: string
+  }>
+  stageStateJson: string
+  isStageComplete: boolean
+  outcomeKey: string | null
+  outcomeConfidence: number
+  roleReplyEn: string
+  coachFeedbackZh: string | null
+  assessment: {
+    score: number | null
+    passed: boolean | null
+    goalAchieved: boolean | null
+    issueTypes: string[]
+    feedbackZh: string | null
+    betterAnswerEn: string | null
+    coveredPoints: string[]
+    missingPoints: string[]
+  } | null
+  nextAction: 'stay_in_stage' | 'complete_stage' | 'clarify' | 'retry'
 }
 
 export interface DialogueHomeCoachScenarioContext {
@@ -411,6 +450,132 @@ export async function routeDialogueInput({
   return {
     ...output,
     confidence: Math.min(1, Math.max(0, Number(output.confidence) || 0)),
+  }
+}
+
+function buildStageInput(
+  scenario: DialogueAiScenarioContext,
+  stage: DialogueAiStageContext,
+  extra: Record<string, unknown>
+) {
+  return {
+    scenario,
+    currentStage: {
+      id: stage.id,
+      title: stage.title,
+      openingLineEn: stage.openingLineEn,
+      openingLineZh: stage.openingLineZh,
+      objective: stage.objective,
+      slotsJson: stage.slotsJson,
+      completionJson: stage.completionJson,
+      assessmentJson: stage.assessmentJson,
+      hintsJson: stage.hintsJson,
+      outcomesJson: stage.outcomesJson,
+    },
+    ...extra,
+  }
+}
+
+const STAGE_AGENT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    slotUpdates: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          key: { type: 'string' },
+          value: { type: 'string' },
+          confidence: { type: 'number' },
+          evidence: { type: 'string' },
+        },
+        required: ['key', 'value', 'confidence', 'evidence'],
+      },
+    },
+    stageStateJson: { type: 'string' },
+    isStageComplete: { type: 'boolean' },
+    outcomeKey: { type: ['string', 'null'] },
+    outcomeConfidence: { type: 'number' },
+    roleReplyEn: { type: 'string' },
+    coachFeedbackZh: { type: ['string', 'null'] },
+    assessment: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      properties: {
+        score: { type: ['integer', 'null'], minimum: 0, maximum: 100 },
+        passed: { type: ['boolean', 'null'] },
+        goalAchieved: { type: ['boolean', 'null'] },
+        issueTypes: { type: 'array', items: { type: 'string' } },
+        feedbackZh: { type: ['string', 'null'] },
+        betterAnswerEn: { type: ['string', 'null'] },
+        coveredPoints: { type: 'array', items: { type: 'string' } },
+        missingPoints: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['score', 'passed', 'goalAchieved', 'issueTypes', 'feedbackZh', 'betterAnswerEn', 'coveredPoints', 'missingPoints'],
+    },
+    nextAction: { type: 'string', enum: ['stay_in_stage', 'complete_stage', 'clarify', 'retry'] },
+  },
+  required: ['slotUpdates', 'stageStateJson', 'isStageComplete', 'outcomeKey', 'outcomeConfidence', 'roleReplyEn', 'coachFeedbackZh', 'assessment', 'nextAction'],
+}
+
+export async function runDialogueStageAgent({
+  scenario,
+  stage,
+  userText,
+  stageState,
+  globalSlots,
+  history,
+  recentTurns,
+}: {
+  scenario: DialogueAiScenarioContext
+  stage: DialogueAiStageContext
+  userText: string
+  stageState: Record<string, unknown>
+  globalSlots?: Record<string, unknown>
+  history?: Array<Record<string, unknown>>
+  recentTurns: Array<{ role: 'user' | 'assistant' | 'coach' | 'system'; text: string }>
+}) {
+  const output = await callResponsesJson<DialogueStageAgentOutput>({
+    model: getDialogueModel('DIALOGUE_STAGE_AGENT_MODEL', getDialogueModel('DIALOGUE_EVALUATOR_MODEL', 'gpt-5.4-mini')),
+    name: 'dialogue_stage_agent',
+    schema: STAGE_AGENT_SCHEMA,
+    instructions: [
+      'You are the adaptive stage runtime for an English scenario practice app.',
+      'A stage is a multi-turn task, not a single fixed script line.',
+      'Use globalSlots and scenarioHistory as cross-stage context. For example, remember meal time, dine-in/delivery choice, cuisine, restaurant, party size, and prior user preferences.',
+      'Update only slots that are supported by the learner message. Keep existing stageState values unless the learner clearly revises them.',
+      'slotUpdates should include current-stage slots plus any globally useful preference that is clearly stated by the learner.',
+      'Ask one natural English follow-up question when required slots are missing or the outcome is unclear.',
+      'Complete the stage only when required slots are satisfied and the stage objective is achieved.',
+      'When complete, choose exactly one outcomeKey from currentStage.outcomesJson when possible.',
+      'If currentStage.outcomesJson is empty, a completed terminal stage may use outcomeKey null.',
+      'During the stage, do not give heavy teaching feedback. At completion, include concise Chinese coachFeedbackZh and assessment.',
+      'stageStateJson must be a compact JSON object string with collected slot values and optional evidence/confidence metadata.',
+    ].join('\n'),
+    input: buildStageInput(scenario, stage, {
+      userText,
+      stageState,
+      globalSlots: globalSlots || {},
+      scenarioHistory: history || [],
+      recentTurns,
+    }),
+  })
+
+  return {
+    ...output,
+    slotUpdates: Array.isArray(output.slotUpdates) ? output.slotUpdates : [],
+    outcomeConfidence: Math.min(1, Math.max(0, Number(output.outcomeConfidence) || 0)),
+    assessment: output.assessment
+      ? {
+          ...output.assessment,
+          score: typeof output.assessment.score === 'number' ? normalizeDialogueScore(output.assessment.score) : null,
+          issueTypes: Array.isArray(output.assessment.issueTypes) ? output.assessment.issueTypes : [],
+          coveredPoints: Array.isArray(output.assessment.coveredPoints) ? output.assessment.coveredPoints : [],
+          missingPoints: Array.isArray(output.assessment.missingPoints) ? output.assessment.missingPoints : [],
+        }
+      : null,
   }
 }
 

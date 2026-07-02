@@ -35,6 +35,7 @@ export type DialogueScenarioMinAggregateOutputType = {
   coverUrl: string | null
   isPublished: boolean | null
   startNodeId: string | null
+  startStageId: string | null
   roleVoice: string | null
   coachVoice: string | null
   createdAt: Date | null
@@ -52,6 +53,7 @@ export type DialogueScenarioMaxAggregateOutputType = {
   coverUrl: string | null
   isPublished: boolean | null
   startNodeId: string | null
+  startStageId: string | null
   roleVoice: string | null
   coachVoice: string | null
   createdAt: Date | null
@@ -69,6 +71,7 @@ export type DialogueScenarioCountAggregateOutputType = {
   coverUrl: number
   isPublished: number
   startNodeId: number
+  startStageId: number
   roleVoice: number
   coachVoice: number
   createdAt: number
@@ -88,6 +91,7 @@ export type DialogueScenarioMinAggregateInputType = {
   coverUrl?: true
   isPublished?: true
   startNodeId?: true
+  startStageId?: true
   roleVoice?: true
   coachVoice?: true
   createdAt?: true
@@ -105,6 +109,7 @@ export type DialogueScenarioMaxAggregateInputType = {
   coverUrl?: true
   isPublished?: true
   startNodeId?: true
+  startStageId?: true
   roleVoice?: true
   coachVoice?: true
   createdAt?: true
@@ -122,6 +127,7 @@ export type DialogueScenarioCountAggregateInputType = {
   coverUrl?: true
   isPublished?: true
   startNodeId?: true
+  startStageId?: true
   roleVoice?: true
   coachVoice?: true
   createdAt?: true
@@ -212,6 +218,7 @@ export type DialogueScenarioGroupByOutputType = {
   coverUrl: string | null
   isPublished: boolean
   startNodeId: string | null
+  startStageId: string | null
   roleVoice: string
   coachVoice: string
   createdAt: Date
@@ -250,12 +257,15 @@ export type DialogueScenarioWhereInput = {
   coverUrl?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
   isPublished?: Prisma.BoolFilter<"DialogueScenario"> | boolean
   startNodeId?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
+  startStageId?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
   roleVoice?: Prisma.StringFilter<"DialogueScenario"> | string
   coachVoice?: Prisma.StringFilter<"DialogueScenario"> | string
   createdAt?: Prisma.DateTimeFilter<"DialogueScenario"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DialogueScenario"> | Date | string
   nodes?: Prisma.DialogueNodeListRelationFilter
   edges?: Prisma.DialogueEdgeListRelationFilter
+  stages?: Prisma.DialogueStageListRelationFilter
+  transitions?: Prisma.DialogueTransitionListRelationFilter
   sessions?: Prisma.DialogueSessionListRelationFilter
 }
 
@@ -270,12 +280,15 @@ export type DialogueScenarioOrderByWithRelationInput = {
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   startNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  startStageId?: Prisma.SortOrderInput | Prisma.SortOrder
   roleVoice?: Prisma.SortOrder
   coachVoice?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   nodes?: Prisma.DialogueNodeOrderByRelationAggregateInput
   edges?: Prisma.DialogueEdgeOrderByRelationAggregateInput
+  stages?: Prisma.DialogueStageOrderByRelationAggregateInput
+  transitions?: Prisma.DialogueTransitionOrderByRelationAggregateInput
   sessions?: Prisma.DialogueSessionOrderByRelationAggregateInput
 }
 
@@ -293,12 +306,15 @@ export type DialogueScenarioWhereUniqueInput = Prisma.AtLeast<{
   coverUrl?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
   isPublished?: Prisma.BoolFilter<"DialogueScenario"> | boolean
   startNodeId?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
+  startStageId?: Prisma.StringNullableFilter<"DialogueScenario"> | string | null
   roleVoice?: Prisma.StringFilter<"DialogueScenario"> | string
   coachVoice?: Prisma.StringFilter<"DialogueScenario"> | string
   createdAt?: Prisma.DateTimeFilter<"DialogueScenario"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DialogueScenario"> | Date | string
   nodes?: Prisma.DialogueNodeListRelationFilter
   edges?: Prisma.DialogueEdgeListRelationFilter
+  stages?: Prisma.DialogueStageListRelationFilter
+  transitions?: Prisma.DialogueTransitionListRelationFilter
   sessions?: Prisma.DialogueSessionListRelationFilter
 }, "id">
 
@@ -313,6 +329,7 @@ export type DialogueScenarioOrderByWithAggregationInput = {
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   startNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  startStageId?: Prisma.SortOrderInput | Prisma.SortOrder
   roleVoice?: Prisma.SortOrder
   coachVoice?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -336,6 +353,7 @@ export type DialogueScenarioScalarWhereWithAggregatesInput = {
   coverUrl?: Prisma.StringNullableWithAggregatesFilter<"DialogueScenario"> | string | null
   isPublished?: Prisma.BoolWithAggregatesFilter<"DialogueScenario"> | boolean
   startNodeId?: Prisma.StringNullableWithAggregatesFilter<"DialogueScenario"> | string | null
+  startStageId?: Prisma.StringNullableWithAggregatesFilter<"DialogueScenario"> | string | null
   roleVoice?: Prisma.StringWithAggregatesFilter<"DialogueScenario"> | string
   coachVoice?: Prisma.StringWithAggregatesFilter<"DialogueScenario"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DialogueScenario"> | Date | string
@@ -353,12 +371,15 @@ export type DialogueScenarioCreateInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeCreateNestedManyWithoutScenarioInput
   edges?: Prisma.DialogueEdgeCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionCreateNestedManyWithoutScenarioInput
 }
 
@@ -373,12 +394,15 @@ export type DialogueScenarioUncheckedCreateInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeUncheckedCreateNestedManyWithoutScenarioInput
   edges?: Prisma.DialogueEdgeUncheckedCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageUncheckedCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionUncheckedCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutScenarioInput
 }
 
@@ -393,12 +417,15 @@ export type DialogueScenarioUpdateInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUpdateManyWithoutScenarioNestedInput
   edges?: Prisma.DialogueEdgeUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUpdateManyWithoutScenarioNestedInput
 }
 
@@ -413,12 +440,15 @@ export type DialogueScenarioUncheckedUpdateInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUncheckedUpdateManyWithoutScenarioNestedInput
   edges?: Prisma.DialogueEdgeUncheckedUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUncheckedUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUncheckedUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput
 }
 
@@ -433,6 +463,7 @@ export type DialogueScenarioCreateManyInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
@@ -450,6 +481,7 @@ export type DialogueScenarioUpdateManyMutationInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -467,6 +499,7 @@ export type DialogueScenarioUncheckedUpdateManyInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -484,6 +517,7 @@ export type DialogueScenarioCountOrderByAggregateInput = {
   coverUrl?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   startNodeId?: Prisma.SortOrder
+  startStageId?: Prisma.SortOrder
   roleVoice?: Prisma.SortOrder
   coachVoice?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -501,6 +535,7 @@ export type DialogueScenarioMaxOrderByAggregateInput = {
   coverUrl?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   startNodeId?: Prisma.SortOrder
+  startStageId?: Prisma.SortOrder
   roleVoice?: Prisma.SortOrder
   coachVoice?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -518,6 +553,7 @@ export type DialogueScenarioMinOrderByAggregateInput = {
   coverUrl?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   startNodeId?: Prisma.SortOrder
+  startStageId?: Prisma.SortOrder
   roleVoice?: Prisma.SortOrder
   coachVoice?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -532,6 +568,34 @@ export type DialogueScenarioScalarRelationFilter = {
 export type DialogueScenarioNullableScalarRelationFilter = {
   is?: Prisma.DialogueScenarioWhereInput | null
   isNot?: Prisma.DialogueScenarioWhereInput | null
+}
+
+export type DialogueScenarioCreateNestedOneWithoutStagesInput = {
+  create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutStagesInput, Prisma.DialogueScenarioUncheckedCreateWithoutStagesInput>
+  connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutStagesInput
+  connect?: Prisma.DialogueScenarioWhereUniqueInput
+}
+
+export type DialogueScenarioUpdateOneRequiredWithoutStagesNestedInput = {
+  create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutStagesInput, Prisma.DialogueScenarioUncheckedCreateWithoutStagesInput>
+  connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutStagesInput
+  upsert?: Prisma.DialogueScenarioUpsertWithoutStagesInput
+  connect?: Prisma.DialogueScenarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DialogueScenarioUpdateToOneWithWhereWithoutStagesInput, Prisma.DialogueScenarioUpdateWithoutStagesInput>, Prisma.DialogueScenarioUncheckedUpdateWithoutStagesInput>
+}
+
+export type DialogueScenarioCreateNestedOneWithoutTransitionsInput = {
+  create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedCreateWithoutTransitionsInput>
+  connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutTransitionsInput
+  connect?: Prisma.DialogueScenarioWhereUniqueInput
+}
+
+export type DialogueScenarioUpdateOneRequiredWithoutTransitionsNestedInput = {
+  create?: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedCreateWithoutTransitionsInput>
+  connectOrCreate?: Prisma.DialogueScenarioCreateOrConnectWithoutTransitionsInput
+  upsert?: Prisma.DialogueScenarioUpsertWithoutTransitionsInput
+  connect?: Prisma.DialogueScenarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DialogueScenarioUpdateToOneWithWhereWithoutTransitionsInput, Prisma.DialogueScenarioUpdateWithoutTransitionsInput>, Prisma.DialogueScenarioUncheckedUpdateWithoutTransitionsInput>
 }
 
 export type DialogueScenarioCreateNestedOneWithoutNodesInput = {
@@ -578,6 +642,214 @@ export type DialogueScenarioUpdateOneWithoutSessionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.DialogueScenarioUpdateToOneWithWhereWithoutSessionsInput, Prisma.DialogueScenarioUpdateWithoutSessionsInput>, Prisma.DialogueScenarioUncheckedUpdateWithoutSessionsInput>
 }
 
+export type DialogueScenarioCreateWithoutStagesInput = {
+  id?: string
+  title: string
+  description?: string
+  difficulty?: string
+  userRole?: string
+  aiRole?: string
+  tagsJson?: string
+  coverUrl?: string | null
+  isPublished?: boolean
+  startNodeId?: string | null
+  startStageId?: string | null
+  roleVoice?: string
+  coachVoice?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.DialogueNodeCreateNestedManyWithoutScenarioInput
+  edges?: Prisma.DialogueEdgeCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionCreateNestedManyWithoutScenarioInput
+  sessions?: Prisma.DialogueSessionCreateNestedManyWithoutScenarioInput
+}
+
+export type DialogueScenarioUncheckedCreateWithoutStagesInput = {
+  id?: string
+  title: string
+  description?: string
+  difficulty?: string
+  userRole?: string
+  aiRole?: string
+  tagsJson?: string
+  coverUrl?: string | null
+  isPublished?: boolean
+  startNodeId?: string | null
+  startStageId?: string | null
+  roleVoice?: string
+  coachVoice?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.DialogueNodeUncheckedCreateNestedManyWithoutScenarioInput
+  edges?: Prisma.DialogueEdgeUncheckedCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionUncheckedCreateNestedManyWithoutScenarioInput
+  sessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutScenarioInput
+}
+
+export type DialogueScenarioCreateOrConnectWithoutStagesInput = {
+  where: Prisma.DialogueScenarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutStagesInput, Prisma.DialogueScenarioUncheckedCreateWithoutStagesInput>
+}
+
+export type DialogueScenarioUpsertWithoutStagesInput = {
+  update: Prisma.XOR<Prisma.DialogueScenarioUpdateWithoutStagesInput, Prisma.DialogueScenarioUncheckedUpdateWithoutStagesInput>
+  create: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutStagesInput, Prisma.DialogueScenarioUncheckedCreateWithoutStagesInput>
+  where?: Prisma.DialogueScenarioWhereInput
+}
+
+export type DialogueScenarioUpdateToOneWithWhereWithoutStagesInput = {
+  where?: Prisma.DialogueScenarioWhereInput
+  data: Prisma.XOR<Prisma.DialogueScenarioUpdateWithoutStagesInput, Prisma.DialogueScenarioUncheckedUpdateWithoutStagesInput>
+}
+
+export type DialogueScenarioUpdateWithoutStagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.StringFieldUpdateOperationsInput | string
+  userRole?: Prisma.StringFieldUpdateOperationsInput | string
+  aiRole?: Prisma.StringFieldUpdateOperationsInput | string
+  tagsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.DialogueNodeUpdateManyWithoutScenarioNestedInput
+  edges?: Prisma.DialogueEdgeUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUpdateManyWithoutScenarioNestedInput
+  sessions?: Prisma.DialogueSessionUpdateManyWithoutScenarioNestedInput
+}
+
+export type DialogueScenarioUncheckedUpdateWithoutStagesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.StringFieldUpdateOperationsInput | string
+  userRole?: Prisma.StringFieldUpdateOperationsInput | string
+  aiRole?: Prisma.StringFieldUpdateOperationsInput | string
+  tagsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.DialogueNodeUncheckedUpdateManyWithoutScenarioNestedInput
+  edges?: Prisma.DialogueEdgeUncheckedUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUncheckedUpdateManyWithoutScenarioNestedInput
+  sessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput
+}
+
+export type DialogueScenarioCreateWithoutTransitionsInput = {
+  id?: string
+  title: string
+  description?: string
+  difficulty?: string
+  userRole?: string
+  aiRole?: string
+  tagsJson?: string
+  coverUrl?: string | null
+  isPublished?: boolean
+  startNodeId?: string | null
+  startStageId?: string | null
+  roleVoice?: string
+  coachVoice?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.DialogueNodeCreateNestedManyWithoutScenarioInput
+  edges?: Prisma.DialogueEdgeCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageCreateNestedManyWithoutScenarioInput
+  sessions?: Prisma.DialogueSessionCreateNestedManyWithoutScenarioInput
+}
+
+export type DialogueScenarioUncheckedCreateWithoutTransitionsInput = {
+  id?: string
+  title: string
+  description?: string
+  difficulty?: string
+  userRole?: string
+  aiRole?: string
+  tagsJson?: string
+  coverUrl?: string | null
+  isPublished?: boolean
+  startNodeId?: string | null
+  startStageId?: string | null
+  roleVoice?: string
+  coachVoice?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  nodes?: Prisma.DialogueNodeUncheckedCreateNestedManyWithoutScenarioInput
+  edges?: Prisma.DialogueEdgeUncheckedCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageUncheckedCreateNestedManyWithoutScenarioInput
+  sessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutScenarioInput
+}
+
+export type DialogueScenarioCreateOrConnectWithoutTransitionsInput = {
+  where: Prisma.DialogueScenarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedCreateWithoutTransitionsInput>
+}
+
+export type DialogueScenarioUpsertWithoutTransitionsInput = {
+  update: Prisma.XOR<Prisma.DialogueScenarioUpdateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedUpdateWithoutTransitionsInput>
+  create: Prisma.XOR<Prisma.DialogueScenarioCreateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedCreateWithoutTransitionsInput>
+  where?: Prisma.DialogueScenarioWhereInput
+}
+
+export type DialogueScenarioUpdateToOneWithWhereWithoutTransitionsInput = {
+  where?: Prisma.DialogueScenarioWhereInput
+  data: Prisma.XOR<Prisma.DialogueScenarioUpdateWithoutTransitionsInput, Prisma.DialogueScenarioUncheckedUpdateWithoutTransitionsInput>
+}
+
+export type DialogueScenarioUpdateWithoutTransitionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.StringFieldUpdateOperationsInput | string
+  userRole?: Prisma.StringFieldUpdateOperationsInput | string
+  aiRole?: Prisma.StringFieldUpdateOperationsInput | string
+  tagsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.DialogueNodeUpdateManyWithoutScenarioNestedInput
+  edges?: Prisma.DialogueEdgeUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUpdateManyWithoutScenarioNestedInput
+  sessions?: Prisma.DialogueSessionUpdateManyWithoutScenarioNestedInput
+}
+
+export type DialogueScenarioUncheckedUpdateWithoutTransitionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.StringFieldUpdateOperationsInput | string
+  userRole?: Prisma.StringFieldUpdateOperationsInput | string
+  aiRole?: Prisma.StringFieldUpdateOperationsInput | string
+  tagsJson?: Prisma.StringFieldUpdateOperationsInput | string
+  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nodes?: Prisma.DialogueNodeUncheckedUpdateManyWithoutScenarioNestedInput
+  edges?: Prisma.DialogueEdgeUncheckedUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUncheckedUpdateManyWithoutScenarioNestedInput
+  sessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput
+}
+
 export type DialogueScenarioCreateWithoutNodesInput = {
   id?: string
   title: string
@@ -589,11 +861,14 @@ export type DialogueScenarioCreateWithoutNodesInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   edges?: Prisma.DialogueEdgeCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionCreateNestedManyWithoutScenarioInput
 }
 
@@ -608,11 +883,14 @@ export type DialogueScenarioUncheckedCreateWithoutNodesInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   edges?: Prisma.DialogueEdgeUncheckedCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageUncheckedCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionUncheckedCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutScenarioInput
 }
 
@@ -643,11 +921,14 @@ export type DialogueScenarioUpdateWithoutNodesInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   edges?: Prisma.DialogueEdgeUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUpdateManyWithoutScenarioNestedInput
 }
 
@@ -662,11 +943,14 @@ export type DialogueScenarioUncheckedUpdateWithoutNodesInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   edges?: Prisma.DialogueEdgeUncheckedUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUncheckedUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUncheckedUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput
 }
 
@@ -681,11 +965,14 @@ export type DialogueScenarioCreateWithoutEdgesInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionCreateNestedManyWithoutScenarioInput
 }
 
@@ -700,11 +987,14 @@ export type DialogueScenarioUncheckedCreateWithoutEdgesInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeUncheckedCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageUncheckedCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionUncheckedCreateNestedManyWithoutScenarioInput
   sessions?: Prisma.DialogueSessionUncheckedCreateNestedManyWithoutScenarioInput
 }
 
@@ -735,11 +1025,14 @@ export type DialogueScenarioUpdateWithoutEdgesInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUpdateManyWithoutScenarioNestedInput
 }
 
@@ -754,11 +1047,14 @@ export type DialogueScenarioUncheckedUpdateWithoutEdgesInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUncheckedUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUncheckedUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUncheckedUpdateManyWithoutScenarioNestedInput
   sessions?: Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput
 }
 
@@ -773,12 +1069,15 @@ export type DialogueScenarioCreateWithoutSessionsInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeCreateNestedManyWithoutScenarioInput
   edges?: Prisma.DialogueEdgeCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionCreateNestedManyWithoutScenarioInput
 }
 
 export type DialogueScenarioUncheckedCreateWithoutSessionsInput = {
@@ -792,12 +1091,15 @@ export type DialogueScenarioUncheckedCreateWithoutSessionsInput = {
   coverUrl?: string | null
   isPublished?: boolean
   startNodeId?: string | null
+  startStageId?: string | null
   roleVoice?: string
   coachVoice?: string
   createdAt?: Date | string
   updatedAt?: Date | string
   nodes?: Prisma.DialogueNodeUncheckedCreateNestedManyWithoutScenarioInput
   edges?: Prisma.DialogueEdgeUncheckedCreateNestedManyWithoutScenarioInput
+  stages?: Prisma.DialogueStageUncheckedCreateNestedManyWithoutScenarioInput
+  transitions?: Prisma.DialogueTransitionUncheckedCreateNestedManyWithoutScenarioInput
 }
 
 export type DialogueScenarioCreateOrConnectWithoutSessionsInput = {
@@ -827,12 +1129,15 @@ export type DialogueScenarioUpdateWithoutSessionsInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUpdateManyWithoutScenarioNestedInput
   edges?: Prisma.DialogueEdgeUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUpdateManyWithoutScenarioNestedInput
 }
 
 export type DialogueScenarioUncheckedUpdateWithoutSessionsInput = {
@@ -846,12 +1151,15 @@ export type DialogueScenarioUncheckedUpdateWithoutSessionsInput = {
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   roleVoice?: Prisma.StringFieldUpdateOperationsInput | string
   coachVoice?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   nodes?: Prisma.DialogueNodeUncheckedUpdateManyWithoutScenarioNestedInput
   edges?: Prisma.DialogueEdgeUncheckedUpdateManyWithoutScenarioNestedInput
+  stages?: Prisma.DialogueStageUncheckedUpdateManyWithoutScenarioNestedInput
+  transitions?: Prisma.DialogueTransitionUncheckedUpdateManyWithoutScenarioNestedInput
 }
 
 
@@ -862,12 +1170,16 @@ export type DialogueScenarioUncheckedUpdateWithoutSessionsInput = {
 export type DialogueScenarioCountOutputType = {
   nodes: number
   edges: number
+  stages: number
+  transitions: number
   sessions: number
 }
 
 export type DialogueScenarioCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   nodes?: boolean | DialogueScenarioCountOutputTypeCountNodesArgs
   edges?: boolean | DialogueScenarioCountOutputTypeCountEdgesArgs
+  stages?: boolean | DialogueScenarioCountOutputTypeCountStagesArgs
+  transitions?: boolean | DialogueScenarioCountOutputTypeCountTransitionsArgs
   sessions?: boolean | DialogueScenarioCountOutputTypeCountSessionsArgs
 }
 
@@ -898,6 +1210,20 @@ export type DialogueScenarioCountOutputTypeCountEdgesArgs<ExtArgs extends runtim
 /**
  * DialogueScenarioCountOutputType without action
  */
+export type DialogueScenarioCountOutputTypeCountStagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueStageWhereInput
+}
+
+/**
+ * DialogueScenarioCountOutputType without action
+ */
+export type DialogueScenarioCountOutputTypeCountTransitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DialogueTransitionWhereInput
+}
+
+/**
+ * DialogueScenarioCountOutputType without action
+ */
 export type DialogueScenarioCountOutputTypeCountSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.DialogueSessionWhereInput
 }
@@ -914,12 +1240,15 @@ export type DialogueScenarioSelect<ExtArgs extends runtime.Types.Extensions.Inte
   coverUrl?: boolean
   isPublished?: boolean
   startNodeId?: boolean
+  startStageId?: boolean
   roleVoice?: boolean
   coachVoice?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   nodes?: boolean | Prisma.DialogueScenario$nodesArgs<ExtArgs>
   edges?: boolean | Prisma.DialogueScenario$edgesArgs<ExtArgs>
+  stages?: boolean | Prisma.DialogueScenario$stagesArgs<ExtArgs>
+  transitions?: boolean | Prisma.DialogueScenario$transitionsArgs<ExtArgs>
   sessions?: boolean | Prisma.DialogueScenario$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.DialogueScenarioCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dialogueScenario"]>
@@ -935,6 +1264,7 @@ export type DialogueScenarioSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   coverUrl?: boolean
   isPublished?: boolean
   startNodeId?: boolean
+  startStageId?: boolean
   roleVoice?: boolean
   coachVoice?: boolean
   createdAt?: boolean
@@ -952,6 +1282,7 @@ export type DialogueScenarioSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   coverUrl?: boolean
   isPublished?: boolean
   startNodeId?: boolean
+  startStageId?: boolean
   roleVoice?: boolean
   coachVoice?: boolean
   createdAt?: boolean
@@ -969,16 +1300,19 @@ export type DialogueScenarioSelectScalar = {
   coverUrl?: boolean
   isPublished?: boolean
   startNodeId?: boolean
+  startStageId?: boolean
   roleVoice?: boolean
   coachVoice?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DialogueScenarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "difficulty" | "userRole" | "aiRole" | "tagsJson" | "coverUrl" | "isPublished" | "startNodeId" | "roleVoice" | "coachVoice" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueScenario"]>
+export type DialogueScenarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "description" | "difficulty" | "userRole" | "aiRole" | "tagsJson" | "coverUrl" | "isPublished" | "startNodeId" | "startStageId" | "roleVoice" | "coachVoice" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueScenario"]>
 export type DialogueScenarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   nodes?: boolean | Prisma.DialogueScenario$nodesArgs<ExtArgs>
   edges?: boolean | Prisma.DialogueScenario$edgesArgs<ExtArgs>
+  stages?: boolean | Prisma.DialogueScenario$stagesArgs<ExtArgs>
+  transitions?: boolean | Prisma.DialogueScenario$transitionsArgs<ExtArgs>
   sessions?: boolean | Prisma.DialogueScenario$sessionsArgs<ExtArgs>
   _count?: boolean | Prisma.DialogueScenarioCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -990,6 +1324,8 @@ export type $DialogueScenarioPayload<ExtArgs extends runtime.Types.Extensions.In
   objects: {
     nodes: Prisma.$DialogueNodePayload<ExtArgs>[]
     edges: Prisma.$DialogueEdgePayload<ExtArgs>[]
+    stages: Prisma.$DialogueStagePayload<ExtArgs>[]
+    transitions: Prisma.$DialogueTransitionPayload<ExtArgs>[]
     sessions: Prisma.$DialogueSessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1003,6 +1339,7 @@ export type $DialogueScenarioPayload<ExtArgs extends runtime.Types.Extensions.In
     coverUrl: string | null
     isPublished: boolean
     startNodeId: string | null
+    startStageId: string | null
     roleVoice: string
     coachVoice: string
     createdAt: Date
@@ -1403,6 +1740,8 @@ export interface Prisma__DialogueScenarioClient<T, Null = never, ExtArgs extends
   readonly [Symbol.toStringTag]: "PrismaPromise"
   nodes<T extends Prisma.DialogueScenario$nodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueScenario$nodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueNodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   edges<T extends Prisma.DialogueScenario$edgesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueScenario$edgesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueEdgePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  stages<T extends Prisma.DialogueScenario$stagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueScenario$stagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueStagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  transitions<T extends Prisma.DialogueScenario$transitionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueScenario$transitionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sessions<T extends Prisma.DialogueScenario$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueScenario$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1443,6 +1782,7 @@ export interface DialogueScenarioFieldRefs {
   readonly coverUrl: Prisma.FieldRef<"DialogueScenario", 'String'>
   readonly isPublished: Prisma.FieldRef<"DialogueScenario", 'Boolean'>
   readonly startNodeId: Prisma.FieldRef<"DialogueScenario", 'String'>
+  readonly startStageId: Prisma.FieldRef<"DialogueScenario", 'String'>
   readonly roleVoice: Prisma.FieldRef<"DialogueScenario", 'String'>
   readonly coachVoice: Prisma.FieldRef<"DialogueScenario", 'String'>
   readonly createdAt: Prisma.FieldRef<"DialogueScenario", 'DateTime'>
@@ -1878,6 +2218,54 @@ export type DialogueScenario$edgesArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.DialogueEdgeScalarFieldEnum | Prisma.DialogueEdgeScalarFieldEnum[]
+}
+
+/**
+ * DialogueScenario.stages
+ */
+export type DialogueScenario$stagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueStage
+   */
+  select?: Prisma.DialogueStageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueStage
+   */
+  omit?: Prisma.DialogueStageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueStageInclude<ExtArgs> | null
+  where?: Prisma.DialogueStageWhereInput
+  orderBy?: Prisma.DialogueStageOrderByWithRelationInput | Prisma.DialogueStageOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueStageWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueStageScalarFieldEnum | Prisma.DialogueStageScalarFieldEnum[]
+}
+
+/**
+ * DialogueScenario.transitions
+ */
+export type DialogueScenario$transitionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueTransition
+   */
+  select?: Prisma.DialogueTransitionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueTransition
+   */
+  omit?: Prisma.DialogueTransitionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueTransitionInclude<ExtArgs> | null
+  where?: Prisma.DialogueTransitionWhereInput
+  orderBy?: Prisma.DialogueTransitionOrderByWithRelationInput | Prisma.DialogueTransitionOrderByWithRelationInput[]
+  cursor?: Prisma.DialogueTransitionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DialogueTransitionScalarFieldEnum | Prisma.DialogueTransitionScalarFieldEnum[]
 }
 
 /**

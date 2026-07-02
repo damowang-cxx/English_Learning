@@ -51,7 +51,7 @@ async function getPublishedScenarioContext() {
     include: {
       _count: {
         select: {
-          nodes: true,
+          stages: true,
         },
       },
     },
@@ -65,7 +65,7 @@ async function getPublishedScenarioContext() {
     userRole: scenario.userRole,
     aiRole: scenario.aiRole,
     tags: normalizeDialogueTags(scenario.tagsJson),
-    nodesCount: scenario._count.nodes,
+    nodesCount: scenario._count.stages,
   }))
 }
 

@@ -19,10 +19,10 @@ export async function PATCH(
     const scenario = await prisma.dialogueScenario.findUnique({
       where: { id },
       include: {
-        nodes: {
+        stages: {
           orderBy: { order: 'asc' },
         },
-        edges: true,
+        transitions: true,
       },
     })
 
@@ -34,8 +34,8 @@ export async function PATCH(
       validateDialoguePublishGraph(normalizeDialogueAdminPayload({
         ...scenario,
         tags: scenario.tagsJson,
-        nodes: scenario.nodes,
-        edges: scenario.edges,
+        stages: scenario.stages,
+        transitions: scenario.transitions,
       }))
     }
 

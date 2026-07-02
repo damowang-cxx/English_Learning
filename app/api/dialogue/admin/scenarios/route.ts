@@ -18,7 +18,7 @@ export async function GET() {
       include: {
         _count: {
           select: {
-            nodes: true,
+            stages: true,
             sessions: true,
           },
         },
@@ -36,10 +36,10 @@ export async function GET() {
         tags: normalizeDialogueTags(scenario.tagsJson),
         coverUrl: scenario.coverUrl,
         isPublished: scenario.isPublished,
-        startNodeId: scenario.startNodeId,
+        startStageId: scenario.startStageId,
         roleVoice: scenario.roleVoice,
         coachVoice: scenario.coachVoice,
-        nodesCount: scenario._count.nodes,
+        nodesCount: scenario._count.stages,
         sessionsCount: scenario._count.sessions,
         createdAt: scenario.createdAt.toISOString(),
         updatedAt: scenario.updatedAt.toISOString(),
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
     const title = String(body?.title || 'New dialogue scenario').trim() || 'New dialogue scenario'
-    const nodeId = `dlg_node_${Date.now()}`
+    const stageId = `dlg_stage_${Date.now()}`
     const scenario = await prisma.dialogueScenario.create({
       data: {
         title,
@@ -71,32 +71,43 @@ export async function POST(request: NextRequest) {
         tagsJson: safeJsonStringify(['draft'], '[]'),
         roleVoice: 'marin',
         coachVoice: 'cedar',
-        startNodeId: nodeId,
-        nodes: {
+        startStageId: stageId,
+        stages: {
           create: {
-            id: nodeId,
+            id: stageId,
             order: 0,
-            title: 'Opening',
-            roleLineEn: 'Hello. How can I help you today?',
-            roleLineZh: '你好。今天我可以怎么帮你？',
-            goal: 'Respond appropriately to the opening question.',
-            rubricJson: safeJsonStringify({
-              requiredMeaning: ['answer the opening question'],
+            title: 'Opening stage',
+            openingLineEn: 'Hello. What would you like to do?',
+            openingLineZh: '你好，你想做什么？',
+            objective: 'Help the learner clearly state what they want in this situation.',
+            slotsJson: safeJsonStringify([
+              {
+                key: 'user_need',
+                label: 'User need',
+                required: true,
+                description: 'What the learner wants or chooses.',
+              },
+            ], '[]'),
+            completionJson: safeJsonStringify({
+              rule: 'Complete when the learner clearly states the required information.',
             }),
-            hintJson: safeJsonStringify({
+            assessmentJson: safeJsonStringify({
+              scoringFocus: ['communicative goal', 'natural expression'],
+            }),
+            hintsJson: safeJsonStringify({
               hints: ['Say what you need in this situation.'],
             }),
-            sampleAnswer: 'I would like to ask about your service.',
+            outcomesJson: safeJsonStringify([], '[]'),
             positionX: 120,
             positionY: 120,
           },
         },
       },
       include: {
-        nodes: {
+        stages: {
           orderBy: { order: 'asc' },
         },
-        edges: true,
+        transitions: true,
       },
     })
 

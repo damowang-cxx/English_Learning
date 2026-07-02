@@ -476,7 +476,7 @@ export default function DialogueHomeCoach({ scenarios, isAuthenticated }: Dialog
                         className="rounded-md border border-cyan-500/22 bg-black/26 px-3 py-2 transition-colors hover:border-cyan-300/58"
                       >
                         <div className="truncate text-sm font-semibold text-cyan-50">{scenario.title}</div>
-                        <div className="mt-1 text-xs text-cyan-100/56">{scenario.difficulty} / {scenario.nodesCount} nodes</div>
+                        <div className="mt-1 text-xs text-cyan-100/56">{scenario.difficulty} / {scenario.nodesCount} stages</div>
                       </Link>
                     ))}
                   </div>

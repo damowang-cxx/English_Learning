@@ -64,7 +64,7 @@ export default function HomeDialogueScenarioGrid({ items }: HomeDialogueScenario
               {item.difficulty.toUpperCase()}
             </div>
             <div className="absolute bottom-3 left-3 font-mono text-[11px] text-cyan-200/85">
-              #{String(index + 1).padStart(3, '0')} / {item.nodesCount} NODES
+              #{String(index + 1).padStart(3, '0')} / {item.nodesCount} STAGES
             </div>
           </div>
 

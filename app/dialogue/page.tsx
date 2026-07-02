@@ -24,7 +24,7 @@ async function getDialogueScenarios() {
     include: {
       _count: {
         select: {
-          nodes: true,
+          stages: true,
           sessions: true,
         },
       },
@@ -40,7 +40,7 @@ async function getDialogueScenarios() {
     aiRole: scenario.aiRole,
     tags: normalizeDialogueTags(scenario.tagsJson),
     coverUrl: scenario.coverUrl,
-    nodesCount: scenario._count.nodes,
+    nodesCount: scenario._count.stages,
     sessionsCount: scenario._count.sessions,
     updatedAt: scenario.updatedAt.toISOString(),
   })) satisfies HomeDialogueScenarioCardItem[]

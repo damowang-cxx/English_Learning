@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireApiUser } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
+import { parseJsonString } from '@/lib/dialogue'
 import { getCoachVoiceForScenario, getRoleVoiceForScenario, synthesizeDialogueSpeech } from '@/lib/dialogue-ai'
 
 type SpeakKind = 'current_role' | 'last_coach' | 'last_better_answer'
@@ -30,7 +31,7 @@ export async function POST(
       },
       include: {
         scenario: true,
-        currentNode: true,
+        currentStage: true,
         attempts: {
           orderBy: { createdAt: 'desc' },
           take: 12,
@@ -51,7 +52,7 @@ export async function POST(
     let instructions = 'Speak in clear natural English for an English learner.'
 
     if (kind === 'current_role') {
-      text = session.currentNode?.roleLineEn || ''
+      text = session.currentStage?.openingLineEn || ''
     } else if (kind === 'last_coach') {
       const attempt = session.attempts.find((entry) => entry.coachReplyZh)
       text = attempt?.coachReplyZh || ''
@@ -59,7 +60,8 @@ export async function POST(
       instructions = 'Speak in warm, clear Simplified Chinese as a concise English coach.'
     } else {
       const attempt = session.attempts.find((entry) => entry.betterAnswerEn)
-      text = attempt?.betterAnswerEn || session.currentNode?.sampleAnswer || ''
+      const hints = parseJsonString<Record<string, unknown>>(session.currentStage?.hintsJson, {})
+      text = attempt?.betterAnswerEn || String(hints.sampleAnswer || hints.example || '')
       voice = getRoleVoiceForScenario(session.scenario.roleVoice)
       instructions = 'Speak in clear natural English for a learner to repeat.'
     }

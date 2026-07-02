@@ -11,6 +11,7 @@
     "postinstall": "node scripts/fix-prisma-path.js",
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:dialogue-demo": "node scripts/seed-dialogue-demo.mjs",
+    "seed:dialogue-meal-demo": "node scripts/seed-dialogue-meal-demo.mjs",
     "sync:ecdict": "node scripts/sync-ecdict.mjs"
   },
   "dependencies": {

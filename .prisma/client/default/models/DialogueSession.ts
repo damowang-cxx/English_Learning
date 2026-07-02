@@ -42,6 +42,8 @@ export type DialogueSessionMinAggregateOutputType = {
   scenarioId: string | null
   userId: string | null
   currentNodeId: string | null
+  currentStageId: string | null
+  stageStateJson: string | null
   status: string | null
   metadataJson: string | null
   totalScore: number | null
@@ -58,6 +60,8 @@ export type DialogueSessionMaxAggregateOutputType = {
   scenarioId: string | null
   userId: string | null
   currentNodeId: string | null
+  currentStageId: string | null
+  stageStateJson: string | null
   status: string | null
   metadataJson: string | null
   totalScore: number | null
@@ -74,6 +78,8 @@ export type DialogueSessionCountAggregateOutputType = {
   scenarioId: number
   userId: number
   currentNodeId: number
+  currentStageId: number
+  stageStateJson: number
   status: number
   metadataJson: number
   totalScore: number
@@ -102,6 +108,8 @@ export type DialogueSessionMinAggregateInputType = {
   scenarioId?: true
   userId?: true
   currentNodeId?: true
+  currentStageId?: true
+  stageStateJson?: true
   status?: true
   metadataJson?: true
   totalScore?: true
@@ -118,6 +126,8 @@ export type DialogueSessionMaxAggregateInputType = {
   scenarioId?: true
   userId?: true
   currentNodeId?: true
+  currentStageId?: true
+  stageStateJson?: true
   status?: true
   metadataJson?: true
   totalScore?: true
@@ -134,6 +144,8 @@ export type DialogueSessionCountAggregateInputType = {
   scenarioId?: true
   userId?: true
   currentNodeId?: true
+  currentStageId?: true
+  stageStateJson?: true
   status?: true
   metadataJson?: true
   totalScore?: true
@@ -237,6 +249,8 @@ export type DialogueSessionGroupByOutputType = {
   scenarioId: string | null
   userId: string
   currentNodeId: string | null
+  currentStageId: string | null
+  stageStateJson: string
   status: string
   metadataJson: string
   totalScore: number
@@ -276,6 +290,8 @@ export type DialogueSessionWhereInput = {
   scenarioId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
   userId?: Prisma.StringFilter<"DialogueSession"> | string
   currentNodeId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  currentStageId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  stageStateJson?: Prisma.StringFilter<"DialogueSession"> | string
   status?: Prisma.StringFilter<"DialogueSession"> | string
   metadataJson?: Prisma.StringFilter<"DialogueSession"> | string
   totalScore?: Prisma.IntFilter<"DialogueSession"> | number
@@ -287,6 +303,7 @@ export type DialogueSessionWhereInput = {
   scenario?: Prisma.XOR<Prisma.DialogueScenarioNullableScalarRelationFilter, Prisma.DialogueScenarioWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   currentNode?: Prisma.XOR<Prisma.DialogueNodeNullableScalarRelationFilter, Prisma.DialogueNodeWhereInput> | null
+  currentStage?: Prisma.XOR<Prisma.DialogueStageNullableScalarRelationFilter, Prisma.DialogueStageWhereInput> | null
   attempts?: Prisma.DialogueAttemptListRelationFilter
   profileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }
@@ -297,6 +314,8 @@ export type DialogueSessionOrderByWithRelationInput = {
   scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
   currentNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  currentStageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  stageStateJson?: Prisma.SortOrder
   status?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
   totalScore?: Prisma.SortOrder
@@ -308,6 +327,7 @@ export type DialogueSessionOrderByWithRelationInput = {
   scenario?: Prisma.DialogueScenarioOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
   currentNode?: Prisma.DialogueNodeOrderByWithRelationInput
+  currentStage?: Prisma.DialogueStageOrderByWithRelationInput
   attempts?: Prisma.DialogueAttemptOrderByRelationAggregateInput
   profileEvents?: Prisma.DialogueProfileEventOrderByRelationAggregateInput
 }
@@ -321,6 +341,8 @@ export type DialogueSessionWhereUniqueInput = Prisma.AtLeast<{
   scenarioId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
   userId?: Prisma.StringFilter<"DialogueSession"> | string
   currentNodeId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  currentStageId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  stageStateJson?: Prisma.StringFilter<"DialogueSession"> | string
   status?: Prisma.StringFilter<"DialogueSession"> | string
   metadataJson?: Prisma.StringFilter<"DialogueSession"> | string
   totalScore?: Prisma.IntFilter<"DialogueSession"> | number
@@ -332,6 +354,7 @@ export type DialogueSessionWhereUniqueInput = Prisma.AtLeast<{
   scenario?: Prisma.XOR<Prisma.DialogueScenarioNullableScalarRelationFilter, Prisma.DialogueScenarioWhereInput> | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   currentNode?: Prisma.XOR<Prisma.DialogueNodeNullableScalarRelationFilter, Prisma.DialogueNodeWhereInput> | null
+  currentStage?: Prisma.XOR<Prisma.DialogueStageNullableScalarRelationFilter, Prisma.DialogueStageWhereInput> | null
   attempts?: Prisma.DialogueAttemptListRelationFilter
   profileEvents?: Prisma.DialogueProfileEventListRelationFilter
 }, "id">
@@ -342,6 +365,8 @@ export type DialogueSessionOrderByWithAggregationInput = {
   scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrder
   currentNodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  currentStageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  stageStateJson?: Prisma.SortOrder
   status?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
   totalScore?: Prisma.SortOrder
@@ -366,6 +391,8 @@ export type DialogueSessionScalarWhereWithAggregatesInput = {
   scenarioId?: Prisma.StringNullableWithAggregatesFilter<"DialogueSession"> | string | null
   userId?: Prisma.StringWithAggregatesFilter<"DialogueSession"> | string
   currentNodeId?: Prisma.StringNullableWithAggregatesFilter<"DialogueSession"> | string | null
+  currentStageId?: Prisma.StringNullableWithAggregatesFilter<"DialogueSession"> | string | null
+  stageStateJson?: Prisma.StringWithAggregatesFilter<"DialogueSession"> | string
   status?: Prisma.StringWithAggregatesFilter<"DialogueSession"> | string
   metadataJson?: Prisma.StringWithAggregatesFilter<"DialogueSession"> | string
   totalScore?: Prisma.IntWithAggregatesFilter<"DialogueSession"> | number
@@ -379,6 +406,7 @@ export type DialogueSessionScalarWhereWithAggregatesInput = {
 export type DialogueSessionCreateInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -390,6 +418,7 @@ export type DialogueSessionCreateInput = {
   scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
   currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
   profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
 }
@@ -400,6 +429,8 @@ export type DialogueSessionUncheckedCreateInput = {
   scenarioId?: string | null
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -415,6 +446,7 @@ export type DialogueSessionUncheckedCreateInput = {
 export type DialogueSessionUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -426,6 +458,7 @@ export type DialogueSessionUpdateInput = {
   scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
   currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
   profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
 }
@@ -436,6 +469,8 @@ export type DialogueSessionUncheckedUpdateInput = {
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -454,6 +489,8 @@ export type DialogueSessionCreateManyInput = {
   scenarioId?: string | null
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -467,6 +504,7 @@ export type DialogueSessionCreateManyInput = {
 export type DialogueSessionUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -483,6 +521,8 @@ export type DialogueSessionUncheckedUpdateManyInput = {
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -509,6 +549,8 @@ export type DialogueSessionCountOrderByAggregateInput = {
   scenarioId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   currentNodeId?: Prisma.SortOrder
+  currentStageId?: Prisma.SortOrder
+  stageStateJson?: Prisma.SortOrder
   status?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
   totalScore?: Prisma.SortOrder
@@ -530,6 +572,8 @@ export type DialogueSessionMaxOrderByAggregateInput = {
   scenarioId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   currentNodeId?: Prisma.SortOrder
+  currentStageId?: Prisma.SortOrder
+  stageStateJson?: Prisma.SortOrder
   status?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
   totalScore?: Prisma.SortOrder
@@ -546,6 +590,8 @@ export type DialogueSessionMinOrderByAggregateInput = {
   scenarioId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   currentNodeId?: Prisma.SortOrder
+  currentStageId?: Prisma.SortOrder
+  stageStateJson?: Prisma.SortOrder
   status?: Prisma.SortOrder
   metadataJson?: Prisma.SortOrder
   totalScore?: Prisma.SortOrder
@@ -650,6 +696,48 @@ export type DialogueSessionUncheckedUpdateManyWithoutScenarioNestedInput = {
   deleteMany?: Prisma.DialogueSessionScalarWhereInput | Prisma.DialogueSessionScalarWhereInput[]
 }
 
+export type DialogueSessionCreateNestedManyWithoutCurrentStageInput = {
+  create?: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput> | Prisma.DialogueSessionCreateWithoutCurrentStageInput[] | Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput[]
+  connectOrCreate?: Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput | Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput[]
+  createMany?: Prisma.DialogueSessionCreateManyCurrentStageInputEnvelope
+  connect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+}
+
+export type DialogueSessionUncheckedCreateNestedManyWithoutCurrentStageInput = {
+  create?: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput> | Prisma.DialogueSessionCreateWithoutCurrentStageInput[] | Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput[]
+  connectOrCreate?: Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput | Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput[]
+  createMany?: Prisma.DialogueSessionCreateManyCurrentStageInputEnvelope
+  connect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+}
+
+export type DialogueSessionUpdateManyWithoutCurrentStageNestedInput = {
+  create?: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput> | Prisma.DialogueSessionCreateWithoutCurrentStageInput[] | Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput[]
+  connectOrCreate?: Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput | Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput[]
+  upsert?: Prisma.DialogueSessionUpsertWithWhereUniqueWithoutCurrentStageInput | Prisma.DialogueSessionUpsertWithWhereUniqueWithoutCurrentStageInput[]
+  createMany?: Prisma.DialogueSessionCreateManyCurrentStageInputEnvelope
+  set?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  disconnect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  delete?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  connect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  update?: Prisma.DialogueSessionUpdateWithWhereUniqueWithoutCurrentStageInput | Prisma.DialogueSessionUpdateWithWhereUniqueWithoutCurrentStageInput[]
+  updateMany?: Prisma.DialogueSessionUpdateManyWithWhereWithoutCurrentStageInput | Prisma.DialogueSessionUpdateManyWithWhereWithoutCurrentStageInput[]
+  deleteMany?: Prisma.DialogueSessionScalarWhereInput | Prisma.DialogueSessionScalarWhereInput[]
+}
+
+export type DialogueSessionUncheckedUpdateManyWithoutCurrentStageNestedInput = {
+  create?: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput> | Prisma.DialogueSessionCreateWithoutCurrentStageInput[] | Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput[]
+  connectOrCreate?: Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput | Prisma.DialogueSessionCreateOrConnectWithoutCurrentStageInput[]
+  upsert?: Prisma.DialogueSessionUpsertWithWhereUniqueWithoutCurrentStageInput | Prisma.DialogueSessionUpsertWithWhereUniqueWithoutCurrentStageInput[]
+  createMany?: Prisma.DialogueSessionCreateManyCurrentStageInputEnvelope
+  set?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  disconnect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  delete?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  connect?: Prisma.DialogueSessionWhereUniqueInput | Prisma.DialogueSessionWhereUniqueInput[]
+  update?: Prisma.DialogueSessionUpdateWithWhereUniqueWithoutCurrentStageInput | Prisma.DialogueSessionUpdateWithWhereUniqueWithoutCurrentStageInput[]
+  updateMany?: Prisma.DialogueSessionUpdateManyWithWhereWithoutCurrentStageInput | Prisma.DialogueSessionUpdateManyWithWhereWithoutCurrentStageInput[]
+  deleteMany?: Prisma.DialogueSessionScalarWhereInput | Prisma.DialogueSessionScalarWhereInput[]
+}
+
 export type DialogueSessionCreateNestedManyWithoutCurrentNodeInput = {
   create?: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentNodeInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentNodeInput> | Prisma.DialogueSessionCreateWithoutCurrentNodeInput[] | Prisma.DialogueSessionUncheckedCreateWithoutCurrentNodeInput[]
   connectOrCreate?: Prisma.DialogueSessionCreateOrConnectWithoutCurrentNodeInput | Prisma.DialogueSessionCreateOrConnectWithoutCurrentNodeInput[]
@@ -723,6 +811,7 @@ export type DialogueSessionUpdateOneRequiredWithoutProfileEventsNestedInput = {
 export type DialogueSessionCreateWithoutUserInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -733,6 +822,7 @@ export type DialogueSessionCreateWithoutUserInput = {
   updatedAt?: Date | string
   scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
   currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
   profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
 }
@@ -742,6 +832,8 @@ export type DialogueSessionUncheckedCreateWithoutUserInput = {
   mode?: string
   scenarioId?: string | null
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -788,6 +880,8 @@ export type DialogueSessionScalarWhereInput = {
   scenarioId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
   userId?: Prisma.StringFilter<"DialogueSession"> | string
   currentNodeId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  currentStageId?: Prisma.StringNullableFilter<"DialogueSession"> | string | null
+  stageStateJson?: Prisma.StringFilter<"DialogueSession"> | string
   status?: Prisma.StringFilter<"DialogueSession"> | string
   metadataJson?: Prisma.StringFilter<"DialogueSession"> | string
   totalScore?: Prisma.IntFilter<"DialogueSession"> | number
@@ -801,6 +895,7 @@ export type DialogueSessionScalarWhereInput = {
 export type DialogueSessionCreateWithoutScenarioInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -811,6 +906,7 @@ export type DialogueSessionCreateWithoutScenarioInput = {
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
   currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
   profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
 }
@@ -820,6 +916,8 @@ export type DialogueSessionUncheckedCreateWithoutScenarioInput = {
   mode?: string
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -857,9 +955,10 @@ export type DialogueSessionUpdateManyWithWhereWithoutScenarioInput = {
   data: Prisma.XOR<Prisma.DialogueSessionUpdateManyMutationInput, Prisma.DialogueSessionUncheckedUpdateManyWithoutScenarioInput>
 }
 
-export type DialogueSessionCreateWithoutCurrentNodeInput = {
+export type DialogueSessionCreateWithoutCurrentStageInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -870,6 +969,70 @@ export type DialogueSessionCreateWithoutCurrentNodeInput = {
   updatedAt?: Date | string
   scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
+  currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
+  profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
+}
+
+export type DialogueSessionUncheckedCreateWithoutCurrentStageInput = {
+  id?: string
+  mode?: string
+  scenarioId?: string | null
+  userId: string
+  currentNodeId?: string | null
+  stageStateJson?: string
+  status?: string
+  metadataJson?: string
+  totalScore?: number
+  completedNodeCount?: number
+  lastActivityAt?: Date | string
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  attempts?: Prisma.DialogueAttemptUncheckedCreateNestedManyWithoutSessionInput
+  profileEvents?: Prisma.DialogueProfileEventUncheckedCreateNestedManyWithoutSessionInput
+}
+
+export type DialogueSessionCreateOrConnectWithoutCurrentStageInput = {
+  where: Prisma.DialogueSessionWhereUniqueInput
+  create: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput>
+}
+
+export type DialogueSessionCreateManyCurrentStageInputEnvelope = {
+  data: Prisma.DialogueSessionCreateManyCurrentStageInput | Prisma.DialogueSessionCreateManyCurrentStageInput[]
+}
+
+export type DialogueSessionUpsertWithWhereUniqueWithoutCurrentStageInput = {
+  where: Prisma.DialogueSessionWhereUniqueInput
+  update: Prisma.XOR<Prisma.DialogueSessionUpdateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedUpdateWithoutCurrentStageInput>
+  create: Prisma.XOR<Prisma.DialogueSessionCreateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedCreateWithoutCurrentStageInput>
+}
+
+export type DialogueSessionUpdateWithWhereUniqueWithoutCurrentStageInput = {
+  where: Prisma.DialogueSessionWhereUniqueInput
+  data: Prisma.XOR<Prisma.DialogueSessionUpdateWithoutCurrentStageInput, Prisma.DialogueSessionUncheckedUpdateWithoutCurrentStageInput>
+}
+
+export type DialogueSessionUpdateManyWithWhereWithoutCurrentStageInput = {
+  where: Prisma.DialogueSessionScalarWhereInput
+  data: Prisma.XOR<Prisma.DialogueSessionUpdateManyMutationInput, Prisma.DialogueSessionUncheckedUpdateManyWithoutCurrentStageInput>
+}
+
+export type DialogueSessionCreateWithoutCurrentNodeInput = {
+  id?: string
+  mode?: string
+  stageStateJson?: string
+  status?: string
+  metadataJson?: string
+  totalScore?: number
+  completedNodeCount?: number
+  lastActivityAt?: Date | string
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
+  user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
   profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
 }
@@ -879,6 +1042,8 @@ export type DialogueSessionUncheckedCreateWithoutCurrentNodeInput = {
   mode?: string
   scenarioId?: string | null
   userId: string
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -919,6 +1084,7 @@ export type DialogueSessionUpdateManyWithWhereWithoutCurrentNodeInput = {
 export type DialogueSessionCreateWithoutAttemptsInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -930,6 +1096,7 @@ export type DialogueSessionCreateWithoutAttemptsInput = {
   scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
   currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   profileEvents?: Prisma.DialogueProfileEventCreateNestedManyWithoutSessionInput
 }
 
@@ -939,6 +1106,8 @@ export type DialogueSessionUncheckedCreateWithoutAttemptsInput = {
   scenarioId?: string | null
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -969,6 +1138,7 @@ export type DialogueSessionUpdateToOneWithWhereWithoutAttemptsInput = {
 export type DialogueSessionUpdateWithoutAttemptsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -980,6 +1150,7 @@ export type DialogueSessionUpdateWithoutAttemptsInput = {
   scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
   currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
 }
 
@@ -989,6 +1160,8 @@ export type DialogueSessionUncheckedUpdateWithoutAttemptsInput = {
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1003,6 +1176,7 @@ export type DialogueSessionUncheckedUpdateWithoutAttemptsInput = {
 export type DialogueSessionCreateWithoutProfileEventsInput = {
   id?: string
   mode?: string
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -1014,6 +1188,7 @@ export type DialogueSessionCreateWithoutProfileEventsInput = {
   scenario?: Prisma.DialogueScenarioCreateNestedOneWithoutSessionsInput
   user: Prisma.UserCreateNestedOneWithoutDialogueSessionsInput
   currentNode?: Prisma.DialogueNodeCreateNestedOneWithoutSessionsInput
+  currentStage?: Prisma.DialogueStageCreateNestedOneWithoutSessionsInput
   attempts?: Prisma.DialogueAttemptCreateNestedManyWithoutSessionInput
 }
 
@@ -1023,6 +1198,8 @@ export type DialogueSessionUncheckedCreateWithoutProfileEventsInput = {
   scenarioId?: string | null
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -1053,6 +1230,7 @@ export type DialogueSessionUpdateToOneWithWhereWithoutProfileEventsInput = {
 export type DialogueSessionUpdateWithoutProfileEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1064,6 +1242,7 @@ export type DialogueSessionUpdateWithoutProfileEventsInput = {
   scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
   currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
 }
 
@@ -1073,6 +1252,8 @@ export type DialogueSessionUncheckedUpdateWithoutProfileEventsInput = {
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1089,6 +1270,8 @@ export type DialogueSessionCreateManyUserInput = {
   mode?: string
   scenarioId?: string | null
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -1102,6 +1285,7 @@ export type DialogueSessionCreateManyUserInput = {
 export type DialogueSessionUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1112,6 +1296,7 @@ export type DialogueSessionUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
   currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
   profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
 }
@@ -1121,6 +1306,8 @@ export type DialogueSessionUncheckedUpdateWithoutUserInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1138,6 +1325,8 @@ export type DialogueSessionUncheckedUpdateManyWithoutUserInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1153,6 +1342,8 @@ export type DialogueSessionCreateManyScenarioInput = {
   mode?: string
   userId: string
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -1166,6 +1357,7 @@ export type DialogueSessionCreateManyScenarioInput = {
 export type DialogueSessionUpdateWithoutScenarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1176,6 +1368,7 @@ export type DialogueSessionUpdateWithoutScenarioInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
   currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
   profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
 }
@@ -1185,6 +1378,8 @@ export type DialogueSessionUncheckedUpdateWithoutScenarioInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1202,6 +1397,80 @@ export type DialogueSessionUncheckedUpdateManyWithoutScenarioInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
+  totalScore?: Prisma.IntFieldUpdateOperationsInput | number
+  completedNodeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DialogueSessionCreateManyCurrentStageInput = {
+  id?: string
+  mode?: string
+  scenarioId?: string | null
+  userId: string
+  currentNodeId?: string | null
+  stageStateJson?: string
+  status?: string
+  metadataJson?: string
+  totalScore?: number
+  completedNodeCount?: number
+  lastActivityAt?: Date | string
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DialogueSessionUpdateWithoutCurrentStageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
+  totalScore?: Prisma.IntFieldUpdateOperationsInput | number
+  completedNodeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
+  currentNode?: Prisma.DialogueNodeUpdateOneWithoutSessionsNestedInput
+  attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
+}
+
+export type DialogueSessionUncheckedUpdateWithoutCurrentStageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  mode?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
+  totalScore?: Prisma.IntFieldUpdateOperationsInput | number
+  completedNodeCount?: Prisma.IntFieldUpdateOperationsInput | number
+  lastActivityAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  attempts?: Prisma.DialogueAttemptUncheckedUpdateManyWithoutSessionNestedInput
+  profileEvents?: Prisma.DialogueProfileEventUncheckedUpdateManyWithoutSessionNestedInput
+}
+
+export type DialogueSessionUncheckedUpdateManyWithoutCurrentStageInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  mode?: Prisma.StringFieldUpdateOperationsInput | string
+  scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  currentNodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1217,6 +1486,8 @@ export type DialogueSessionCreateManyCurrentNodeInput = {
   mode?: string
   scenarioId?: string | null
   userId: string
+  currentStageId?: string | null
+  stageStateJson?: string
   status?: string
   metadataJson?: string
   totalScore?: number
@@ -1230,6 +1501,7 @@ export type DialogueSessionCreateManyCurrentNodeInput = {
 export type DialogueSessionUpdateWithoutCurrentNodeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   mode?: Prisma.StringFieldUpdateOperationsInput | string
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1240,6 +1512,7 @@ export type DialogueSessionUpdateWithoutCurrentNodeInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scenario?: Prisma.DialogueScenarioUpdateOneWithoutSessionsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutDialogueSessionsNestedInput
+  currentStage?: Prisma.DialogueStageUpdateOneWithoutSessionsNestedInput
   attempts?: Prisma.DialogueAttemptUpdateManyWithoutSessionNestedInput
   profileEvents?: Prisma.DialogueProfileEventUpdateManyWithoutSessionNestedInput
 }
@@ -1249,6 +1522,8 @@ export type DialogueSessionUncheckedUpdateWithoutCurrentNodeInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1266,6 +1541,8 @@ export type DialogueSessionUncheckedUpdateManyWithoutCurrentNodeInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  currentStageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageStateJson?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.StringFieldUpdateOperationsInput | string
   metadataJson?: Prisma.StringFieldUpdateOperationsInput | string
   totalScore?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1322,6 +1599,8 @@ export type DialogueSessionSelect<ExtArgs extends runtime.Types.Extensions.Inter
   scenarioId?: boolean
   userId?: boolean
   currentNodeId?: boolean
+  currentStageId?: boolean
+  stageStateJson?: boolean
   status?: boolean
   metadataJson?: boolean
   totalScore?: boolean
@@ -1333,6 +1612,7 @@ export type DialogueSessionSelect<ExtArgs extends runtime.Types.Extensions.Inter
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
   attempts?: boolean | Prisma.DialogueSession$attemptsArgs<ExtArgs>
   profileEvents?: boolean | Prisma.DialogueSession$profileEventsArgs<ExtArgs>
   _count?: boolean | Prisma.DialogueSessionCountOutputTypeDefaultArgs<ExtArgs>
@@ -1344,6 +1624,8 @@ export type DialogueSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   scenarioId?: boolean
   userId?: boolean
   currentNodeId?: boolean
+  currentStageId?: boolean
+  stageStateJson?: boolean
   status?: boolean
   metadataJson?: boolean
   totalScore?: boolean
@@ -1355,6 +1637,7 @@ export type DialogueSessionSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
 }, ExtArgs["result"]["dialogueSession"]>
 
 export type DialogueSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1363,6 +1646,8 @@ export type DialogueSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   scenarioId?: boolean
   userId?: boolean
   currentNodeId?: boolean
+  currentStageId?: boolean
+  stageStateJson?: boolean
   status?: boolean
   metadataJson?: boolean
   totalScore?: boolean
@@ -1374,6 +1659,7 @@ export type DialogueSessionSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
 }, ExtArgs["result"]["dialogueSession"]>
 
 export type DialogueSessionSelectScalar = {
@@ -1382,6 +1668,8 @@ export type DialogueSessionSelectScalar = {
   scenarioId?: boolean
   userId?: boolean
   currentNodeId?: boolean
+  currentStageId?: boolean
+  stageStateJson?: boolean
   status?: boolean
   metadataJson?: boolean
   totalScore?: boolean
@@ -1392,11 +1680,12 @@ export type DialogueSessionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type DialogueSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "mode" | "scenarioId" | "userId" | "currentNodeId" | "status" | "metadataJson" | "totalScore" | "completedNodeCount" | "lastActivityAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueSession"]>
+export type DialogueSessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "mode" | "scenarioId" | "userId" | "currentNodeId" | "currentStageId" | "stageStateJson" | "status" | "metadataJson" | "totalScore" | "completedNodeCount" | "lastActivityAt" | "completedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["dialogueSession"]>
 export type DialogueSessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
   attempts?: boolean | Prisma.DialogueSession$attemptsArgs<ExtArgs>
   profileEvents?: boolean | Prisma.DialogueSession$profileEventsArgs<ExtArgs>
   _count?: boolean | Prisma.DialogueSessionCountOutputTypeDefaultArgs<ExtArgs>
@@ -1405,11 +1694,13 @@ export type DialogueSessionIncludeCreateManyAndReturn<ExtArgs extends runtime.Ty
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
 }
 export type DialogueSessionIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scenario?: boolean | Prisma.DialogueSession$scenarioArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   currentNode?: boolean | Prisma.DialogueSession$currentNodeArgs<ExtArgs>
+  currentStage?: boolean | Prisma.DialogueSession$currentStageArgs<ExtArgs>
 }
 
 export type $DialogueSessionPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1418,6 +1709,7 @@ export type $DialogueSessionPayload<ExtArgs extends runtime.Types.Extensions.Int
     scenario: Prisma.$DialogueScenarioPayload<ExtArgs> | null
     user: Prisma.$UserPayload<ExtArgs>
     currentNode: Prisma.$DialogueNodePayload<ExtArgs> | null
+    currentStage: Prisma.$DialogueStagePayload<ExtArgs> | null
     attempts: Prisma.$DialogueAttemptPayload<ExtArgs>[]
     profileEvents: Prisma.$DialogueProfileEventPayload<ExtArgs>[]
   }
@@ -1427,6 +1719,8 @@ export type $DialogueSessionPayload<ExtArgs extends runtime.Types.Extensions.Int
     scenarioId: string | null
     userId: string
     currentNodeId: string | null
+    currentStageId: string | null
+    stageStateJson: string
     status: string
     metadataJson: string
     totalScore: number
@@ -1832,6 +2126,7 @@ export interface Prisma__DialogueSessionClient<T, Null = never, ExtArgs extends 
   scenario<T extends Prisma.DialogueSession$scenarioArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSession$scenarioArgs<ExtArgs>>): Prisma.Prisma__DialogueScenarioClient<runtime.Types.Result.GetResult<Prisma.$DialogueScenarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   currentNode<T extends Prisma.DialogueSession$currentNodeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSession$currentNodeArgs<ExtArgs>>): Prisma.Prisma__DialogueNodeClient<runtime.Types.Result.GetResult<Prisma.$DialogueNodePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  currentStage<T extends Prisma.DialogueSession$currentStageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSession$currentStageArgs<ExtArgs>>): Prisma.Prisma__DialogueStageClient<runtime.Types.Result.GetResult<Prisma.$DialogueStagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   attempts<T extends Prisma.DialogueSession$attemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSession$attemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   profileEvents<T extends Prisma.DialogueSession$profileEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DialogueSession$profileEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DialogueProfileEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1868,6 +2163,8 @@ export interface DialogueSessionFieldRefs {
   readonly scenarioId: Prisma.FieldRef<"DialogueSession", 'String'>
   readonly userId: Prisma.FieldRef<"DialogueSession", 'String'>
   readonly currentNodeId: Prisma.FieldRef<"DialogueSession", 'String'>
+  readonly currentStageId: Prisma.FieldRef<"DialogueSession", 'String'>
+  readonly stageStateJson: Prisma.FieldRef<"DialogueSession", 'String'>
   readonly status: Prisma.FieldRef<"DialogueSession", 'String'>
   readonly metadataJson: Prisma.FieldRef<"DialogueSession", 'String'>
   readonly totalScore: Prisma.FieldRef<"DialogueSession", 'Int'>
@@ -2305,6 +2602,25 @@ export type DialogueSession$currentNodeArgs<ExtArgs extends runtime.Types.Extens
    */
   include?: Prisma.DialogueNodeInclude<ExtArgs> | null
   where?: Prisma.DialogueNodeWhereInput
+}
+
+/**
+ * DialogueSession.currentStage
+ */
+export type DialogueSession$currentStageArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DialogueStage
+   */
+  select?: Prisma.DialogueStageSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DialogueStage
+   */
+  omit?: Prisma.DialogueStageOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DialogueStageInclude<ExtArgs> | null
+  where?: Prisma.DialogueStageWhereInput
 }
 
 /**

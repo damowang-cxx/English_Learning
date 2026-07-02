@@ -13,7 +13,7 @@ export async function GET() {
       include: {
         _count: {
           select: {
-            nodes: true,
+            stages: true,
             sessions: true,
           },
         },
@@ -32,7 +32,7 @@ export async function GET() {
         coverUrl: scenario.coverUrl,
         roleVoice: scenario.roleVoice,
         coachVoice: scenario.coachVoice,
-        nodesCount: scenario._count.nodes,
+        nodesCount: scenario._count.stages,
         sessionsCount: scenario._count.sessions,
         createdAt: scenario.createdAt.toISOString(),
         updatedAt: scenario.updatedAt.toISOString(),

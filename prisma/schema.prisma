@@ -172,17 +172,69 @@ model DialogueScenario {
   coverUrl    String?
   isPublished Boolean           @default(false)
   startNodeId String?
+  startStageId String?
   roleVoice   String            @default("marin")
   coachVoice  String            @default("cedar")
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   nodes       DialogueNode[]
   edges       DialogueEdge[]
+  stages      DialogueStage[]
+  transitions DialogueTransition[]
   sessions    DialogueSession[]
 
   @@index([isPublished])
   @@index([difficulty])
   @@index([createdAt])
+}
+
+model DialogueStage {
+  id              String               @id @default(cuid())
+  scenarioId      String
+  scenario        DialogueScenario     @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  order           Int
+  title           String               @default("")
+  openingLineEn   String
+  openingLineZh   String?
+  objective       String
+  slotsJson       String               @default("[]")
+  completionJson  String               @default("{}")
+  assessmentJson  String               @default("{}")
+  hintsJson       String               @default("{}")
+  outcomesJson    String               @default("[]")
+  positionX       Float                @default(0)
+  positionY       Float                @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  outgoingTransitions DialogueTransition[] @relation("DialogueTransitionFromStage")
+  incomingTransitions DialogueTransition[] @relation("DialogueTransitionToStage")
+  sessions        DialogueSession[]    @relation("DialogueCurrentStage")
+  attempts        DialogueAttempt[]
+
+  @@index([scenarioId])
+  @@index([scenarioId, order])
+}
+
+model DialogueTransition {
+  id          String           @id @default(cuid())
+  scenarioId  String
+  scenario    DialogueScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  fromStageId String
+  fromStage   DialogueStage    @relation("DialogueTransitionFromStage", fields: [fromStageId], references: [id], onDelete: Cascade)
+  outcomeKey  String
+  label       String           @default("")
+  conditionJson String         @default("{}")
+  priority    Int              @default(0)
+  isFallback  Boolean          @default(false)
+  toStageId   String?
+  toStage     DialogueStage?   @relation("DialogueTransitionToStage", fields: [toStageId], references: [id], onDelete: SetNull)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([scenarioId])
+  @@index([fromStageId])
+  @@index([fromStageId, outcomeKey])
+  @@index([toStageId])
 }
 
 model DialogueNode {
@@ -243,6 +295,9 @@ model DialogueSession {
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentNodeId      String?
   currentNode        DialogueNode?      @relation("DialogueCurrentNode", fields: [currentNodeId], references: [id], onDelete: SetNull)
+  currentStageId     String?
+  currentStage       DialogueStage?     @relation("DialogueCurrentStage", fields: [currentStageId], references: [id], onDelete: SetNull)
+  stageStateJson     String             @default("{}")
   status             String             @default("active")
   metadataJson       String             @default("{}")
   totalScore         Int                @default(0)
@@ -255,6 +310,7 @@ model DialogueSession {
   profileEvents      DialogueProfileEvent[]
 
   @@index([scenarioId])
+  @@index([currentStageId])
   @@index([mode])
   @@index([userId])
   @@index([status])
@@ -268,6 +324,8 @@ model DialogueAttempt {
   scenarioId      String?
   nodeId          String?
   node            DialogueNode?    @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  stageId         String?
+  stage           DialogueStage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
   userId          String
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   inputMode       String           @default("text")
@@ -281,6 +339,7 @@ model DialogueAttempt {
   assessmentJson  String?
   profileEventsJson String         @default("[]")
   errorJson       String?
+  stageStateJson  String           @default("{}")
   routerIntent    String           @default("scene_answer")
   routerJson      String           @default("{}")
   evaluatorJson   String?
@@ -298,6 +357,7 @@ model DialogueAttempt {
   @@index([sessionId, turnIndex])
   @@index([scenarioId])
   @@index([nodeId])
+  @@index([stageId])
   @@index([userId])
   @@index([createdAt])
 }
@@ -313,6 +373,7 @@ model DialogueProfileEvent {
   mode         String
   scenarioId   String?
   nodeId       String?
+  stageId      String?
   type         String
   severity     String          @default("low")
   evidence     String          @default("")
@@ -326,6 +387,7 @@ model DialogueProfileEvent {
   @@index([mode])
   @@index([scenarioId])
   @@index([nodeId])
+  @@index([stageId])
   @@index([type])
   @@index([createdAt])
 }

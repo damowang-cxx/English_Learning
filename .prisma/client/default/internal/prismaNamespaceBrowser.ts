@@ -62,6 +62,8 @@ export const ModelName = {
   VideoCaptionNote: 'VideoCaptionNote',
   LearningDailyStat: 'LearningDailyStat',
   DialogueScenario: 'DialogueScenario',
+  DialogueStage: 'DialogueStage',
+  DialogueTransition: 'DialogueTransition',
   DialogueNode: 'DialogueNode',
   DialogueEdge: 'DialogueEdge',
   DialogueSession: 'DialogueSession',
@@ -232,6 +234,7 @@ export const DialogueScenarioScalarFieldEnum = {
   coverUrl: 'coverUrl',
   isPublished: 'isPublished',
   startNodeId: 'startNodeId',
+  startStageId: 'startStageId',
   roleVoice: 'roleVoice',
   coachVoice: 'coachVoice',
   createdAt: 'createdAt',
@@ -239,6 +242,45 @@ export const DialogueScenarioScalarFieldEnum = {
 } as const
 
 export type DialogueScenarioScalarFieldEnum = (typeof DialogueScenarioScalarFieldEnum)[keyof typeof DialogueScenarioScalarFieldEnum]
+
+
+export const DialogueStageScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  order: 'order',
+  title: 'title',
+  openingLineEn: 'openingLineEn',
+  openingLineZh: 'openingLineZh',
+  objective: 'objective',
+  slotsJson: 'slotsJson',
+  completionJson: 'completionJson',
+  assessmentJson: 'assessmentJson',
+  hintsJson: 'hintsJson',
+  outcomesJson: 'outcomesJson',
+  positionX: 'positionX',
+  positionY: 'positionY',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueStageScalarFieldEnum = (typeof DialogueStageScalarFieldEnum)[keyof typeof DialogueStageScalarFieldEnum]
+
+
+export const DialogueTransitionScalarFieldEnum = {
+  id: 'id',
+  scenarioId: 'scenarioId',
+  fromStageId: 'fromStageId',
+  outcomeKey: 'outcomeKey',
+  label: 'label',
+  conditionJson: 'conditionJson',
+  priority: 'priority',
+  isFallback: 'isFallback',
+  toStageId: 'toStageId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DialogueTransitionScalarFieldEnum = (typeof DialogueTransitionScalarFieldEnum)[keyof typeof DialogueTransitionScalarFieldEnum]
 
 
 export const DialogueNodeScalarFieldEnum = {
@@ -286,6 +328,8 @@ export const DialogueSessionScalarFieldEnum = {
   scenarioId: 'scenarioId',
   userId: 'userId',
   currentNodeId: 'currentNodeId',
+  currentStageId: 'currentStageId',
+  stageStateJson: 'stageStateJson',
   status: 'status',
   metadataJson: 'metadataJson',
   totalScore: 'totalScore',
@@ -304,6 +348,7 @@ export const DialogueAttemptScalarFieldEnum = {
   sessionId: 'sessionId',
   scenarioId: 'scenarioId',
   nodeId: 'nodeId',
+  stageId: 'stageId',
   userId: 'userId',
   inputMode: 'inputMode',
   turnStatus: 'turnStatus',
@@ -316,6 +361,7 @@ export const DialogueAttemptScalarFieldEnum = {
   assessmentJson: 'assessmentJson',
   profileEventsJson: 'profileEventsJson',
   errorJson: 'errorJson',
+  stageStateJson: 'stageStateJson',
   routerIntent: 'routerIntent',
   routerJson: 'routerJson',
   evaluatorJson: 'evaluatorJson',
@@ -340,6 +386,7 @@ export const DialogueProfileEventScalarFieldEnum = {
   mode: 'mode',
   scenarioId: 'scenarioId',
   nodeId: 'nodeId',
+  stageId: 'stageId',
   type: 'type',
   severity: 'severity',
   evidence: 'evidence',

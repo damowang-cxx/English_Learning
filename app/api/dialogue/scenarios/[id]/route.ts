@@ -14,10 +14,10 @@ export async function GET(
         isPublished: true,
       },
       include: {
-        nodes: {
+        stages: {
           orderBy: { order: 'asc' },
         },
-        edges: true,
+        transitions: true,
       },
     })
 
@@ -34,26 +34,31 @@ export async function GET(
       aiRole: scenario.aiRole,
       tags: normalizeDialogueTags(scenario.tagsJson),
       coverUrl: scenario.coverUrl,
-      startNodeId: scenario.startNodeId,
+      startStageId: scenario.startStageId,
       roleVoice: scenario.roleVoice,
       coachVoice: scenario.coachVoice,
-      nodes: scenario.nodes.map((node) => ({
-        id: node.id,
-        order: node.order,
-        title: node.title,
-        roleLineEn: node.roleLineEn,
-        roleLineZh: node.roleLineZh,
-        goal: node.goal,
-        rubric: parseJsonString<Record<string, unknown>>(node.rubricJson, {}),
-        hints: parseJsonString<Record<string, unknown>>(node.hintJson, {}),
-        sampleAnswer: node.sampleAnswer,
-        retryLimit: node.retryLimit,
+      stages: scenario.stages.map((stage) => ({
+        id: stage.id,
+        order: stage.order,
+        title: stage.title,
+        openingLineEn: stage.openingLineEn,
+        openingLineZh: stage.openingLineZh,
+        objective: stage.objective,
+        slots: parseJsonString<unknown[]>(stage.slotsJson, []),
+        completion: parseJsonString<Record<string, unknown>>(stage.completionJson, {}),
+        assessment: parseJsonString<Record<string, unknown>>(stage.assessmentJson, {}),
+        hints: parseJsonString<Record<string, unknown>>(stage.hintsJson, {}),
+        outcomes: parseJsonString<unknown[]>(stage.outcomesJson, []),
       })),
-      edges: scenario.edges.map((edge) => ({
-        id: edge.id,
-        fromNodeId: edge.fromNodeId,
-        onResult: edge.onResult,
-        toNodeId: edge.toNodeId,
+      transitions: scenario.transitions.map((transition) => ({
+        id: transition.id,
+        fromStageId: transition.fromStageId,
+        outcomeKey: transition.outcomeKey,
+        label: transition.label,
+        condition: parseJsonString<Record<string, unknown>>(transition.conditionJson, {}),
+        priority: transition.priority,
+        isFallback: transition.isFallback,
+        toStageId: transition.toStageId,
       })),
     })
   } catch (error) {

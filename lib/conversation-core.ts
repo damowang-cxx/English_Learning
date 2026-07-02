@@ -57,6 +57,7 @@ export interface ProfileEvent {
   mode: ConversationMode
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   turnId?: string
   metadata?: Record<string, unknown>
   createdAt?: string
@@ -68,6 +69,8 @@ export interface ConversationSession {
   userId: string
   scenarioId: string | null
   currentNodeId: string | null
+  currentStageId: string | null
+  stageState: Record<string, unknown>
   status: ConversationSessionStatus
   metadata: Record<string, unknown>
   totalScore: number
@@ -83,6 +86,7 @@ export interface ConversationTurn {
   sessionId: string
   scenarioId: string | null
   nodeId: string | null
+  stageId: string | null
   userId: string
   inputMode: ConversationInputMode
   turnStatus: ConversationTurnStatus
@@ -97,6 +101,7 @@ export interface ConversationTurn {
   error: Record<string, unknown> | null
   routerIntent: string
   router: Record<string, unknown>
+  stageState: Record<string, unknown>
   nextAction: string
   createdAt: string
 }
@@ -114,10 +119,12 @@ interface BaseTurnInput {
   userId: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   inputMode: ConversationInputMode
   transcriptSource: TranscriptSource
   userText: string
   transcript?: Partial<Transcript> | null
+  stageState?: Record<string, unknown> | null
   routerIntent?: string
   router?: unknown
   nextAction?: string
@@ -143,6 +150,8 @@ export interface CreateConversationSessionInput {
   mode: ConversationMode
   scenarioId?: string | null
   currentNodeId?: string | null
+  currentStageId?: string | null
+  stageState?: Record<string, unknown>
   metadata?: Record<string, unknown>
 }
 
@@ -160,6 +169,7 @@ export interface CompleteConversationTurnInput extends CompleteTurnFields {
   turnId: string
   userId: string
   transcript?: Partial<Transcript> | null
+  stageState?: Record<string, unknown> | null
 }
 
 export interface FailConversationTurnInput {
@@ -282,12 +292,14 @@ function normalizeProfileEvents({
   turnId,
   scenarioId,
   nodeId,
+  stageId,
 }: {
   events: ProfileEvent[] | undefined
   mode: ConversationMode
   turnId?: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
 }) {
   return (events || [])
     .map((event) => ({
@@ -298,6 +310,7 @@ function normalizeProfileEvents({
       mode: event.mode || mode,
       scenarioId: event.scenarioId ?? scenarioId ?? null,
       nodeId: event.nodeId ?? nodeId ?? null,
+      stageId: event.stageId ?? stageId ?? null,
       turnId: event.turnId || turnId,
       metadata: event.metadata || {},
       createdAt: event.createdAt,
@@ -312,6 +325,8 @@ function serializeConversationSession(record: DialogueSessionRecord): Conversati
     userId: record.userId,
     scenarioId: record.scenarioId,
     currentNodeId: record.currentNodeId,
+    currentStageId: record.currentStageId,
+    stageState: parseJsonString<Record<string, unknown>>(record.stageStateJson, {}),
     status: normalizeSessionStatus(record.status),
     metadata: parseJsonString<Record<string, unknown>>(record.metadataJson, {}),
     totalScore: record.totalScore,
@@ -336,6 +351,7 @@ function serializeConversationTurn(record: DialogueTurnRecord): ConversationTurn
     turnId: record.id,
     scenarioId: record.scenarioId,
     nodeId: record.nodeId,
+    stageId: record.stageId,
   })
   const fallbackReplyText = record.coachReplyZh || record.roleReplyEn || ''
   const aiReply =
@@ -359,6 +375,7 @@ function serializeConversationTurn(record: DialogueTurnRecord): ConversationTurn
     sessionId: record.sessionId,
     scenarioId: record.scenarioId,
     nodeId: record.nodeId,
+    stageId: record.stageId,
     userId: record.userId,
     inputMode: normalizeInputMode(record.inputMode),
     turnStatus: normalizeTurnStatus(record.turnStatus),
@@ -377,6 +394,7 @@ function serializeConversationTurn(record: DialogueTurnRecord): ConversationTurn
     error: record.errorJson ? parseJsonString<Record<string, unknown> | null>(record.errorJson, null) : null,
     routerIntent: record.routerIntent,
     router: parseJsonString<Record<string, unknown>>(record.routerJson, {}),
+    stageState: parseJsonString<Record<string, unknown>>(record.stageStateJson, {}),
     nextAction: record.nextAction,
     createdAt: toIso(record.createdAt) || '',
   }
@@ -414,6 +432,7 @@ async function persistProfileEvents(record: DialogueTurnRecord, profileEvents: P
     turnId: record.id,
     scenarioId: record.scenarioId,
     nodeId: record.nodeId,
+    stageId: record.stageId,
   })
 
   if (!normalizedEvents.length) {
@@ -428,6 +447,7 @@ async function persistProfileEvents(record: DialogueTurnRecord, profileEvents: P
       mode: event.mode,
       scenarioId: event.scenarioId,
       nodeId: event.nodeId,
+      stageId: event.stageId,
       type: event.type,
       severity: event.severity,
       evidence: event.evidence,
@@ -461,6 +481,8 @@ export async function createConversationSession({
   mode,
   scenarioId = null,
   currentNodeId = null,
+  currentStageId = null,
+  stageState = {},
   metadata = {},
 }: CreateConversationSessionInput) {
   if (mode === 'scenario' && !scenarioId) {
@@ -473,6 +495,8 @@ export async function createConversationSession({
       scenarioId: mode === 'scenario' ? scenarioId : null,
       userId,
       currentNodeId: mode === 'scenario' ? currentNodeId : null,
+      currentStageId: mode === 'scenario' ? currentStageId : null,
+      stageStateJson: safeJsonStringify(stageState),
       status: 'active',
       metadataJson: safeJsonStringify(metadata),
     },
@@ -532,6 +556,7 @@ export async function startConversationTurn(input: StartConversationTurnInput): 
       sessionId: session.id,
       scenarioId: input.scenarioId ?? session.scenarioId ?? null,
       nodeId: input.nodeId ?? session.currentNodeId ?? null,
+      stageId: input.stageId ?? session.currentStageId ?? null,
       userId: input.userId,
       inputMode: input.inputMode,
       turnStatus: 'started',
@@ -540,6 +565,7 @@ export async function startConversationTurn(input: StartConversationTurnInput): 
       userText: input.userText,
       transcriptText: transcript.text || null,
       transcriptJson: safeJsonStringify(transcript),
+      stageStateJson: safeJsonStringify(input.stageState || {}),
       routerIntent: input.routerIntent || 'conversation',
       routerJson: safeJsonStringify(input.router || {}),
       nextAction: input.nextAction || 'stay',
@@ -590,6 +616,7 @@ export async function completeConversationTurn(input: CompleteConversationTurnIn
       aiReplyJson: safeJsonStringify(input.aiReply || {}),
       assessmentJson: assessment ? safeJsonStringify(assessment) : null,
       errorJson: input.error ? safeJsonStringify(input.error) : null,
+      stageStateJson: safeJsonStringify(input.stageState || parseJsonString<Record<string, unknown>>(existing.stageStateJson, {})),
       evaluatorJson: input.evaluator === undefined ? existing.evaluatorJson : safeJsonStringify(input.evaluator),
       coachJson: input.coach === undefined ? existing.coachJson : safeJsonStringify(input.coach),
       roleReplyEn: legacyReply.roleReplyEn,
@@ -643,6 +670,7 @@ export async function failConversationTurn(input: FailConversationTurnInput): Pr
       transcriptText: transcript.text || null,
       transcriptJson: safeJsonStringify(transcript),
       errorJson: safeJsonStringify(input.error),
+      stageStateJson: safeJsonStringify(parseJsonString<Record<string, unknown>>(existing.stageStateJson, {})),
       nextAction: 'error',
     },
   })
@@ -674,6 +702,7 @@ export async function recordCompletedConversationTurn(
       sessionId: session.id,
       scenarioId: input.scenarioId ?? session.scenarioId ?? null,
       nodeId: input.nodeId ?? session.currentNodeId ?? null,
+      stageId: input.stageId ?? session.currentStageId ?? null,
       userId: input.userId,
       inputMode: input.inputMode,
       turnStatus: 'completed',
@@ -682,6 +711,7 @@ export async function recordCompletedConversationTurn(
       userText: input.userText,
       transcriptText: transcript.text || null,
       transcriptJson: safeJsonStringify(transcript),
+      stageStateJson: safeJsonStringify(input.stageState || {}),
       aiReplyJson: safeJsonStringify(input.aiReply || {}),
       assessmentJson: assessment ? safeJsonStringify(assessment) : null,
       profileEventsJson: safeJsonStringify(input.profileEvents || []),

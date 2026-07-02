@@ -21,12 +21,25 @@ interface DialogueNodeView {
   retryLimit: number
 }
 
+interface DialogueStageView {
+  id: string
+  order: number
+  title: string
+  openingLineEn: string
+  openingLineZh: string | null
+  objective: string
+  slots?: unknown
+  outcomes?: unknown
+}
+
 interface DialoguePracticePayload {
   session: {
     id: string
     status: string
     averageScore: number
     completedNodeCount: number
+    currentStageId?: string | null
+    stageState?: Record<string, unknown>
   }
   scenario: {
     id: string
@@ -40,9 +53,11 @@ interface DialoguePracticePayload {
     coachVoice: string
   }
   currentNode: DialogueNodeView | null
+  currentStage?: DialogueStageView | null
   attempts: Array<{
     id: string
     nodeId: string | null
+    stageId?: string | null
     userText: string
     routerIntent: string
     coachReplyZh: string | null
@@ -79,6 +94,22 @@ interface DialoguePracticePayload {
     confidence: number | null
     reason: string | null
   } | null
+  matchedTransition?: {
+    id: string
+    fromStageId: string
+    toStageId: string | null
+    outcomeKey: string
+    label: string
+    priority: number
+    isFallback: boolean
+    confidence: number | null
+    reason: string | null
+  } | null
+  stageState?: Record<string, unknown>
+  stageCompleted?: boolean
+  outcomeKey?: string | null
+  outcomeConfidence?: number | null
+  nextStage?: DialogueStageView | null
   branchConfidence?: number | null
   branchReason?: string | null
   nextAction?: string
@@ -293,12 +324,17 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
         next.push(createMessage('system', '分支不明确：请再说清楚你的选择，系统暂时不会推进剧情。'))
       } else if (payload.nextAction === 'skip_unavailable') {
         next.push(createMessage('system', '当前节点没有配置跳过分支，剧情未推进。'))
+      } else if (payload.matchedTransition?.label) {
+        const outcome = payload.outcomeKey ? ` / ${payload.outcomeKey}` : ''
+        next.push(createMessage('system', `阶段完成，进入分支：${payload.matchedTransition.label}${outcome}`))
+      } else if (payload.stageCompleted && payload.outcomeKey) {
+        next.push(createMessage('system', `阶段完成：${payload.outcomeKey}`))
       } else if (payload.matchedEdge?.label) {
         next.push(createMessage('system', `进入分支：${payload.matchedEdge.label}`))
       }
 
       if (payload.roleReplyEn) {
-        next.push(createMessage('role', payload.roleReplyEn, payload.currentNode?.roleLineZh || undefined))
+        next.push(createMessage('role', payload.roleReplyEn, payload.currentStage?.openingLineZh || payload.currentNode?.roleLineZh || undefined))
       }
 
       if (payload.session.status === 'completed') {
@@ -512,6 +548,7 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
   }
 
   const currentNode = practice?.currentNode || null
+  const currentStage = practice?.currentStage || null
   const completed = practice?.session.status === 'completed'
 
   return (
@@ -544,11 +581,11 @@ export default function DialoguePracticeClient({ scenarioId }: DialoguePracticeC
             <div className="rounded-lg border border-cyan-500/16 bg-black/30 p-4">
               <div className="font-mono text-[11px] tracking-[0.2em] text-cyan-300/60">CURRENT TASK</div>
               <div className="mt-3 text-sm leading-6 text-cyan-50">
-                {currentNode?.goal || 'Create a session to load the first task.'}
+                {currentStage?.objective || currentNode?.goal || 'Create a session to load the first task.'}
               </div>
               <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-cyan-200/70">
-                <span>Node #{currentNode ? currentNode.order + 1 : '-'}</span>
-                <span>Retry limit {currentNode?.retryLimit ?? '-'}</span>
+                <span>Stage #{currentStage ? currentStage.order + 1 : currentNode ? currentNode.order + 1 : '-'}</span>
+                <span>{currentStage?.title || currentNode?.title || 'No stage loaded'}</span>
               </div>
             </div>
 

@@ -32,6 +32,7 @@ export type DialogueProfileEventMinAggregateOutputType = {
   mode: string | null
   scenarioId: string | null
   nodeId: string | null
+  stageId: string | null
   type: string | null
   severity: string | null
   evidence: string | null
@@ -48,6 +49,7 @@ export type DialogueProfileEventMaxAggregateOutputType = {
   mode: string | null
   scenarioId: string | null
   nodeId: string | null
+  stageId: string | null
   type: string | null
   severity: string | null
   evidence: string | null
@@ -64,6 +66,7 @@ export type DialogueProfileEventCountAggregateOutputType = {
   mode: number
   scenarioId: number
   nodeId: number
+  stageId: number
   type: number
   severity: number
   evidence: number
@@ -82,6 +85,7 @@ export type DialogueProfileEventMinAggregateInputType = {
   mode?: true
   scenarioId?: true
   nodeId?: true
+  stageId?: true
   type?: true
   severity?: true
   evidence?: true
@@ -98,6 +102,7 @@ export type DialogueProfileEventMaxAggregateInputType = {
   mode?: true
   scenarioId?: true
   nodeId?: true
+  stageId?: true
   type?: true
   severity?: true
   evidence?: true
@@ -114,6 +119,7 @@ export type DialogueProfileEventCountAggregateInputType = {
   mode?: true
   scenarioId?: true
   nodeId?: true
+  stageId?: true
   type?: true
   severity?: true
   evidence?: true
@@ -203,6 +209,7 @@ export type DialogueProfileEventGroupByOutputType = {
   mode: string
   scenarioId: string | null
   nodeId: string | null
+  stageId: string | null
   type: string
   severity: string
   evidence: string
@@ -240,6 +247,7 @@ export type DialogueProfileEventWhereInput = {
   mode?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   scenarioId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
+  stageId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   type?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   severity?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   evidence?: Prisma.StringFilter<"DialogueProfileEvent"> | string
@@ -259,6 +267,7 @@ export type DialogueProfileEventOrderByWithRelationInput = {
   mode?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   nodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  stageId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   evidence?: Prisma.SortOrder
@@ -281,6 +290,7 @@ export type DialogueProfileEventWhereUniqueInput = Prisma.AtLeast<{
   mode?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   scenarioId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
+  stageId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   type?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   severity?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   evidence?: Prisma.StringFilter<"DialogueProfileEvent"> | string
@@ -300,6 +310,7 @@ export type DialogueProfileEventOrderByWithAggregationInput = {
   mode?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrderInput | Prisma.SortOrder
   nodeId?: Prisma.SortOrderInput | Prisma.SortOrder
+  stageId?: Prisma.SortOrderInput | Prisma.SortOrder
   type?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   evidence?: Prisma.SortOrder
@@ -322,6 +333,7 @@ export type DialogueProfileEventScalarWhereWithAggregatesInput = {
   mode?: Prisma.StringWithAggregatesFilter<"DialogueProfileEvent"> | string
   scenarioId?: Prisma.StringNullableWithAggregatesFilter<"DialogueProfileEvent"> | string | null
   nodeId?: Prisma.StringNullableWithAggregatesFilter<"DialogueProfileEvent"> | string | null
+  stageId?: Prisma.StringNullableWithAggregatesFilter<"DialogueProfileEvent"> | string | null
   type?: Prisma.StringWithAggregatesFilter<"DialogueProfileEvent"> | string
   severity?: Prisma.StringWithAggregatesFilter<"DialogueProfileEvent"> | string
   evidence?: Prisma.StringWithAggregatesFilter<"DialogueProfileEvent"> | string
@@ -335,6 +347,7 @@ export type DialogueProfileEventCreateInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -354,6 +367,7 @@ export type DialogueProfileEventUncheckedCreateInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -367,6 +381,7 @@ export type DialogueProfileEventUpdateInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -386,6 +401,7 @@ export type DialogueProfileEventUncheckedUpdateInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -402,6 +418,7 @@ export type DialogueProfileEventCreateManyInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -415,6 +432,7 @@ export type DialogueProfileEventUpdateManyMutationInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -431,6 +449,7 @@ export type DialogueProfileEventUncheckedUpdateManyInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -457,6 +476,7 @@ export type DialogueProfileEventCountOrderByAggregateInput = {
   mode?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrder
   nodeId?: Prisma.SortOrder
+  stageId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   evidence?: Prisma.SortOrder
@@ -473,6 +493,7 @@ export type DialogueProfileEventMaxOrderByAggregateInput = {
   mode?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrder
   nodeId?: Prisma.SortOrder
+  stageId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   evidence?: Prisma.SortOrder
@@ -489,6 +510,7 @@ export type DialogueProfileEventMinOrderByAggregateInput = {
   mode?: Prisma.SortOrder
   scenarioId?: Prisma.SortOrder
   nodeId?: Prisma.SortOrder
+  stageId?: Prisma.SortOrder
   type?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   evidence?: Prisma.SortOrder
@@ -628,6 +650,7 @@ export type DialogueProfileEventCreateWithoutUserInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -645,6 +668,7 @@ export type DialogueProfileEventUncheckedCreateWithoutUserInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -689,6 +713,7 @@ export type DialogueProfileEventScalarWhereInput = {
   mode?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   scenarioId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   nodeId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
+  stageId?: Prisma.StringNullableFilter<"DialogueProfileEvent"> | string | null
   type?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   severity?: Prisma.StringFilter<"DialogueProfileEvent"> | string
   evidence?: Prisma.StringFilter<"DialogueProfileEvent"> | string
@@ -702,6 +727,7 @@ export type DialogueProfileEventCreateWithoutSessionInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -719,6 +745,7 @@ export type DialogueProfileEventUncheckedCreateWithoutSessionInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -757,6 +784,7 @@ export type DialogueProfileEventCreateWithoutTurnInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -774,6 +802,7 @@ export type DialogueProfileEventUncheckedCreateWithoutTurnInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -814,6 +843,7 @@ export type DialogueProfileEventCreateManyUserInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -827,6 +857,7 @@ export type DialogueProfileEventUpdateWithoutUserInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -844,6 +875,7 @@ export type DialogueProfileEventUncheckedUpdateWithoutUserInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -859,6 +891,7 @@ export type DialogueProfileEventUncheckedUpdateManyWithoutUserInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -874,6 +907,7 @@ export type DialogueProfileEventCreateManySessionInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -887,6 +921,7 @@ export type DialogueProfileEventUpdateWithoutSessionInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -904,6 +939,7 @@ export type DialogueProfileEventUncheckedUpdateWithoutSessionInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -919,6 +955,7 @@ export type DialogueProfileEventUncheckedUpdateManyWithoutSessionInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -934,6 +971,7 @@ export type DialogueProfileEventCreateManyTurnInput = {
   mode: string
   scenarioId?: string | null
   nodeId?: string | null
+  stageId?: string | null
   type: string
   severity?: string
   evidence?: string
@@ -947,6 +985,7 @@ export type DialogueProfileEventUpdateWithoutTurnInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -964,6 +1003,7 @@ export type DialogueProfileEventUncheckedUpdateWithoutTurnInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -979,6 +1019,7 @@ export type DialogueProfileEventUncheckedUpdateManyWithoutTurnInput = {
   mode?: Prisma.StringFieldUpdateOperationsInput | string
   scenarioId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   nodeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   type?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.StringFieldUpdateOperationsInput | string
   evidence?: Prisma.StringFieldUpdateOperationsInput | string
@@ -997,6 +1038,7 @@ export type DialogueProfileEventSelect<ExtArgs extends runtime.Types.Extensions.
   mode?: boolean
   scenarioId?: boolean
   nodeId?: boolean
+  stageId?: boolean
   type?: boolean
   severity?: boolean
   evidence?: boolean
@@ -1016,6 +1058,7 @@ export type DialogueProfileEventSelectCreateManyAndReturn<ExtArgs extends runtim
   mode?: boolean
   scenarioId?: boolean
   nodeId?: boolean
+  stageId?: boolean
   type?: boolean
   severity?: boolean
   evidence?: boolean
@@ -1035,6 +1078,7 @@ export type DialogueProfileEventSelectUpdateManyAndReturn<ExtArgs extends runtim
   mode?: boolean
   scenarioId?: boolean
   nodeId?: boolean
+  stageId?: boolean
   type?: boolean
   severity?: boolean
   evidence?: boolean
@@ -1054,6 +1098,7 @@ export type DialogueProfileEventSelectScalar = {
   mode?: boolean
   scenarioId?: boolean
   nodeId?: boolean
+  stageId?: boolean
   type?: boolean
   severity?: boolean
   evidence?: boolean
@@ -1062,7 +1107,7 @@ export type DialogueProfileEventSelectScalar = {
   createdAt?: boolean
 }
 
-export type DialogueProfileEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "sessionId" | "turnId" | "mode" | "scenarioId" | "nodeId" | "type" | "severity" | "evidence" | "suggestion" | "metadataJson" | "createdAt", ExtArgs["result"]["dialogueProfileEvent"]>
+export type DialogueProfileEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "sessionId" | "turnId" | "mode" | "scenarioId" | "nodeId" | "stageId" | "type" | "severity" | "evidence" | "suggestion" | "metadataJson" | "createdAt", ExtArgs["result"]["dialogueProfileEvent"]>
 export type DialogueProfileEventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   session?: boolean | Prisma.DialogueSessionDefaultArgs<ExtArgs>
@@ -1094,6 +1139,7 @@ export type $DialogueProfileEventPayload<ExtArgs extends runtime.Types.Extension
     mode: string
     scenarioId: string | null
     nodeId: string | null
+    stageId: string | null
     type: string
     severity: string
     evidence: string
@@ -1533,6 +1579,7 @@ export interface DialogueProfileEventFieldRefs {
   readonly mode: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
   readonly scenarioId: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
   readonly nodeId: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
+  readonly stageId: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
   readonly type: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
   readonly severity: Prisma.FieldRef<"DialogueProfileEvent", 'String'>
   readonly evidence: Prisma.FieldRef<"DialogueProfileEvent", 'String'>

@@ -8,10 +8,10 @@ async function getAdminScenario(id: string) {
   const scenario = await prisma.dialogueScenario.findUnique({
     where: { id },
     include: {
-      nodes: {
+      stages: {
         orderBy: { order: 'asc' },
       },
-      edges: true,
+      transitions: true,
     },
   })
 
@@ -58,7 +58,7 @@ export async function PUT(
     const existing = await prisma.dialogueScenario.findUnique({
       where: { id },
       include: {
-        nodes: {
+        stages: {
           select: {
             id: true,
             scenarioId: true,
@@ -71,7 +71,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Dialogue scenario not found' }, { status: 404 })
     }
 
-    const submittedNodeIds = new Set(payload.nodes.map((node) => node.id))
+    const submittedStageIds = new Set(payload.stages.map((stage) => stage.id))
 
     await prisma.$transaction(async (tx) => {
       await tx.dialogueScenario.update({
@@ -84,79 +84,79 @@ export async function PUT(
           aiRole: payload.aiRole,
           tagsJson: safeJsonStringify(payload.tags, '[]'),
           coverUrl: payload.coverUrl,
-          startNodeId: payload.startNodeId,
+          startStageId: payload.startStageId,
           roleVoice: payload.roleVoice,
           coachVoice: payload.coachVoice,
         },
       })
 
-      await tx.dialogueEdge.deleteMany({
+      await tx.dialogueTransition.deleteMany({
         where: { scenarioId: id },
       })
 
-      const nodeIdsToDelete = existing.nodes
-        .map((node) => node.id)
-        .filter((nodeId) => !submittedNodeIds.has(nodeId))
+      const stageIdsToDelete = existing.stages
+        .map((stage) => stage.id)
+        .filter((stageId) => !submittedStageIds.has(stageId))
 
-      if (nodeIdsToDelete.length > 0) {
-        await tx.dialogueNode.deleteMany({
+      if (stageIdsToDelete.length > 0) {
+        await tx.dialogueStage.deleteMany({
           where: {
             scenarioId: id,
             id: {
-              in: nodeIdsToDelete,
+              in: stageIdsToDelete,
             },
           },
         })
       }
 
-      for (const node of payload.nodes) {
-        const existingNode = await tx.dialogueNode.findUnique({
-          where: { id: node.id },
+      for (const stage of payload.stages) {
+        const existingStage = await tx.dialogueStage.findUnique({
+          where: { id: stage.id },
           select: { scenarioId: true },
         })
 
-        if (existingNode && existingNode.scenarioId !== id) {
-          throw new Error(`Node id belongs to another scenario: ${node.id}`)
+        if (existingStage && existingStage.scenarioId !== id) {
+          throw new Error(`Stage id belongs to another scenario: ${stage.id}`)
         }
 
-        const nodeData = {
-          order: node.order,
-          title: node.title,
-          roleLineEn: node.roleLineEn,
-          roleLineZh: node.roleLineZh,
-          goal: node.goal,
-          rubricJson: node.rubricJson,
-          hintJson: node.hintJson,
-          sampleAnswer: node.sampleAnswer,
-          retryLimit: node.retryLimit,
-          allowDynamicFollowup: node.allowDynamicFollowup,
-          positionX: node.positionX,
-          positionY: node.positionY,
+        const stageData = {
+          order: stage.order,
+          title: stage.title,
+          openingLineEn: stage.openingLineEn,
+          openingLineZh: stage.openingLineZh,
+          objective: stage.objective,
+          slotsJson: stage.slotsJson,
+          completionJson: stage.completionJson,
+          assessmentJson: stage.assessmentJson,
+          hintsJson: stage.hintsJson,
+          outcomesJson: stage.outcomesJson,
+          positionX: stage.positionX,
+          positionY: stage.positionY,
         }
 
-        await tx.dialogueNode.upsert({
-          where: { id: node.id },
-          update: nodeData,
+        await tx.dialogueStage.upsert({
+          where: { id: stage.id },
+          update: stageData,
           create: {
-            id: node.id,
+            id: stage.id,
             scenarioId: id,
-            ...nodeData,
+            ...stageData,
           },
         })
       }
 
-      for (const edge of payload.edges) {
-        await tx.dialogueEdge.create({
+      for (const transition of payload.transitions) {
+        await tx.dialogueTransition.create({
           data: {
-            ...(edge.id ? { id: edge.id } : {}),
+            ...(transition.id ? { id: transition.id } : {}),
             scenarioId: id,
-            fromNodeId: edge.fromNodeId,
-            onResult: edge.onResult,
-            label: edge.label,
-            conditionJson: edge.conditionJson,
-            priority: edge.priority,
-            isFallback: edge.isFallback,
-            toNodeId: edge.toNodeId,
+            fromStageId: transition.fromStageId,
+            outcomeKey: transition.outcomeKey,
+            label: transition.label,
+            conditionJson: transition.conditionJson,
+            priority: transition.priority,
+            isFallback: transition.isFallback,
+            toStageId: transition.toStageId,
           },
         })
       }
